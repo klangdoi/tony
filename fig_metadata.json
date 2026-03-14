@@ -1,0 +1,41 @@
+{
+  "generated_at": "2026-03-14T09:30:00Z",
+  "total_varieties": 334,
+  "varieties": [
+    {
+      "id": "ALACANTINA",
+      "name_th": "อาลาคานตินา",
+      "main_image": "Ebook/ALACANTINA.jpg",
+      "detail_image": "Ebook/ALACANTINA_DETAIL.JPG",
+      "category": "A"
+    },
+    {
+      "id": "ALBACOR",
+      "name_th": "อัลบาคอร์",
+      "main_image": "Ebook/ALBACOR.jpg",
+      "detail_image": "Ebook/ALBACOR_DETAIL.JPG",
+      "category": "A"
+    },
+    {
+      "id": "JORBA",
+      "name_th": "จอร์บา",
+      "main_image": "Ebook/JORBA.jpg",
+      "detail_image": "Ebook/JORBA_DETAIL.JPG",
+      "category": "J"
+    },
+    {
+      "id": "ปฏิทิน_FIG_TREE",
+      "name_th": "ปฏิทินต้นฟิกส์",
+      "main_image": "Ebook/ปฏิทิน_FIG_TREE.JPG",
+      "detail_image": null,
+      "category": "ป"
+    },
+    {
+      "id": "มะเดื่อฝรั่งทีขึ้นเองตามพื้นที่",
+      "name_th": "มะเดื่อฝรั่งที่ขึ้นเองตามพื้นที่",
+      "main_image": "Ebook/มะเดื่อฝรั่งทีขึ้นเองตามพื้นที่.JPG",
+      "detail_image": null,
+      "category": "ม"
+    }
+  ]
+}
