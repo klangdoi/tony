@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KLANGDOI GARDEN - สวนฟิกส์ 334 สายพันธุ์</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>สวนฟิกส์ KLANGDOI</h1>
+      <p>รวมสายพันธุ์ฟิกส์ทั่วโลก 334 ชนิด • สำหรับใช้ส่วนตัวเท่านั้น</p>
+    </header>
+
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="ค้นหาสายพันธุ์... (เช่น จอร์บา, อาลาคานตินา)">
+      <button onclick="filterVarieties()">ค้นหา</button>
+    </div>
+
+    <div class="category-filter">
+      <button onclick="showAll()">ทั้งหมด</button>
+      <button onclick="filterByCategory('A')">A</button>
+      <button onclick="filterByCategory('J')">J</button>
+      <button onclick="filterByCategory('ป')">ป</button>
+      <button onclick="filterByCategory('ม')">ม</button>
+      <button onclick="filterByCategory('ส')">ส</button>
+    </div>
+
+    <div id="varietiesGrid" class="varieties-grid"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
