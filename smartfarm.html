@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SmartFarm">
 <link rel="manifest" id="pwa-manifest">
-<title>SmartFarm Registry v2.4</title>
+<title>SmartFarm Registry v2.6</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
@@ -181,11 +181,72 @@ textarea.fi{resize:vertical;min-height:70px}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .empty{text-align:center;padding:48px 20px;color:var(--t3)}
 .empty-icon{font-size:44px;margin-bottom:10px}
+
+/* DASHBOARD */
+.dash-stat{background:var(--s1);border:1px solid var(--bdr);border-radius:var(--r2);padding:14px;text-align:center}
+.dash-stat-v{font-family:'Syne',sans-serif;font-size:24px;font-weight:800}
+.dash-stat-l{font-size:11px;color:var(--t3);margin-top:3px}
+.zone-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr)}
+.zone-row:last-child{border:none}
+.zone-bar-wrap{flex:1;height:6px;background:var(--bdr);border-radius:3px;overflow:hidden}
+.zone-bar-fill{height:100%;border-radius:3px;background:var(--g);transition:width .6s ease}
+/* CARE */
+.care-item{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--bdr)}
+.care-item:last-child{border:none}
+.care-ico{width:36px;height:36px;border-radius:9px;background:var(--gdim);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.care-info{flex:1}
+.care-name{font-size:13px;font-weight:600}
+.care-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.care-due{font-size:11px;font-weight:700;padding:3px 8px;border-radius:8px;flex-shrink:0}
+.due-today{background:rgba(255,85,85,.15);color:var(--danger)}
+.due-soon{background:rgba(245,166,35,.15);color:var(--warn)}
+.due-ok{background:var(--gdim);color:var(--g)}
+.due-past{background:rgba(255,85,85,.2);color:var(--danger)}
+/* COST */
+.cost-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bdr);cursor:pointer}
+.cost-row:last-child{border:none}
+.cost-thumb{width:36px;height:36px;border-radius:8px;background:var(--gdim);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;flex-shrink:0}
+.cost-thumb img{width:100%;height:100%;object-fit:cover}
+.cost-info{flex:1;min-width:0}
+.cost-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cost-sub{font-size:11px;color:var(--t3);margin-top:2px}
+.cost-profit{font-size:13px;font-weight:700;text-align:right;flex-shrink:0}
+
+/* DASHBOARD */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.dash-stat{background:var(--s1);border:1px solid var(--bdr);border-radius:var(--r2);padding:14px;text-align:center}
+.dash-stat-v{font-family:'Syne',sans-serif;font-size:28px;font-weight:800}
+.dash-stat-l{font-size:11px;color:var(--t3);margin-top:4px}
+.dash-zone-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bdr);font-size:13px}
+.dash-zone-row:last-child{border:none}
+.dash-zone-bar{flex:1;height:6px;background:var(--bdr);border-radius:3px;overflow:hidden}
+.dash-zone-fill{height:100%;border-radius:3px;background:var(--g);transition:width .6s ease}
+.dash-cat-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-size:12px;margin:3px}
+
+/* COST fields */
+.cost-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+
+/* QR Modal */
+.qr-box{display:flex;justify-content:center;padding:20px 0}
+.qr-box canvas,.qr-box img{border-radius:10px}
+.qr-share-info{background:var(--s2);border-radius:10px;padding:12px;font-size:12px;color:var(--t3);line-height:1.8;margin-bottom:12px}
+
+/* CARE SCHEDULE */
+.care-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bdr)}
+.care-item:last-child{border:none}
+.care-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.care-overdue{background:var(--danger)}
+.care-today{background:var(--warn)}
+.care-soon{background:var(--g)}
+.care-ok{background:var(--bdr2)}
+.care-info{flex:1}
+.care-name{font-size:13px;font-weight:600}
+.care-detail{font-size:11px;color:var(--t3);margin-top:2px}
+.care-badge{font-size:11px;padding:3px 8px;border-radius:10px;flex-shrink:0}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px}
 </style>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -195,12 +256,39 @@ textarea.fi{resize:vertical;min-height:70px}
 </div>
 
 <div class="nav">
+  <button class="nb" onclick="nav('dashboard',this)">📊 Dashboard</button>
+  <button class="nb" onclick="nav('dashboard',this)">📊 Dashboard</button>
   <button class="nb on" onclick="nav('plants',this)">🌿 ทะเบียน</button>
   <button class="nb" onclick="nav('history',this)">📋 ประวัติ</button>
+  <button class="nb" onclick="nav('care',this)">🔔 ดูแล</button>
+  <button class="nb" onclick="nav('cost',this)">💰 ต้นทุน</button>
   <button class="nb" onclick="nav('io',this)">📦 Import/Export</button>
   <button class="nb" onclick="nav('system',this)">⚙️ ระบบ</button>
 </div>
 
+<!-- PAGE: DASHBOARD -->
+<div id="pg-dashboard" class="pg">
+  <div class="card">
+    <div class="ct">ภาพรวมฟาร์ม</div>
+    <div class="dash-grid" id="dash-stats"></div>
+  </div>
+  <div class="card">
+    <div class="ct">สัดส่วนตามประเภท</div>
+    <div id="dash-cats" style="display:flex;flex-wrap:wrap;padding:4px 0"></div>
+  </div>
+  <div class="card">
+    <div class="ct">ต้นไม้ตามโซน</div>
+    <div id="dash-zones"></div>
+  </div>
+  <div class="card">
+    <div class="ct">🔔 แจ้งเตือนวันดูแลวันนี้</div>
+    <div id="dash-care-alert"></div>
+  </div>
+  <div class="card">
+    <div class="ct">ต้นไม้เพิ่งเพิ่มล่าสุด</div>
+    <div id="dash-recent"></div>
+  </div>
+</div>
 <!-- PAGE: PLANTS -->
 <div id="pg-plants" class="pg on">
   <div id="pwa-install-banner" class="pwa-banner">
@@ -296,28 +384,6 @@ textarea.fi{resize:vertical;min-height:70px}
     <div id="pwa-status" style="font-size:12px;color:var(--t3);text-align:center;padding:8px">ตรวจสอบสถานะ PWA...</div>
   </div>
   <div class="card">
-    <div class="ct">ที่เก็บข้อมูล (Storage Mode)</div>
-    <div class="sys-row">
-      <div class="sys-ico">💾</div>
-      <div class="sys-info"><div class="sys-n">Local Storage</div><div class="sys-d">เก็บในเครื่อง (default, ทำงาน offline)</div></div>
-      <div id="mode-local-dot" style="width:10px;height:10px;border-radius:50%;background:var(--g);flex-shrink:0"></div>
-    </div>
-    <div class="sys-row">
-      <div class="sys-ico">☁️</div>
-      <div class="sys-info"><div class="sys-n">Firebase Cloud</div><div class="sys-d" id="cloud-desc">ต้องการ internet — สำรองข้อมูลขึ้น cloud</div></div>
-      <div id="mode-cloud-dot" style="width:10px;height:10px;border-radius:50%;background:var(--bdr2);flex-shrink:0"></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
-      <button class="act-btn" id="btn-use-local" onclick="setStorageMode('local')" style="padding:11px;font-size:13px">💾 ใช้ Local</button>
-      <button class="act-btn act-nfc" id="btn-use-cloud" onclick="setStorageMode('cloud')" style="padding:11px;font-size:13px">☁️ ใช้ Cloud</button>
-    </div>
-    <div style="margin-top:12px;display:flex;gap:8px">
-      <button class="btn-p" onclick="syncToCloud()" style="flex:1;margin:0;padding:11px;font-size:13px">⬆️ Upload Local → Cloud</button>
-      <button class="btn-s" onclick="syncFromCloud()" style="flex:1;margin:0;padding:11px;font-size:13px">⬇️ Download Cloud → Local</button>
-    </div>
-    <div id="sync-status" style="margin-top:10px;font-size:12px;color:var(--t3);text-align:center"></div>
-  </div>
-  <div class="card">
     <div class="ct">เกี่ยวกับ</div>
     <div style="font-size:13px;color:var(--t2);line-height:2.3">
       <div>เวอร์ชัน: <strong style="color:var(--g)" id="sys-ver">—</strong></div>
@@ -325,6 +391,53 @@ textarea.fi{resize:vertical;min-height:70px}
       <div>NFC API: <strong id="nfc-api-txt">ตรวจสอบ...</strong></div>
       <div>Prefix รหัส: <strong style="color:var(--g)">KLD-###</strong></div>
     </div>
+  </div>
+</div>
+
+<!-- ══ PAGE: DASHBOARD ══ -->
+<div id="pg-dashboard" class="pg">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px" id="dash-stats"></div>
+  <div class="card" id="dash-zone-card">
+    <div class="ct">สถิติตามโซน</div>
+    <div id="dash-zones"></div>
+  </div>
+  <div class="card">
+    <div class="ct">สถิติตามประเภท</div>
+    <div id="dash-cats"></div>
+  </div>
+  <div class="card">
+    <div class="ct">อายุเฉลี่ยต้นไม้</div>
+    <div id="dash-age"></div>
+  </div>
+  <div class="card" id="dash-care-upcoming">
+    <div class="ct">แจ้งเตือนใกล้ครบกำหนด</div>
+    <div id="dash-alerts-list"></div>
+  </div>
+  <div class="card">
+    <div class="ct">สรุปมูลค่า</div>
+    <div id="dash-cost"></div>
+  </div>
+</div>
+
+<!-- ══ PAGE: CARE SCHEDULE ══ -->
+<div id="pg-care" class="pg">
+  <div class="card">
+    <div class="ct">กำหนดการดูแลวันนี้ & ใกล้ถึง</div>
+    <div id="care-today"></div>
+  </div>
+  <div class="card">
+    <div class="ct">กำหนดการทั้งหมด</div>
+    <div id="care-all"></div>
+  </div>
+  <button class="btn-p" style="margin-bottom:12px" onclick="openCareModal()">＋ เพิ่มกำหนดการดูแล</button>
+</div>
+
+<!-- ══ PAGE: COST ══ -->
+<div id="pg-cost" class="pg">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px" id="cost-summary"></div>
+  <div class="card">
+    <div class="ct">มูลค่าต้นไม้รายต้น</div>
+    <div id="cost-list"></div>
   </div>
 </div>
 
@@ -361,6 +474,16 @@ textarea.fi{resize:vertical;min-height:70px}
       <div class="fg"><label class="fl">วันที่ปลูก</label><input class="fi" type="date" id="d-date" onchange="refreshDetailAge()"></div>
     </div>
     <div class="fg"><label class="fl">อุณหภูมิ (°C)</label><input class="fi" id="d-temp" placeholder="เช่น 20-28"></div>
+    <div class="cost-row">
+      <div class="fg" style="margin:0"><label class="fl">ต้นทุน (บาท)</label><input class="fi" id="d-cost" type="number" placeholder="0" min="0"></div>
+      <div class="fg" style="margin:0"><label class="fl">มูลค่าตลาด (บาท)</label><input class="fi" id="d-value" type="number" placeholder="0" min="0"></div>
+    </div>
+    <div class="fg"><label class="fl">รอบดูแลถัดไป</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <select class="fi" id="d-care-type"><option value="">-- ประเภท --</option><option>รดน้ำ</option><option>ใส่ปุ๋ย</option><option>ตรวจโรค</option><option>ตัดแต่ง</option><option>ย้ายกระถาง</option></select>
+        <input class="fi" type="date" id="d-care-date">
+      </div>
+    </div>
     <div class="fg"><label class="fl">บันทึก/หมายเหตุ</label><textarea class="fi" id="d-note"></textarea></div>
     <div class="detail-age" id="detail-age-box">
       <div class="detail-age-v" id="detail-age-val">—</div>
@@ -378,6 +501,7 @@ textarea.fi{resize:vertical;min-height:70px}
     </div>
     <div style="display:flex;gap:8px">
       <button class="act-btn act-nfc" style="flex:1;padding:12px" onclick="nfcFromDetail()">📲 ผูก NFC</button>
+      <button class="act-btn" style="flex:1;padding:12px;border-color:var(--purple);color:var(--purple)" onclick="openQR(detailId)">📸 QR Code</button>
       <button class="act-btn act-del" style="flex:1;padding:12px" onclick="delFromDetail()">🗑️ ลบต้นนี้</button>
     </div>
   </div>
@@ -404,6 +528,16 @@ textarea.fi{resize:vertical;min-height:70px}
       <div class="fg"><label class="fl">วันที่ปลูก</label><input class="fi" type="date" id="f-date"></div>
     </div>
     <div class="fg"><label class="fl">อุณหภูมิ (°C)</label><input class="fi" id="f-temp" placeholder="เช่น 20-28"></div>
+    <div class="cost-row">
+      <div class="fg" style="margin:0"><label class="fl">ต้นทุน (บาท)</label><input class="fi" id="f-cost" type="number" placeholder="0" min="0"></div>
+      <div class="fg" style="margin:0"><label class="fl">มูลค่าตลาด (บาท)</label><input class="fi" id="f-value" type="number" placeholder="0" min="0"></div>
+    </div>
+    <div class="fg"><label class="fl">รอบดูแลถัดไป</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <select class="fi" id="f-care-type"><option value="">-- ประเภท --</option><option>รดน้ำ</option><option>ใส่ปุ๋ย</option><option>ตรวจโรค</option><option>ตัดแต่ง</option><option>ย้ายกระถาง</option></select>
+        <input class="fi" type="date" id="f-care-date">
+      </div>
+    </div>
     <div class="fg"><label class="fl">บันทึก / หมายเหตุ</label><textarea class="fi" id="f-note" placeholder="รายละเอียด..."></textarea></div>
     <button class="btn-p" onclick="savePlant()">💾 บันทึก</button>
     <button class="btn-s" onclick="closeM('m-add')">ยกเลิก</button>
@@ -433,121 +567,68 @@ textarea.fi{resize:vertical;min-height:70px}
   </div>
 </div>
 
+<!-- MODAL: CARE SCHEDULE -->
+<div class="overlay" id="m-care" onclick="bgClose(event,'m-care')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">🔔 เพิ่มกำหนดการดูแล</div>
+    <div class="fg"><label class="fl">ต้นไม้</label>
+      <select class="fi" id="care-plant-id"><option value="">— เลือกต้นไม้ หรือทุกต้น —</option><option value="ALL">🌿 ทุกต้น</option></select>
+    </div>
+    <div class="fg"><label class="fl">ประเภทการดูแล</label>
+      <select class="fi" id="care-type">
+        <option value="รดน้ำ">💧 รดน้ำ</option>
+        <option value="ใส่ปุ๋ย">🌿 ใส่ปุ๋ย</option>
+        <option value="ตรวจโรค">🔍 ตรวจโรค</option>
+        <option value="ตัดแต่ง">✂️ ตัดแต่ง</option>
+        <option value="ย้ายกระถาง">🪴 ย้ายกระถาง</option>
+        <option value="อื่นๆ">📝 อื่นๆ</option>
+      </select>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">วันที่นัด</label><input class="fi" type="date" id="care-date"></div>
+      <div class="fg"><label class="fl">ทำซ้ำทุก (วัน)</label><input class="fi" type="number" id="care-repeat" placeholder="0=ไม่ซ้ำ" min="0"></div>
+    </div>
+    <div class="fg"><label class="fl">หมายเหตุ</label><input class="fi" id="care-note" placeholder="รายละเอียดเพิ่มเติม..."></div>
+    <button class="btn-p" onclick="saveCare()">💾 บันทึก</button>
+    <button class="btn-s" onclick="closeM('m-care')">ยกเลิก</button>
+  </div>
+</div>
+
+<!-- MODAL: COST -->
+<div class="overlay" id="m-cost" onclick="bgClose(event,'m-cost')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" id="cost-modal-title">💰 บันทึกต้นทุน/มูลค่า</div>
+    <div class="fg"><label class="fl">ต้นทุน (บาท)</label><input class="fi" type="number" id="cost-input" placeholder="0"></div>
+    <div class="fg"><label class="fl">มูลค่าตลาดปัจจุบัน (บาท)</label><input class="fi" type="number" id="value-input" placeholder="0"></div>
+    <div class="fg"><label class="fl">หมายเหตุ</label><input class="fi" id="cost-note" placeholder="เช่น ราคาซื้อมา, ประเมินตลาด..."></div>
+    <button class="btn-p" onclick="saveCost()">💾 บันทึก</button>
+    <button class="btn-s" onclick="closeM('m-cost')">ยกเลิก</button>
+  </div>
+</div>
+
+<!-- MODAL: QR CODE -->
+<div class="overlay" id="m-qr" onclick="bgClose(event,'m-qr')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" id="qr-title">📸 QR Code ต้นไม้</div>
+    <div class="qr-share-info" id="qr-info"></div>
+    <div class="qr-box"><div id="qr-canvas"></div></div>
+    <p style="text-align:center;font-size:11px;color:var(--t3);margin-bottom:12px">ให้ลูกค้าสแกนเพื่อดูข้อมูลต้นนี้</p>
+    <button class="btn-p" onclick="downloadQR()">⬇️ บันทึก QR Code</button>
+    <button class="btn-s" onclick="closeM('m-qr')">ปิด</button>
+  </div>
+</div>
+
 <script>
-const APP_VERSION='2.4', APP_BUILD='2026-03-20';
-// ══════════════════════════════════════
-// FIREBASE CONFIG
-// ══════════════════════════════════════
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyCKeiqyIuiuCF1NNtgRk73KW22fNsai8VQ",
-  authDomain: "smartfarm-registry-be06c.firebaseapp.com",
-  projectId: "smartfarm-registry-be06c",
-  storageBucket: "smartfarm-registry-be06c.firebasestorage.app",
-  messagingSenderId: "666501945331",
-  appId: "1:666501945331:web:cf51dac33c0b2be1ae486"
-};
-
-let db = null;
-let storageMode = 'local'; // 'local' | 'cloud'
-
-function initFirebase() {
-  try {
-    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-    db = firebase.firestore();
-    return true;
-  } catch(e) {
-    console.error('Firebase init error:', e);
-    return false;
-  }
+const APP_VERSION='2.6', APP_BUILD='2026-03-20';
 }
-
-function setStorageMode(mode) {
-  if (mode === 'cloud') {
-    if (!initFirebase()) { toast('❌ Firebase เริ่มต้นไม่ได้'); return; }
-    storageMode = 'cloud';
-    localStorage.setItem('sf_storage_mode', 'cloud');
-    toast('☁️ เปลี่ยนเป็น Cloud แล้ว');
-  } else {
-    storageMode = 'local';
-    localStorage.setItem('sf_storage_mode', 'local');
-    toast('💾 เปลี่ยนเป็น Local แล้ว');
-  }
-  updateStorageModeUI();
-}
-
-function updateStorageModeUI() {
-  const isCloud = storageMode === 'cloud';
-  const localDot = document.getElementById('mode-local-dot');
-  const cloudDot = document.getElementById('mode-cloud-dot');
-  const btnLocal = document.getElementById('btn-use-local');
-  const btnCloud = document.getElementById('btn-use-cloud');
-  if (localDot) localDot.style.background = isCloud ? 'var(--bdr2)' : 'var(--g)';
-  if (cloudDot) cloudDot.style.background = isCloud ? 'var(--g)' : 'var(--bdr2)';
-  if (btnLocal) { btnLocal.style.borderColor = isCloud ? 'var(--bdr)' : 'var(--g)'; btnLocal.style.color = isCloud ? 'var(--t2)' : 'var(--g)'; }
   if (btnCloud) { btnCloud.style.borderColor = isCloud ? 'var(--g)' : 'var(--bdr)'; btnCloud.style.color = isCloud ? 'var(--g)' : 'var(--t2)'; }
   const desc = document.getElementById('cloud-desc');
   if (desc) desc.textContent = isCloud ? '✅ กำลังใช้งาน Cloud' : 'ต้องการ internet — สำรองข้อมูลขึ้น cloud';
   const loc = document.getElementById('db-location');
-  if (loc) loc.textContent = isCloud ? 'Firebase Firestore: smartfarm-registry-be06c / plants' : location.origin + ' → localStorage["sf_plants_v2"]';
-}
-
-// Upload local → Cloud
-async function syncToCloud() {
-  if (!initFirebase()) { toast('❌ Firebase เริ่มต้นไม่ได้'); return; }
-  setSyncStatus('⬆️ กำลัง Upload...');
-  try {
-    const batch = db.batch();
-    // Save metadata doc
-    const metaRef = db.collection('smartfarm').doc('__meta__');
-    batch.set(metaRef, { zones, updatedAt: new Date().toISOString(), version: APP_VERSION });
-    // Save each plant
-    plants.forEach(p => {
-      const ref = db.collection('smartfarm').doc(p.id);
-      const data = { ...p };
-      // include image as base64 field if exists (max ~900KB)
-      if (images[p.id]) data._img = images[p.id];
-      batch.set(ref, data);
-    });
-    await batch.commit();
-    setSyncStatus('✅ Upload สำเร็จ ' + plants.length + ' ต้น — ' + new Date().toLocaleTimeString('th-TH'));
-    toast('☁️ Upload Cloud สำเร็จ ✓');
-  } catch(e) {
-    setSyncStatus('❌ Upload ผิดพลาด: ' + e.message);
-    toast('❌ ' + e.message);
-  }
-}
-
-// Download Cloud → Local
-async function syncFromCloud() {
-  if (!initFirebase()) { toast('❌ Firebase เริ่มต้นไม่ได้'); return; }
-  setSyncStatus('⬇️ กำลัง Download...');
-  try {
-    const snap = await db.collection('smartfarm').get();
-    const newPlants = [], newImages = {};
-    let newZones = zones;
-    snap.forEach(doc => {
-      const d = doc.data();
-      if (doc.id === '__meta__') { if (d.zones) newZones = d.zones; return; }
-      if (d._img) { newImages[d.id] = d._img; delete d._img; }
-      newPlants.push(d);
-    });
-    plants = newPlants;
-    images = newImages;
-    zones = newZones;
-    save();
-    renderPlants();
-    renderZones();
-    setSyncStatus('✅ Download สำเร็จ ' + plants.length + ' ต้น — ' + new Date().toLocaleTimeString('th-TH'));
-    toast('⬇️ Download Cloud สำเร็จ ✓');
-  } catch(e) {
-    setSyncStatus('❌ Download ผิดพลาด: ' + e.message);
-    toast('❌ ' + e.message);
-  }
-}
-
-function setSyncStatus(msg) {
-  const el = document.getElementById('sync-status');
-  if (el) el.textContent = msg;
+  if (loc) loc.textContent = location.origin + ' → localStorage["sf_plants_v2"]';
 }
 
 
@@ -650,6 +731,124 @@ function delZone(i){
   zones.splice(i,1);save();renderZones();
 }
 
+
+// ══════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════
+function renderDashboard(){
+  if(!document.getElementById('dash-stats')) return;
+  const total=plants.length;
+  const totalCost=plants.reduce((s,p)=>s+(parseFloat(p.cost)||0),0);
+  const totalVal=plants.reduce((s,p)=>s+(parseFloat(p.value)||0),0);
+  const ages=plants.filter(p=>p.date).map(p=>{
+    const d=new Date(p.date),n=new Date();
+    return Math.max(0,(n-d)/(1000*60*60*24*365));
+  });
+  const avgAge=ages.length?(ages.reduce((a,b)=>a+b,0)/ages.length).toFixed(1):'—';
+
+  // Stats grid
+  document.getElementById('dash-stats').innerHTML=`
+    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--g)">${total}</div><div class="dash-stat-l">ต้นทั้งหมด</div></div>
+    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--blue)">${avgAge}</div><div class="dash-stat-l">อายุเฉลี่ย (ปี)</div></div>
+    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--warn)">${totalCost>0?'฿'+totalCost.toLocaleString():'—'}</div><div class="dash-stat-l">ต้นทุนรวม</div></div>
+    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--purple)">${totalVal>0?'฿'+totalVal.toLocaleString():'—'}</div><div class="dash-stat-l">มูลค่าตลาดรวม</div></div>`;
+
+  // Categories
+  const catMap={premium:{l:'✨ Premium',c:'var(--purple)'},rare:{l:'🔥 Rare',c:'var(--danger)'},health:{l:'💚 สุขภาพ',c:'var(--g)'},collect:{l:'🏆 สะสม',c:'var(--blue)'}};
+  const catCount={};
+  plants.forEach(p=>{catCount[p.cat]=(catCount[p.cat]||0)+1;});
+  document.getElementById('dash-cats').innerHTML=Object.entries(catCount).map(([k,v])=>{
+    const cm=catMap[k]||{l:k,c:'var(--t2)'};
+    return `<div class="dash-cat-chip" style="background:rgba(255,255,255,.05);border:1px solid var(--bdr)">
+      <span style="color:${cm.c};font-weight:700">${v}</span>
+      <span style="color:var(--t3);font-size:11px">${cm.l}</span>
+    </div>`;
+  }).join('');
+
+  // Zones
+  const zoneCount={};
+  plants.forEach(p=>{if(p.zone) zoneCount[p.zone]=(zoneCount[p.zone]||0)+1;});
+  const maxZ=Math.max(1,...Object.values(zoneCount));
+  document.getElementById('dash-zones').innerHTML=Object.entries(zoneCount).length
+    ?Object.entries(zoneCount).sort((a,b)=>b[1]-a[1]).map(([z,n])=>`
+      <div class="dash-zone-row">
+        <div style="font-weight:600;min-width:36px">${z}</div>
+        <div class="dash-zone-bar"><div class="dash-zone-fill" style="width:${n/maxZ*100}%"></div></div>
+        <div style="color:var(--g);font-weight:700;min-width:24px;text-align:right">${n}</div>
+        <div style="color:var(--t3);font-size:11px">ต้น</div>
+      </div>`).join('')
+    :'<div style="color:var(--t3);font-size:13px;padding:8px 0">ยังไม่มีต้นไม้</div>';
+
+  // Care alerts today
+  const today=new Date().toISOString().split('T')[0];
+  const overdue=plants.filter(p=>p.careDate&&p.careDate<=today&&p.careType);
+  const careEl=document.getElementById('dash-care-alert');
+  if(overdue.length){
+    careEl.innerHTML=overdue.slice(0,5).map(p=>{
+      const diff=Math.round((new Date(today)-new Date(p.careDate))/(1000*60*60*24));
+      const isOD=diff>0, isToday=diff===0;
+      return `<div class="care-item">
+        <div class="care-dot ${isOD?'care-overdue':isToday?'care-today':'care-soon'}"></div>
+        <div class="care-info">
+          <div class="care-name">${p.name}</div>
+          <div class="care-detail">${p.careType} · ${p.careDate}</div>
+        </div>
+        <div class="care-badge" style="background:${isOD?'rgba(255,85,85,.15)':isToday?'rgba(245,166,35,.15)':'rgba(61,220,104,.12)'};color:${isOD?'var(--danger)':isToday?'var(--warn)':'var(--g)'}">
+          ${isOD?'เกิน '+diff+' วัน':isToday?'วันนี้':'เร็วๆนี้'}
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    careEl.innerHTML='<div style="color:var(--t3);font-size:13px;padding:8px 0">✅ ไม่มีงานค้าง</div>';
+  }
+
+  // Recent plants
+  const recent=[...plants].slice(-4).reverse();
+  document.getElementById('dash-recent').innerHTML=recent.map(p=>{
+    const img=images[p.id];
+    return `<div class="dash-zone-row" onclick="openDetail('${p.id}')" style="cursor:pointer">
+      <div style="width:36px;height:36px;border-radius:8px;background:var(--gdim);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:18px">
+        ${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`:'{EMO}'[0]}
+      </div>
+      <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</div>
+      <div style="font-size:11px;color:var(--t3)">${p.id} · ${p.zone||'—'}</div></div>
+      <div style="font-size:12px;color:var(--t3)">${calcAge(p.date)}</div>
+    </div>`;
+  }).join('') || '<div style="color:var(--t3);font-size:13px;padding:8px 0">ยังไม่มีต้นไม้</div>';
+}
+
+// ══════════════════════════════════════
+// QR CODE
+// ══════════════════════════════════════
+function openQR(id){
+  const p=plants.find(x=>x.id===id);if(!p) return;
+  document.getElementById('qr-title').textContent='📸 QR Code — '+p.name;
+  document.getElementById('qr-info').innerHTML=`
+    <div><strong style="color:var(--t1)">${p.name}</strong></div>
+    <div>รหัส: ${p.id} · โซน: ${p.zone||'—'} · อายุ: ${calcAge(p.date)}</div>
+    ${p.cost?'<div>ต้นทุน: ฿'+Number(p.cost).toLocaleString()+'</div>':''}
+    ${p.value?'<div>มูลค่าตลาด: ฿'+Number(p.value).toLocaleString()+'</div>':''}
+    ${p.temp?'<div>อุณหภูมิ: '+p.temp+'°C</div>':''}
+    ${p.note?'<div>📝 '+p.note+'</div>':''}`;
+  const canvas=document.getElementById('qr-canvas');
+  canvas.innerHTML='';
+  const qrText=`SmartFarm Registry\nID: ${p.id}\nName: ${p.name}\nZone: ${p.zone||'-'}\nAge: ${calcAge(p.date)}\nCost: ${p.cost||'-'} THB\nValue: ${p.value||'-'} THB\nDate: ${p.date||'-'}`;
+  try{
+    new QRCode(canvas,{text:qrText,width:220,height:220,colorDark:'#e4f5e9',colorLight:'#0c1a0f',correctLevel:QRCode.CorrectLevel.M});
+  }catch(e){canvas.innerHTML='<div style="color:var(--danger);font-size:12px">QR library ยังโหลดไม่เสร็จ</div>';}
+  openM('m-qr');
+}
+
+function downloadQR(){
+  const canvas=document.querySelector('#qr-canvas canvas');
+  if(!canvas){toast('ยังสร้าง QR ไม่เสร็จ');return;}
+  const a=document.createElement('a');
+  a.download='smartfarm-qr.png';
+  a.href=canvas.toDataURL('image/png');
+  a.click();
+  toast('บันทึก QR Code แล้ว ✓');
+}
+
 // ── NAV ──
 function nav(id,btn){
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
@@ -657,6 +856,10 @@ function nav(id,btn){
   document.getElementById('pg-'+id).classList.add('on');btn.classList.add('on');
   if(id==='history') renderAllHistory();
   if(id==='io') updateCounts();
+  if(id==='dashboard') renderDashboard();
+  if(id==='dashboard') renderDashboard();
+  if(id==='care') renderCare();
+  if(id==='cost'){renderCost();}
   if(id==='system') renderZones();
 }
 
@@ -693,12 +896,14 @@ function renderPlants(){
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;padding:8px 10px;background:var(--s2);border-radius:8px;font-size:12px">
           ${p.nfcSN?`<span style="color:var(--t3)">📲 S/N:</span><span style="color:var(--blue);font-family:monospace;font-size:11px;margin-left:4px">${p.nfcSN}</span>`:'<span style="color:var(--t3)">📲 NFC: ยังไม่ได้ผูก</span>'}
         </div>
+        ${p.careType&&p.careDate?`<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding:7px 10px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:8px;font-size:12px"><span style="color:var(--warn)">🔔 ${p.careType}</span><span style="color:var(--t3)">${p.careDate}</span></div>`:''}
         ${p.note?`<div style="font-size:12px;color:var(--t3);line-height:1.6;margin-bottom:10px">📝 ${p.note}</div>`:''}
         <div class="hist-list">${hist||'<div style="color:var(--t3);font-size:12px;padding:6px 0">ยังไม่มีบันทึก</div>'}</div>
         <div class="hist-add-row"><input class="hist-input" id="hi-${p.id}" placeholder="เพิ่มบันทึก..."><button class="act-btn act-nfc" style="flex:none;padding:8px 14px" onclick="addHist('${p.id}')">＋</button></div>
         <div class="act-row">
           <button class="act-btn" onclick="openDetail('${p.id}')">🔍 ดูรายละเอียด</button>
           <button class="act-btn act-nfc" onclick="writeNFC('${p.id}')">📲 NFC</button>
+          <button class="act-btn" style="border-color:var(--warn);color:var(--warn)" onclick="openCostModal('${p.id}')">💰 ต้นทุน</button>
           <button class="act-btn act-del" onclick="delPlant('${p.id}')">🗑️ ลบ</button>
         </div>
       </div>
@@ -722,6 +927,10 @@ function openDetail(id){
   document.getElementById('d-date').value=p.date||'';
   document.getElementById('d-temp').value=p.temp||'';
   document.getElementById('d-note').value=p.note||'';
+  document.getElementById('d-cost').value=p.cost||'';
+  document.getElementById('d-value').value=p.value||'';
+  document.getElementById('d-care-type').value=p.careType||'';
+  document.getElementById('d-care-date').value=p.careDate||'';
   // zone select
   const zsel=document.getElementById('d-zone');
   zsel.innerHTML=zones.map(z=>`<option value="${z}">${z}</option>`).join('');
@@ -756,6 +965,10 @@ function saveDetail(){
   p.date=document.getElementById('d-date').value;
   p.temp=document.getElementById('d-temp').value.trim();
   p.note=document.getElementById('d-note').value.trim();
+  p.cost=document.getElementById('d-cost').value;
+  p.value=document.getElementById('d-value').value;
+  p.careType=document.getElementById('d-care-type').value;
+  p.careDate=document.getElementById('d-care-date').value;
   (p.history=p.history||[]).push({ts:now(),note:'แก้ไขข้อมูล'});
   // update badge
   const [bc,bl]=BADGE[p.cat]||['bh','—'];
@@ -813,7 +1026,9 @@ function renderAllHistory(){
 function openAdd(){
   editId=null;
   document.getElementById('m-title').textContent='🌱 เพิ่มต้นไม้ใหม่';
-  ['f-name','f-id','f-temp','f-note'].forEach(i=>document.getElementById(i).value='');
+  ['f-name','f-id','f-temp','f-note','f-cost','f-value'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('f-care-type').value='';
+  document.getElementById('f-care-date').value='';
   document.getElementById('f-cat').value='rare';
   document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('f-zone').innerHTML=zones.map(z=>`<option value="${z}">${z}</option>`).join('');
@@ -828,6 +1043,10 @@ function openEdit(id){
   document.getElementById('f-cat').value=p.cat||'rare';document.getElementById('f-date').value=p.date||'';
   document.getElementById('f-zone').innerHTML=zones.map(z=>`<option value="${z}">${z}</option>`).join('');
   document.getElementById('f-zone').value=p.zone||zones[0]||'';
+  document.getElementById('f-cost').value=p.cost||'';
+  document.getElementById('f-value').value=p.value||'';
+  document.getElementById('f-care-type').value=p.careType||'';
+  document.getElementById('f-care-date').value=p.careDate||'';
   const area=document.getElementById('img-area');
   if(images[id]){area.innerHTML=`<img src="${images[id]}" style="width:100%;height:100%;object-fit:cover"><input type="file" accept="image/*" onchange="previewImg(this)" style="position:absolute;inset:0;opacity:0;cursor:pointer">`;area._img=null;}
   else resetImgArea();
@@ -845,7 +1064,7 @@ function savePlant(){
   const id=document.getElementById('f-id').value.trim()||(editId||genId());
   const area=document.getElementById('img-area');
   const imgData=area._img||(area.querySelector('img')?.src?.startsWith('data')?area.querySelector('img').src:null);
-  const fields={id,name,zone:document.getElementById('f-zone').value,cat:document.getElementById('f-cat').value,date:document.getElementById('f-date').value,temp:document.getElementById('f-temp').value.trim(),note:document.getElementById('f-note').value.trim()};
+  const fields={id,name,zone:document.getElementById('f-zone').value,cat:document.getElementById('f-cat').value,date:document.getElementById('f-date').value,temp:document.getElementById('f-temp').value.trim(),note:document.getElementById('f-note').value.trim(),cost:document.getElementById('f-cost').value,value:document.getElementById('f-value').value,careType:document.getElementById('f-care-type').value,careDate:document.getElementById('f-care-date').value};
   const pendingSN=document.getElementById('m-add')._pendingSN||null;
   if(editId){
     const p=plants.find(x=>x.id===editId);Object.assign(p,fields);
@@ -858,7 +1077,7 @@ function savePlant(){
     plants.push(entry);if(imgData) images[id]=imgData;
   }
   document.getElementById('m-add')._pendingSN=null;
-  save();closeM('m-add');renderPlants();toast(editId?'อัปเดตแล้ว ✓':'เพิ่มต้นไม้แล้ว ✓');
+  save();closeM('m-add');renderPlants();renderDashboard();toast(editId?'อัปเดตแล้ว ✓':'เพิ่มต้นไม้แล้ว ✓');
 }
 function delPlant(id){
   if(!confirm('ลบต้นไม้นี้?')) return;
@@ -972,6 +1191,268 @@ function bgClose(e,id){if(e.target.id===id)closeM(id);}
 // ── TOAST ──
 let tt;function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2800);}
 
+
+// ══════════════════════════════════════
+// CARE SCHEDULE
+// ══════════════════════════════════════
+const CARE_DB = 'sf_care_v1';
+let careList = [];
+
+function loadCare(){
+  try{careList=JSON.parse(localStorage.getItem(CARE_DB))||[];}catch{careList=[];}
+}
+function saveCare2(){localStorage.setItem(CARE_DB,JSON.stringify(careList));}
+
+function openCareModal(plantId){
+  const sel=document.getElementById('care-plant-id');
+  sel.innerHTML='<option value="">— ทุกต้น —</option><option value="ALL">🌿 ทุกต้น</option>'
+    +plants.map(p=>`<option value="${p.id}">${p.name} (${p.id})</option>`).join('');
+  if(plantId) sel.value=plantId; else sel.value='ALL';
+  document.getElementById('care-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('care-repeat').value='0';
+  document.getElementById('care-note').value='';
+  openM('m-care');
+}
+
+function saveCare(){
+  const pid=document.getElementById('care-plant-id').value||'ALL';
+  const type=document.getElementById('care-type').value;
+  const date=document.getElementById('care-date').value;
+  const repeat=parseInt(document.getElementById('care-repeat').value)||0;
+  const note=document.getElementById('care-note').value.trim();
+  if(!date){toast('กรุณาเลือกวันที่');return;}
+  careList.push({id:'C'+Date.now(),plantId:pid,type,date,repeat,note,done:false});
+  saveCare2();closeM('m-care');renderCare();renderDashboard();
+  toast('เพิ่มกำหนดการแล้ว ✓');
+}
+
+function doneCare(id){
+  const c=careList.find(x=>x.id===id);if(!c) return;
+  // log history
+  const targets=c.plantId==='ALL'?plants:plants.filter(p=>p.id===c.plantId);
+  targets.forEach(p=>{(p.history=p.history||[]).push({ts:now(),note:c.type+' '+(c.note||'')});});
+  save();
+  if(c.repeat>0){
+    // reschedule
+    const d=new Date(c.date);d.setDate(d.getDate()+c.repeat);
+    c.date=d.toISOString().split('T')[0];c.done=false;
+  } else {
+    careList=careList.filter(x=>x.id!==id);
+  }
+  saveCare2();renderCare();renderDashboard();renderPlants();
+  toast('บันทึกเสร็จแล้ว ✓');
+}
+
+function delCare(id){
+  careList=careList.filter(x=>x.id!==id);
+  saveCare2();renderCare();renderDashboard();
+  toast('ลบกำหนดการแล้ว');
+}
+
+function daysDiff(dateStr){
+  const d=new Date(dateStr),n=new Date();
+  n.setHours(0,0,0,0);d.setHours(0,0,0,0);
+  return Math.round((d-n)/(1000*60*60*24));
+}
+
+function careDueClass(days){
+  if(days<0) return ['due-past','เลยกำหนด '+Math.abs(days)+' วัน'];
+  if(days===0) return ['due-today','วันนี้!'];
+  if(days<=3) return ['due-soon','อีก '+days+' วัน'];
+  return ['due-ok','อีก '+days+' วัน'];
+}
+
+const CARE_ICONS={'รดน้ำ':'💧','ใส่ปุ๋ย':'🌿','ตรวจโรค':'🔍','ตัดแต่ง':'✂️','ย้ายกระถาง':'🪴','อื่นๆ':'📝'};
+
+function renderCare(){
+  const sorted=[...careList].sort((a,b)=>a.date.localeCompare(b.date));
+  // today & upcoming (≤7 days)
+  const upcoming=sorted.filter(x=>daysDiff(x.date)<=7);
+  const all=sorted;
+  const makeItem=(x)=>{
+    const days=daysDiff(x.date);
+    const [cls,label]=careDueClass(days);
+    const pname=x.plantId==='ALL'?'ทุกต้น':(plants.find(p=>p.id===x.plantId)?.name||x.plantId);
+    const ico=CARE_ICONS[x.type]||'📝';
+    return `<div class="care-item">
+      <div class="care-ico">${ico}</div>
+      <div class="care-info">
+        <div class="care-name">${x.type} — ${pname}</div>
+        <div class="care-sub">${x.date}${x.repeat>0?' · ซ้ำทุก '+x.repeat+' วัน':''}${x.note?' · '+x.note:''}</div>
+      </div>
+      <span class="care-due ${cls}">${label}</span>
+      <button class="act-btn" style="flex:none;padding:6px 8px;font-size:11px;margin-left:4px;border-color:var(--g);color:var(--g)" onclick="doneCare('${x.id}')">✓</button>
+      <button class="act-btn act-del" style="flex:none;padding:6px 8px;font-size:11px;margin-left:2px" onclick="delCare('${x.id}')">×</button>
+    </div>`;
+  };
+  const todayEl=document.getElementById('care-today');
+  const allEl=document.getElementById('care-all');
+  if(todayEl) todayEl.innerHTML=upcoming.length?upcoming.map(makeItem).join(''):'<div style="color:var(--t3);font-size:13px;text-align:center;padding:16px">ไม่มีกำหนดการใน 7 วันนี้ 🎉</div>';
+  if(allEl) allEl.innerHTML=all.length?all.map(makeItem).join(''):'<div style="color:var(--t3);font-size:13px;text-align:center;padding:16px">ยังไม่มีกำหนดการ</div>';
+  // populate care-plant-id in plant cards
+}
+
+// ══════════════════════════════════════
+// COST / VALUE
+// ══════════════════════════════════════
+let costEditId=null;
+
+function openCostModal(id){
+  costEditId=id;
+  const p=plants.find(x=>x.id===id);if(!p) return;
+  document.getElementById('cost-modal-title').textContent='💰 '+p.name;
+  document.getElementById('cost-input').value=p.cost||'';
+  document.getElementById('value-input').value=p.value||'';
+  document.getElementById('cost-note').value=p.costNote||'';
+  openM('m-cost');
+}
+
+function saveCost(){
+  const p=plants.find(x=>x.id===costEditId);if(!p) return;
+  p.cost=parseFloat(document.getElementById('cost-input').value)||0;
+  p.value=parseFloat(document.getElementById('value-input').value)||0;
+  p.costNote=document.getElementById('cost-note').value.trim();
+  (p.history=p.history||[]).push({ts:now(),note:`บันทึกต้นทุน ${p.cost.toLocaleString()} ฿ / มูลค่า ${p.value.toLocaleString()} ฿`});
+  save();closeM('m-cost');renderCost();renderDashboard();
+  toast('บันทึกต้นทุนแล้ว ✓');
+}
+
+function renderCost(){
+  const el=document.getElementById('cost-list');if(!el) return;
+  const sorted=[...plants].sort((a,b)=>(b.value||0)-(a.value||0));
+  el.innerHTML=sorted.map(p=>{
+    const cost=p.cost||0,val=p.value||0,profit=val-cost;
+    const img=images[p.id];
+    const thumb=img?`<div class="cost-thumb"><img src="${img}"></div>`:`<div class="cost-thumb">${({premium:'✨',rare:'🔥',health:'💚',collect:'🏆'})[p.cat]||'🌱'}</div>`;
+    const profitColor=profit>0?'var(--g)':profit<0?'var(--danger)':'var(--t3)';
+    const profitTxt=profit>0?'+'+profit.toLocaleString():profit.toLocaleString();
+    return `<div class="cost-row" onclick="openCostModal('${p.id}')">
+      ${thumb}
+      <div class="cost-info">
+        <div class="cost-name">${p.name}</div>
+        <div class="cost-sub">ต้นทุน ${cost?cost.toLocaleString()+' ฿':'ยังไม่ระบุ'} · มูลค่า ${val?val.toLocaleString()+' ฿':'ยังไม่ระบุ'}</div>
+      </div>
+      <div class="cost-profit" style="color:${profitColor}">${cost||val?profitTxt+' ฿':'แตะเพื่อใส่'}</div>
+    </div>`;
+  }).join('');
+
+  // summary
+  const totalCost=plants.reduce((s,p)=>s+(p.cost||0),0);
+  const totalVal=plants.reduce((s,p)=>s+(p.value||0),0);
+  const totalProfit=totalVal-totalCost;
+  const sumEl=document.getElementById('cost-summary');
+  if(sumEl) sumEl.innerHTML=`
+    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--warn)">${totalCost.toLocaleString()}</div><div class="dash-stat-l">ต้นทุนรวม (฿)</div></div>
+    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--blue)">${totalVal.toLocaleString()}</div><div class="dash-stat-l">มูลค่ารวม (฿)</div></div>
+    <div class="dash-stat"><div class="dash-stat-v" style="color:${totalProfit>=0?'var(--g)':'var(--danger)'}">${totalProfit>=0?'+':''}${totalProfit.toLocaleString()}</div><div class="dash-stat-l">กำไร/ขาดทุน (฿)</div></div>`;
+}
+
+// ══════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════
+function renderDashboard(){
+  // ── Stats ──
+  const total=plants.length;
+  const totalCost=plants.reduce((s,p)=>s+(p.cost||0),0);
+  const totalVal=plants.reduce((s,p)=>s+(p.value||0),0);
+  const upcoming=careList.filter(x=>daysDiff(x.date)<=3).length;
+  const statsEl=document.getElementById('dash-stats');
+  if(statsEl) statsEl.innerHTML=`
+    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--g)">${total}</div><div class="dash-stat-l">ต้นทั้งหมด</div></div>
+    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--warn)">${upcoming}</div><div class="dash-stat-l">ดูแลใน 3 วัน</div></div>
+    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--blue)">${totalVal.toLocaleString()}</div><div class="dash-stat-l">มูลค่ารวม (฿)</div></div>
+    <div class="dash-stat"><div class="dash-stat-v" style="color:${totalVal-totalCost>=0?'var(--g)':'var(--danger)'}">${totalVal-totalCost>=0?'+':''}${(totalVal-totalCost).toLocaleString()}</div><div class="dash-stat-l">กำไร/ขาดทุน (฿)</div></div>`;
+
+  // ── Zone stats ──
+  const zoneMap={};
+  plants.forEach(p=>{const z=p.zone||'ไม่ระบุ';zoneMap[z]=(zoneMap[z]||0)+1;});
+  const maxZ=Math.max(...Object.values(zoneMap),1);
+  const zoneEl=document.getElementById('dash-zones');
+  if(zoneEl) zoneEl.innerHTML=Object.entries(zoneMap).sort((a,b)=>b[1]-a[1]).map(([z,n])=>`
+    <div class="zone-row">
+      <div style="font-size:13px;font-weight:600;min-width:36px">${z}</div>
+      <div class="zone-bar-wrap"><div class="zone-bar-fill" style="width:${n/maxZ*100}%"></div></div>
+      <div style="font-size:12px;color:var(--t2);min-width:30px;text-align:right">${n} ต้น</div>
+    </div>`).join('')||'<div style="color:var(--t3);font-size:13px">ยังไม่มีข้อมูล</div>';
+
+  // ── Category stats ──
+  const catMap={};
+  const catLabel={premium:'✨ Premium',rare:'🔥 Rare',health:'💚 สุขภาพ',collect:'🏆 สะสม'};
+  plants.forEach(p=>{const c=p.cat||'อื่นๆ';catMap[c]=(catMap[c]||0)+1;});
+  const catEl=document.getElementById('dash-cats');
+  if(catEl) catEl.innerHTML=Object.entries(catMap).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`
+    <div class="zone-row">
+      <div style="font-size:13px;font-weight:600;min-width:90px">${catLabel[c]||c}</div>
+      <div class="zone-bar-wrap"><div class="zone-bar-fill" style="width:${n/total*100}%;background:var(--purple)"></div></div>
+      <div style="font-size:12px;color:var(--t2);min-width:30px;text-align:right">${n} ต้น</div>
+    </div>`).join('')||'<div style="color:var(--t3);font-size:13px">ยังไม่มีข้อมูล</div>';
+
+  // ── Age stats ──
+  const ages=plants.filter(p=>p.date).map(p=>{
+    const d=new Date(p.date),n=new Date();
+    return Math.floor((n-d)/(1000*60*60*24));
+  });
+  const avgDays=ages.length?Math.round(ages.reduce((a,b)=>a+b,0)/ages.length):0;
+  const avgY=Math.floor(avgDays/365),avgM=Math.floor((avgDays%365)/30);
+  const oldest=plants.filter(p=>p.date).sort((a,b)=>a.date.localeCompare(b.date))[0];
+  const newest=plants.filter(p=>p.date).sort((a,b)=>b.date.localeCompare(a.date))[0];
+  const ageEl=document.getElementById('dash-age');
+  if(ageEl) ageEl.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+      <div style="background:var(--s2);border-radius:8px;padding:10px">
+        <div style="font-family:Syne,sans-serif;font-size:18px;font-weight:700;color:var(--g2)">${avgY>0?avgY+'ปี ':''} ${avgM}เดือน</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:3px">อายุเฉลี่ย</div>
+      </div>
+      <div style="background:var(--s2);border-radius:8px;padding:10px">
+        <div style="font-size:12px;font-weight:600;color:var(--warn)">${oldest?.name||'—'}</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:3px">อายุมากสุด</div>
+      </div>
+      <div style="background:var(--s2);border-radius:8px;padding:10px">
+        <div style="font-size:12px;font-weight:600;color:var(--blue)">${newest?.name||'—'}</div>
+        <div style="font-size:10px;color:var(--t3);margin-top:3px">ปลูกล่าสุด</div>
+      </div>
+    </div>`;
+
+  // ── Care alerts on dashboard ──
+  const alertsSorted=[...careList].sort((a,b)=>a.date.localeCompare(b.date)).filter(x=>daysDiff(x.date)<=7);
+  const alertEl=document.getElementById('dash-alerts-list');
+  if(alertEl) alertEl.innerHTML=alertsSorted.length
+    ?alertsSorted.slice(0,5).map(x=>{
+        const days=daysDiff(x.date);
+        const [cls,label]=careDueClass(days);
+        const pname=x.plantId==='ALL'?'ทุกต้น':(plants.find(p=>p.id===x.plantId)?.name||x.plantId);
+        return `<div class="care-item">
+          <div class="care-ico">${CARE_ICONS[x.type]||'📝'}</div>
+          <div class="care-info"><div class="care-name">${x.type} — ${pname}</div><div class="care-sub">${x.date}</div></div>
+          <span class="care-due ${cls}">${label}</span>
+        </div>`;
+      }).join('')
+    :'<div style="color:var(--t3);font-size:13px;text-align:center;padding:12px">ไม่มีกำหนดการใน 7 วัน 🎉</div>';
+
+  // ── Cost summary ──
+  const dashCostEl=document.getElementById('dash-cost');
+  if(dashCostEl){
+    const tc=plants.reduce((s,p)=>s+(p.cost||0),0);
+    const tv=plants.reduce((s,p)=>s+(p.value||0),0);
+    const tp=tv-tc;
+    dashCostEl.innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+        <div style="background:var(--s2);border-radius:8px;padding:10px">
+          <div style="font-family:Syne,sans-serif;font-size:16px;font-weight:700;color:var(--warn)">${tc.toLocaleString()}</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">ต้นทุนรวม ฿</div>
+        </div>
+        <div style="background:var(--s2);border-radius:8px;padding:10px">
+          <div style="font-family:Syne,sans-serif;font-size:16px;font-weight:700;color:var(--blue)">${tv.toLocaleString()}</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">มูลค่ารวม ฿</div>
+        </div>
+        <div style="background:var(--s2);border-radius:8px;padding:10px">
+          <div style="font-family:Syne,sans-serif;font-size:16px;font-weight:700;color:${tp>=0?'var(--g)':'var(--danger)'}">${tp>=0?'+':''}${tp.toLocaleString()}</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">กำไร/ขาดทุน ฿</div>
+        </div>
+      </div>`;
+  }
+}
+
 // ── INIT ──
 function checkNFC(){
   const ok='NDEFReader' in window;
@@ -983,10 +1464,7 @@ function checkNFC(){
   if(!deferredPrompt) document.getElementById('pwa-status').textContent=navigator.standalone||window.matchMedia('(display-mode: standalone)').matches?'✅ ติดตั้งแล้ว':'ใช้เมนู Chrome → เพิ่มลงหน้าจอหลัก';
 }
 injectManifest();
-load();renderPlants();renderZones();checkNFC();updateNFCBtn();updateCounts();
-storageMode=localStorage.getItem("sf_storage_mode")||"local";
-if(storageMode==="cloud") initFirebase();
-updateStorageModeUI();
+loadCare();load();renderPlants();renderZones();checkNFC();updateNFCBtn();updateCounts();renderDashboard();
 document.getElementById('sys-ver').textContent=APP_VERSION;
 document.getElementById('sys-build').textContent=APP_BUILD;
 document.getElementById('hdr-ver').textContent='v'+APP_VERSION;
