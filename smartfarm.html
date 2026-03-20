@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SmartFarm">
 <link rel="manifest" id="pwa-manifest">
-<title>SmartFarm Registry v3.0</title>
+<title>SmartFarm Registry v3.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
@@ -393,7 +393,13 @@ textarea.fi{resize:vertical;min-height:70px}
 </div>
 <!-- PAGE: HISTORY -->
 <div id="pg-history" class="pg">
-  <div class="card"><div class="ct">กิจกรรมทั้งหมด</div><div id="all-history"></div></div>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="ct" style="margin:0">กิจกรรมทั้งหมด</div>
+      <button onclick="deleteAllHistory()" style="background:none;border:1px solid rgba(255,85,85,.3);color:var(--danger);border-radius:8px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:Sarabun,sans-serif">🗑️ ลบทั้งหมด</button>
+    </div>
+    <div id="all-history"></div>
+  </div>
 </div>
 
 <!-- PAGE: GRAPH -->
@@ -714,7 +720,7 @@ textarea.fi{resize:vertical;min-height:70px}
 </div>
 
 <script>
-const APP_VERSION='3.0', APP_BUILD='2026-03-20';
+const APP_VERSION='3.1', APP_BUILD='2026-03-20';
 
 
 const DB='sf_plants_v3', IDB='sf_images_v2', ZDB='sf_zones';
@@ -824,7 +830,7 @@ function delZone(i){
 // TELEGRAM & NOTIFICATIONS
 // ══════════════════════════════════════
 let tgToken='', tgChatId='', notifTimer=null;
-let chartPrice=null, chartProfit=null, chartCat=null;
+let chartPrice=null, chartProfit=null, chartCatOldOld=null;
 
 function loadTgConfig(){
   tgToken=localStorage.getItem('sf_tg_token')||'';
@@ -856,7 +862,7 @@ async function sendTelegram(msg){
 async function testTelegram(){
   const el=document.getElementById('tg-status');
   el.textContent='กำลังส่ง...';el.style.color='var(--t3)';
-  const ok=await sendTelegram('🌿 <b>SmartFarm Registry v3.0</b>\nทดสอบการแจ้งเตือน — ระบบพร้อมใช้งาน ✅');
+  const ok=await sendTelegram('🌿 <b>SmartFarm Registry v3.1</b>\nทดสอบการแจ้งเตือน — ระบบพร้อมใช้งาน ✅');
   el.textContent=ok?'✅ ส่งสำเร็จ!':'❌ ส่งไม่ได้ — ตรวจสอบ Token และ Chat ID';
   el.style.color=ok?'var(--g)':'var(--danger)';
 }
@@ -878,23 +884,22 @@ function dismissNotif(){
   document.getElementById('notif-banner')?.classList.remove('show');
 }
 
-// ── Care Scheduler — check every minute ──
+// ── Care Scheduler — แจ้งเตือนในแอป 1 ครั้ง รวมทุกรายการที่ยังไม่รับทราบ ──
 function checkCareSchedule(){
   const today=new Date().toISOString().split('T')[0];
-  const due=plants.filter(p=>p.careDate&&p.careDate<=today&&p.careType);
-  if(!due.length) return;
-  due.forEach(async p=>{
-    const isOD=p.careDate<today;
-    const msg=`🔔 <b>${p.name}</b>\n${p.careType} — ${isOD?'เกินกำหนด!':'วันนี้'}\nรหัส: ${p.id} · โซน: ${p.zone||'—'}`;
-    // Show in-app banner
-    showNotif(`🔔 <strong>${p.name}</strong> — ${p.careType} ${isOD?'<span style="color:var(--danger)">เกินกำหนด!</span>':'<span style="color:var(--warn)">วันนี้</span>'}`, isOD?'var(--danger)':'var(--warn)');
-    // Send Telegram (once per day — check last sent)
-    const key='sf_notif_'+p.id+'_'+today;
-    if(!localStorage.getItem(key)){
-      const ok=await sendTelegram(msg);
-      if(ok) localStorage.setItem(key,'1');
-    }
-  });
+  const lastNotif=localStorage.getItem('sf_notif_banner');
+  if(lastNotif===today) return; // แจ้งเตือนแล้ววันนี้
+  const pending=plants.filter(p=>p.careDate&&p.careDate<=today&&p.careType&&p.careAckDate!==today);
+  if(!pending.length) return;
+  const overdue=pending.filter(p=>p.careDate<today);
+  const names=pending.slice(0,3).map(p=>p.name).join(', ')+(pending.length>3?` +${pending.length-3}`:'');
+  const color=overdue.length?'var(--danger)':'var(--warn)';
+  showNotif(
+    `🔔 <strong>มีงานดูแล ${pending.length} รายการ</strong><br><span style="font-size:11px;color:var(--t2)">${names}</span><br><span style="font-size:11px">ไปที่ Dashboard เพื่อรับทราบ</span>`,
+    color
+  );
+  // Mark banner shown today
+  localStorage.setItem('sf_notif_banner',today);
 }
 
 // Request browser notification permission
@@ -1299,6 +1304,157 @@ function acknowledgeCare(id){
   sendTelegram('✅ <b>ดำเนินการแล้ว</b>\n'+p.name+' ('+p.id+')\n'+p.careType+'\n📅 '+now());
 }
 
+
+// ══════════════════════════════════════
+// ANALYTICS
+// ══════════════════════════════════════
+let chartCostVal=null, chartAge=null, chartCat=null, chartZone=null;
+
+function destroyCharts(){
+  [chartCostVal,chartAge,chartCat,chartZone].forEach(ch=>{try{ch&&ch.destroy();}catch{}});
+  chartCostVal=chartAge=chartCat=chartZone=null;
+}
+
+function populateAnSelect(){
+  const sel=document.getElementById('an-plant');
+  if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="all">🌿 ทุกสายพันธุ์</option>'+
+    plants.map(p=>`<option value="${p.id}">${p.name} (${p.id})</option>`).join('');
+  sel.value=plants.find(p=>p.id===cur)?cur:'all';
+}
+
+function renderAnalytics(){
+  const selEl=document.getElementById('an-plant');
+  const periodEl=document.getElementById('an-period');
+  if(!selEl||!periodEl) return;
+  const sel=selEl.value;
+  const period=periodEl.value;
+  let list=sel==='all'?[...plants]:plants.filter(p=>p.id===sel);
+
+  // Period filter by plantDate
+  if(period!=='all'){
+    const months={'year':12,'6m':6,'3m':3}[period]||0;
+    const cutoff=new Date();cutoff.setMonth(cutoff.getMonth()-months);
+    list=list.filter(p=>!p.date||new Date(p.date)>=cutoff);
+  }
+
+  // KPI
+  const totalCost=list.reduce((s,p)=>s+(parseFloat(p.cost)||0),0);
+  const totalVal=list.reduce((s,p)=>s+(parseFloat(p.value)||0),0);
+  const roi=totalCost>0?((totalVal-totalCost)/totalCost*100).toFixed(1):0;
+  const fmt=n=>n>=1000?'฿'+(n/1000).toFixed(1)+'K':'฿'+n.toLocaleString();
+  document.getElementById('an-kpi').innerHTML=`
+    <div class="kpi-card"><div class="kpi-v" style="color:var(--g)">${list.length}</div><div class="kpi-l">ต้นไม้</div></div>
+    <div class="kpi-card"><div class="kpi-v" style="color:var(--warn)">${totalCost>0?fmt(totalCost):'—'}</div><div class="kpi-l">ต้นทุนรวม</div></div>
+    <div class="kpi-card"><div class="kpi-v" style="color:var(--purple)">${totalVal>0?fmt(totalVal):'—'}</div><div class="kpi-l">มูลค่าตลาด</div></div>
+    <div class="kpi-card"><div class="kpi-v" style="color:${roi>0?'var(--g)':'var(--danger)'}">${totalCost>0?roi+'%':'—'}</div><div class="kpi-l">ROI</div></div>`;
+
+  // ROI detail
+  const roiEl=document.getElementById('an-roi');
+  if(roiEl){
+    const profit=totalVal-totalCost;
+    roiEl.innerHTML=totalCost>0?`
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+        <span style="color:var(--t3)">กำไร/ขาดทุน:</span>
+        <strong style="color:${profit>=0?'var(--g)':'var(--danger)'}">${profit>=0?'+':''}฿${profit.toLocaleString()}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px">
+        <span style="color:var(--t3)">ROI:</span>
+        <strong style="color:${roi>0?'var(--g)':'var(--danger)'}">${roi}%</strong>
+      </div>`
+    :'<div style="color:var(--t3);font-size:13px">ยังไม่มีข้อมูลต้นทุน</div>';
+  }
+
+  destroyCharts();
+
+  // Chart.js check
+  if(typeof Chart==='undefined') return;
+
+  const gridColor='rgba(255,255,255,.06)';
+  const baseOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7aaa88',font:{size:11}}}}};
+
+  // Cost vs Value bar
+  const cvEl=document.getElementById('chart-costvval');
+  if(cvEl&&list.length){
+    chartCostVal=new Chart(cvEl,{type:'bar',
+      data:{labels:list.map(p=>p.name.length>10?p.name.slice(0,10)+'…':p.name),
+        datasets:[
+          {label:'ต้นทุน',data:list.map(p=>parseFloat(p.cost)||0),backgroundColor:'rgba(245,166,35,.7)',borderRadius:4},
+          {label:'มูลค่าตลาด',data:list.map(p=>parseFloat(p.value)||0),backgroundColor:'rgba(180,122,255,.7)',borderRadius:4}
+        ]},
+      options:{...baseOpts,scales:{x:{ticks:{color:'#7aaa88',font:{size:10}},grid:{color:gridColor}},y:{ticks:{color:'#7aaa88'},grid:{color:gridColor}}}}
+    });
+  }
+
+  // Age distribution
+  const ageEl=document.getElementById('chart-age');
+  if(ageEl&&list.length){
+    const bins={'<6 ด.':0,'6-12 ด.':0,'1-2 ปี':0,'2-3 ปี':0,'3+ ปี':0};
+    list.forEach(p=>{
+      if(!p.date) return;
+      const months=(new Date()-new Date(p.date))/(1000*60*60*24*30);
+      if(months<6) bins['<6 ด.']++;
+      else if(months<12) bins['6-12 ด.']++;
+      else if(months<24) bins['1-2 ปี']++;
+      else if(months<36) bins['2-3 ปี']++;
+      else bins['3+ ปี']++;
+    });
+    chartAge=new Chart(ageEl,{type:'bar',
+      data:{labels:Object.keys(bins),datasets:[{label:'จำนวนต้น',data:Object.values(bins),backgroundColor:'rgba(61,220,104,.7)',borderRadius:4}]},
+      options:{...baseOpts,scales:{x:{ticks:{color:'#7aaa88'},grid:{color:gridColor}},y:{ticks:{color:'#7aaa88',stepSize:1},grid:{color:gridColor}}}}
+    });
+  }
+
+  // Category pie
+  const catEl=document.getElementById('chart-cat');
+  if(catEl&&list.length){
+    const catMap={premium:'✨ Premium',rare:'🔥 Rare',health:'💚 สุขภาพ',collect:'🏆 สะสม'};
+    const catCount={};list.forEach(p=>{catCount[p.cat]=(catCount[p.cat]||0)+1;});
+    const cats=Object.keys(catCount);
+    const colors=['rgba(180,122,255,.8)','rgba(255,85,85,.8)','rgba(61,220,104,.8)','rgba(77,184,255,.8)'];
+    chartCat=new Chart(catEl,{type:'doughnut',
+      data:{labels:cats.map(k=>catMap[k]||k),datasets:[{data:cats.map(k=>catCount[k]),backgroundColor:colors,borderWidth:0}]},
+      options:{...baseOpts}
+    });
+  }
+
+  // Zone bar
+  const zoneEl=document.getElementById('chart-zone');
+  if(zoneEl&&list.length){
+    const zoneCount={};list.forEach(p=>{if(p.zone)zoneCount[p.zone]=(zoneCount[p.zone]||0)+1;});
+    chartZone=new Chart(zoneEl,{type:'bar',
+      data:{labels:Object.keys(zoneCount),datasets:[{label:'จำนวนต้น',data:Object.values(zoneCount),backgroundColor:'rgba(77,184,255,.7)',borderRadius:4}]},
+      options:{...baseOpts,scales:{x:{ticks:{color:'#7aaa88'},grid:{color:gridColor}},y:{ticks:{color:'#7aaa88',stepSize:1},grid:{color:gridColor}}}}
+    });
+  }
+
+  // Table
+  const tableEl=document.getElementById('an-table');
+  if(tableEl){
+    tableEl.innerHTML=list.length?`
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="color:var(--t3);border-bottom:1px solid var(--bdr)">
+          <th style="padding:6px 4px;text-align:left">ชื่อ</th>
+          <th style="padding:6px 4px;text-align:right">ต้นทุน</th>
+          <th style="padding:6px 4px;text-align:right">มูลค่า</th>
+          <th style="padding:6px 4px;text-align:right">ROI</th>
+        </tr></thead>
+        <tbody>${list.map(p=>{
+          const cost=parseFloat(p.cost)||0,val=parseFloat(p.value)||0;
+          const r=cost>0?((val-cost)/cost*100).toFixed(0):null;
+          return `<tr style="border-bottom:1px solid var(--bdr)">
+            <td style="padding:8px 4px;color:var(--t1)">${p.name}</td>
+            <td style="padding:8px 4px;text-align:right;color:var(--warn)">${cost>0?'฿'+cost.toLocaleString():'—'}</td>
+            <td style="padding:8px 4px;text-align:right;color:var(--purple)">${val>0?'฿'+val.toLocaleString():'—'}</td>
+            <td style="padding:8px 4px;text-align:right;color:${r>0?'var(--g)':'var(--danger)'}">${r!==null?r+'%':'—'}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`
+    :'<div style="color:var(--t3);font-size:13px;padding:8px">ไม่มีข้อมูล</div>';
+  }
+}
+
 // ── NAV ──
 function nav(id,btn){
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
@@ -1307,13 +1463,12 @@ function nav(id,btn){
   if(id==='history') renderAllHistory();
   if(id==='io') updateCounts();
   if(id==='dashboard') renderDashboard();
-  if(id==='analytics'){populateAnSelect();}
+  if(id==='analytics'){populateAnSelect();renderAnalytics();}
   if(id==='system'){renderZones();loadTGSettings();}
   if(id==='graph') renderGraphs();
   if(id==='system'){renderZones();loadTgConfig();}
   if(id==='dashboard') renderDashboard();
-  if(id==='analytics'){populateAnSelect();}
-    if(id==='graph') renderGraphs();
+      if(id==='graph') renderGraphs();
   if(id==='system'){renderZones();loadTgConfig();}
   if(id==='care') renderCare();
   if(id==='cost'){renderCost();}
@@ -1484,6 +1639,13 @@ function renderAllHistory(){
       <button onclick="deleteHistItem('${h.pid}',${h.hi})" style="background:none;border:none;color:var(--danger);font-size:16px;cursor:pointer;padding:0 4px;flex-shrink:0" title="ลบ">×</button>
     </div>`).join('')
     :'<div class="empty"><div class="empty-icon">📋</div><div>ยังไม่มีบันทึก</div></div>';
+}
+
+
+function deleteAllHistory(){
+  if(!confirm('ลบประวัติกิจกรรมทั้งหมด?\nไม่สามารถย้อนกลับได้')) return;
+  plants.forEach(p=>p.history=[]);
+  save();renderAllHistory();toast('ลบประวัติทั้งหมดแล้ว');
 }
 
 function deleteHistItem(pid,hi){
