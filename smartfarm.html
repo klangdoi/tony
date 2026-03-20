@@ -328,7 +328,7 @@ textarea.fi{resize:vertical;min-height:70px}
 </div>
 
 <div class="nav">
-  <button class="nb on" onclick="nav('dashboard',this)">📊 Dashboard</button>
+  <button class="nb on" onclick="nav('dashboard',this)">🌾 แปลงปลูก</button>
   <button class="nb" onclick="nav('plants',this)">🌿 ทะเบียน</button>
   <button class="nb" onclick="nav('history',this)">📋 ประวัติ</button>
   <button class="nb" onclick="nav('analytics',this)">📈 วิเคราะห์</button>
@@ -343,6 +343,7 @@ textarea.fi{resize:vertical;min-height:70px}
   <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
     <div style="flex:1;font-family:Syne,sans-serif;font-weight:700;font-size:15px;color:var(--g)">🗺️ แผนผังแปลงปลูก</div>
     <button id="map-edit-btn" onclick="toggleMapEdit()" style="padding:6px 12px;border-radius:8px;border:1px solid var(--bdr);background:var(--s2);color:var(--t2);font-size:12px;cursor:pointer;font-family:Sarabun,sans-serif">✏️ จัดตำแหน่ง</button>
+    <button onclick="autoArrange()" style="padding:6px 10px;border-radius:8px;border:1px solid rgba(77,184,255,.4);background:rgba(77,184,255,.1);color:var(--blue);font-size:12px;cursor:pointer;font-family:Sarabun,sans-serif" title="จัดให้เป็นระเบียบ">⚡ จัดระเบียบ</button>
     <button onclick="resetMapPositions()" style="padding:6px 10px;border-radius:8px;border:1px solid var(--bdr);background:var(--s2);color:var(--t3);font-size:12px;cursor:pointer;font-family:Sarabun,sans-serif" title="Reset">↺</button>
   </div>
 
@@ -796,7 +797,7 @@ textarea.fi{resize:vertical;min-height:70px}
 </div>
 
 <script>
-const APP_VERSION='3.3', APP_BUILD='2026-03-20';
+const APP_VERSION='3.4', APP_BUILD='2026-03-20';
 
 
 const DB='sf_plants_v3', IDB='sf_images_v2', ZDB='sf_zones';
@@ -1553,26 +1554,19 @@ function autoLayout(){
   const mapEl=document.getElementById('farm-map');
   if(!mapEl) return;
   const W=mapEl.offsetWidth||360, H=mapEl.offsetHeight||520;
-  const NODE_W=64, NODE_H=72, PAD=16;
-  const cols=Math.floor((W-PAD*2)/NODE_W);
-
+  const cols=Math.max(1,Math.floor(W/SNAP));
   // Group by zone
   const zones={};
   plants.forEach(p=>{const z=p.zone||'—';(zones[z]=zones[z]||[]).push(p);});
-  let row=0,col=0;
+  let slot=0;
   Object.entries(zones).forEach(([zone,ps])=>{
     ps.forEach(p=>{
       if(!mapPositions[p.id]){
-        mapPositions[p.id]={
-          x:PAD+col*NODE_W,
-          y:PAD+row*NODE_H
-        };
-        col++;
-        if(col>=cols){col=0;row++;}
+        mapPositions[p.id]={x:(slot%cols)*SNAP, y:Math.floor(slot/cols)*SNAP};
       }
+      slot++;
     });
-    // new row per zone
-    if(col>0){col=0;row++;}
+    if(slot%cols!==0) slot=Math.ceil(slot/cols)*cols;
   });
   saveMapPositions();
 }
@@ -1645,6 +1639,10 @@ function renderFarmMap(){
   renderDashStats();
 }
 
+// Snap grid size (px)
+const SNAP=64;
+function snapVal(v){return Math.round(v/SNAP)*SNAP;}
+
 function setupDrag(node, pid){
   let startX,startY,origX,origY,moved=false;
 
@@ -1655,22 +1653,33 @@ function setupDrag(node, pid){
     moved=false;
     node.classList.add('dragging');
     node.style.zIndex=100;
+    // Show snap grid overlay
+    showSnapGrid(true);
   };
+
   const onMove=(ex,ey)=>{
     const dx=ex-startX, dy=ey-startY;
-    if(Math.abs(dx)>4||Math.abs(dy)>4) moved=true;
+    if(Math.abs(dx)>6||Math.abs(dy)>6) moved=true;
     if(!moved) return;
     const mapEl=document.getElementById('farm-map');
     const rect=mapEl.getBoundingClientRect();
-    const newX=Math.max(0,Math.min(rect.width-58, origX+dx));
-    const newY=Math.max(0,Math.min(rect.height-72, origY+dy));
-    node.style.left=newX+'px';
-    node.style.top=newY+'px';
-    mapPositions[pid]={x:newX,y:newY};
+    // Raw position
+    const rawX=Math.max(0,Math.min(rect.width-64, origX+dx));
+    const rawY=Math.max(0,Math.min(rect.height-72, origY+dy));
+    // Snap to grid
+    const snapX=Math.max(0,Math.min(rect.width-64, snapVal(rawX)));
+    const snapY=Math.max(0,Math.min(rect.height-72, snapVal(rawY)));
+    node.style.left=snapX+'px';
+    node.style.top=snapY+'px';
+    mapPositions[pid]={x:snapX,y:snapY};
+    // Highlight target cell
+    highlightSnapCell(snapX,snapY);
   };
+
   const onEnd=()=>{
     node.classList.remove('dragging');
     node.style.zIndex='';
+    showSnapGrid(false);
     if(moved) saveMapPositions();
   };
 
@@ -1684,6 +1693,71 @@ function setupDrag(node, pid){
   node.addEventListener('touchstart',e=>{const t=e.touches[0];onStart(t.clientX,t.clientY);},{passive:true});
   node.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];onMove(t.clientX,t.clientY);},{passive:false});
   node.addEventListener('touchend',()=>onEnd(),{passive:true});
+}
+
+// Show/hide snap grid overlay
+function showSnapGrid(show){
+  let ov=document.getElementById('snap-overlay');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='snap-overlay';
+    ov.style.cssText='position:absolute;inset:0;pointer-events:none;z-index:5;';
+    document.getElementById('farm-map').appendChild(ov);
+  }
+  if(!show){ov.innerHTML='';return;}
+  const mapEl=document.getElementById('farm-map');
+  const W=mapEl.offsetWidth, H=mapEl.offsetHeight;
+  let html='';
+  for(let x=0;x<W;x+=SNAP) for(let y=0;y<H;y+=SNAP){
+    html+=`<div style="position:absolute;left:${x}px;top:${y}px;width:${SNAP-2}px;height:${SNAP-2}px;border:1px dashed rgba(255,255,255,.07);border-radius:6px;"></div>`;
+  }
+  ov.innerHTML=html;
+}
+
+function highlightSnapCell(sx,sy){
+  const cells=document.querySelectorAll('#snap-overlay > div');
+  cells.forEach(cell=>{
+    const cx=parseInt(cell.style.left), cy=parseInt(cell.style.top);
+    cell.style.background=cx===sx&&cy===sy?'rgba(61,220,104,.12)':'';
+    cell.style.borderColor=cx===sx&&cy===sy?'rgba(61,220,104,.4)':'rgba(255,255,255,.07)';
+  });
+}
+
+// Auto-arrange: pack all plants neatly into snap grid
+function autoArrange(){
+  const mapEl=document.getElementById('farm-map');
+  if(!mapEl) return;
+  const W=mapEl.offsetWidth||360;
+  const cols=Math.floor(W/SNAP)||4;
+  // Group by zone first
+  const zones={};
+  plants.forEach(p=>{const z=p.zone||'—';(zones[z]=zones[z]||[]).push(p);});
+  let slot=0;
+  // zone labels on map
+  const zoneLabel=document.getElementById('map-zone-labels');
+  if(zoneLabel) zoneLabel.innerHTML='';
+  Object.entries(zones).forEach(([zone,ps])=>{
+    // Add zone label at leftmost position of this group
+    const labelCol=(slot%cols)*SNAP;
+    const labelRow=Math.floor(slot/cols)*SNAP;
+    if(zoneLabel){
+      const lbl=document.createElement('div');
+      lbl.style.cssText=`position:absolute;left:${labelCol+2}px;top:${labelRow+2}px;font-size:9px;color:var(--t3);font-weight:600;z-index:3;pointer-events:none;`;
+      lbl.textContent=zone;
+      zoneLabel.appendChild(lbl);
+    }
+    ps.forEach(p=>{
+      const col=slot%cols;
+      const row=Math.floor(slot/cols);
+      mapPositions[p.id]={x:col*SNAP, y:row*SNAP};
+      slot++;
+    });
+    // gap after each zone
+    if(slot%cols!==0) slot=Math.ceil(slot/cols)*cols;
+  });
+  saveMapPositions();
+  renderFarmMap();
+  toast('⚡ จัดระเบียบแล้ว ✓');
 }
 
 function toggleMapEdit(){
