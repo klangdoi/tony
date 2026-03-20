@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SmartFarm">
 <link rel="manifest" id="pwa-manifest">
-<title>SmartFarm Registry v2.6</title>
+<title>SmartFarm Registry v2.7</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
@@ -243,15 +243,25 @@ textarea.fi{resize:vertical;min-height:70px}
 .care-name{font-size:13px;font-weight:600}
 .care-detail{font-size:11px;color:var(--t3);margin-top:2px}
 .care-badge{font-size:11px;padding:3px 8px;border-radius:10px;flex-shrink:0}
+
+/* NOTIFICATION */
+.notif-banner{position:fixed;top:0;left:0;right:0;z-index:500;padding:14px 16px;background:var(--s3);border-bottom:2px solid var(--warn);display:none;align-items:center;gap:12px;animation:slideDown .3s ease}
+.notif-banner.show{display:flex}
+@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}
+.notif-text{flex:1;font-size:13px;line-height:1.5}
+.notif-close{background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer}
+/* TELEGRAM CONFIG */
+.tg-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
 <div class="hdr">
-  <div class="hdr-logo"><div class="live-dot"></div>SmartFarm<span style="color:var(--t2);font-weight:400">Registry</span><span class="ver-badge" id="hdr-ver">v2.6</span></div>
+  <div class="hdr-logo"><div class="live-dot"></div>SmartFarm<span style="color:var(--t2);font-weight:400">Registry</span><span class="ver-badge" id="hdr-ver">v2.7</span></div>
   <div class="hdr-count">ต้นไม้<b id="total-count">0 ต้น</b></div>
 </div>
 
@@ -259,6 +269,7 @@ textarea.fi{resize:vertical;min-height:70px}
   <button class="nb on" onclick="nav('dashboard',this)">📊 Dashboard</button>
   <button class="nb" onclick="nav('plants',this)">🌿 ทะเบียน</button>
   <button class="nb" onclick="nav('history',this)">📋 ประวัติ</button>
+  <button class="nb" onclick="nav('graph',this)">📈 กราฟราคา</button>
   <button class="nb" onclick="nav('io',this)">📦 Import/Export</button>
   <button class="nb" onclick="nav('system',this)">⚙️ ระบบ</button>
 </div>
@@ -313,6 +324,24 @@ textarea.fi{resize:vertical;min-height:70px}
   <div class="card"><div class="ct">กิจกรรมทั้งหมด</div><div id="all-history"></div></div>
 </div>
 
+<!-- PAGE: GRAPH -->
+<div id="pg-graph" class="pg">
+  <div class="card">
+    <div class="ct">วิเคราะห์ราคาตามสายพันธุ์</div>
+    <p style="font-size:12px;color:var(--t3);margin-bottom:12px">เปรียบเทียบต้นทุน vs มูลค่าตลาด แต่ละสายพันธุ์</p>
+    <canvas id="chart-price" style="width:100%;max-height:320px"></canvas>
+  </div>
+  <div class="card">
+    <div class="ct">กำไร/ขาดทุน (มูลค่า - ต้นทุน)</div>
+    <canvas id="chart-profit" style="width:100%;max-height:260px"></canvas>
+  </div>
+  <div class="card">
+    <div class="ct">สัดส่วนมูลค่าตามประเภท</div>
+    <canvas id="chart-cat" style="width:100%;max-height:260px"></canvas>
+  </div>
+  <div id="graph-table" style="margin-top:4px"></div>
+  <div style="height:80px"></div>
+</div>
 <!-- PAGE: IMPORT/EXPORT -->
 <div id="pg-io" class="pg">
   <div class="card">
@@ -381,6 +410,51 @@ textarea.fi{resize:vertical;min-height:70px}
     <div id="pwa-status" style="font-size:12px;color:var(--t3);text-align:center;padding:8px">ตรวจสอบสถานะ PWA...</div>
   </div>
   <div class="card">
+    <div class="ct">Telegram แจ้งเตือน</div>
+    <div class="fg">
+      <label class="fl">Bot Token</label>
+      <input class="fi" id="tg-token" placeholder="123456789:ABCdef..." type="password">
+    </div>
+    <div class="fg">
+      <label class="fl">Chat ID</label>
+      <input class="fi" id="tg-chatid" placeholder="-100123456789">
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn-p" style="flex:1;margin:0;padding:11px;font-size:13px" onclick="saveTgConfig()">💾 บันทึก</button>
+      <button class="act-btn act-nfc" style="flex:1;padding:11px;font-size:13px" onclick="testTelegram()">📤 ทดสอบส่ง</button>
+    </div>
+    <div id="tg-status" style="font-size:12px;color:var(--t3);text-align:center;margin-top:8px"></div>
+  </div>
+  <div class="card">
+    <div class="ct">📣 Telegram Notification</div>
+    <div class="fg">
+      <label class="fl">Bot Token</label>
+      <input class="fi" id="tg-token" type="password" placeholder="110201543:AAHdqTcvCH1vGWJxfSeofSs0K6oJXoRiLrw">
+      <div style="display:flex;justify-content:flex-end;margin-top:4px">
+        <button onclick="toggleTGToken()" style="background:none;border:none;color:var(--t3);font-size:11px;cursor:pointer" id="tg-token-eye">👁 แสดง</button>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">Chat ID</label>
+      <input class="fi" id="tg-chatid" placeholder="-1001234567890 หรือ 123456789">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+      <button class="btn-p" style="margin:0;padding:11px;font-size:13px" onclick="saveTGSettings()">💾 บันทึก</button>
+      <button class="btn-s" style="margin:0;padding:11px;font-size:13px" onclick="testTelegram()">🔔 ทดสอบส่ง</button>
+    </div>
+    <div id="tg-status" style="margin-top:10px;font-size:12px;color:var(--t3);text-align:center;min-height:18px"></div>
+    <div style="margin-top:10px;padding:10px 12px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--t3);line-height:1.9">
+      <div>วิธีสร้าง Bot Token:</div>
+      <div>1. เปิด Telegram → ค้นหา <strong style="color:var(--t1)">@BotFather</strong></div>
+      <div>2. พิมพ์ <strong style="color:var(--g)">/newbot</strong> แล้วตั้งชื่อ</div>
+      <div>3. Copy Token มาวางด้านบน</div>
+      <div style="margin-top:6px">วิธีหา Chat ID:</div>
+      <div>1. เพิ่ม Bot เข้า Group แล้วพิมพ์ <strong style="color:var(--g)">/start</strong></div>
+      <div>2. เปิด: api.telegram.org/bot<em>TOKEN</em>/getUpdates</div>
+      <div>3. ดูค่า <strong style="color:var(--t1)">chat.id</strong></div>
+    </div>
+  </div>
+  <div class="card">
     <div class="ct">เกี่ยวกับ</div>
     <div style="font-size:13px;color:var(--t2);line-height:2.3">
       <div>เวอร์ชัน: <strong style="color:var(--g)" id="sys-ver">—</strong></div>
@@ -414,6 +488,7 @@ textarea.fi{resize:vertical;min-height:70px}
   </div>
 </div>
 
+<div class="notif-banner" id="notif-banner"><div class="notif-text" id="notif-text"></div><button class="notif-close" onclick="dismissNotif()">×</button></div>
 <button class="fab" onclick="openAdd()">＋</button>
 <div class="toast" id="toast"></div>
 
@@ -453,7 +528,7 @@ textarea.fi{resize:vertical;min-height:70px}
     </div>
     <div class="fg"><label class="fl">รอบดูแลถัดไป</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <select class="fi" id="d-care-type"><option value="">-- ประเภท --</option><option>รดน้ำ</option><option>ใส่ปุ๋ย</option><option>ตรวจโรค</option><option>ตัดแต่ง</option><option>ย้ายกระถาง</option></select>
+        <select class="fi" id="d-care-type"><option value="">-- ประเภท --</option><option>รดน้ำ</option><option>ใส่ปุ๋ย</option><option>ตรวจโรค</option><option>ตัดแต่ง</option><option>ย้ายกระถาง</option><option>ลงขาย</option></select>
         <input class="fi" type="date" id="d-care-date">
       </div>
     </div>
@@ -507,7 +582,7 @@ textarea.fi{resize:vertical;min-height:70px}
     </div>
     <div class="fg"><label class="fl">รอบดูแลถัดไป</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <select class="fi" id="f-care-type"><option value="">-- ประเภท --</option><option>รดน้ำ</option><option>ใส่ปุ๋ย</option><option>ตรวจโรค</option><option>ตัดแต่ง</option><option>ย้ายกระถาง</option></select>
+        <select class="fi" id="f-care-type"><option value="">-- ประเภท --</option><option>รดน้ำ</option><option>ใส่ปุ๋ย</option><option>ตรวจโรค</option><option>ตัดแต่ง</option><option>ย้ายกระถาง</option><option>ลงขาย</option></select>
         <input class="fi" type="date" id="f-care-date">
       </div>
     </div>
@@ -595,7 +670,7 @@ textarea.fi{resize:vertical;min-height:70px}
 </div>
 
 <script>
-const APP_VERSION='2.6', APP_BUILD='2026-03-20';
+const APP_VERSION='2.7', APP_BUILD='2026-03-20';
 
 
 const DB='sf_plants_v3', IDB='sf_images_v2', ZDB='sf_zones';
@@ -697,6 +772,202 @@ function delZone(i){
   zones.splice(i,1);save();renderZones();
 }
 
+
+
+// ══════════════════════════════════════
+// TELEGRAM & NOTIFICATIONS
+// ══════════════════════════════════════
+let tgToken='', tgChatId='', notifTimer=null;
+let chartPrice=null, chartProfit=null, chartCat=null;
+
+function loadTgConfig(){
+  tgToken=localStorage.getItem('sf_tg_token')||'';
+  tgChatId=localStorage.getItem('sf_tg_chatid')||'';
+  const t=document.getElementById('tg-token');
+  const ci=document.getElementById('tg-chatid');
+  if(t) t.value=tgToken;
+  if(ci) ci.value=tgChatId;
+}
+function saveTgConfig(){
+  tgToken=document.getElementById('tg-token').value.trim();
+  tgChatId=document.getElementById('tg-chatid').value.trim();
+  localStorage.setItem('sf_tg_token',tgToken);
+  localStorage.setItem('sf_tg_chatid',tgChatId);
+  toast('บันทึก Telegram config แล้ว ✓');
+  document.getElementById('tg-status').textContent='';
+}
+async function sendTelegram(msg){
+  if(!tgToken||!tgChatId) return false;
+  try{
+    const r=await fetch(`https://api.telegram.org/bot${tgToken}/sendMessage`,{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:tgChatId,text:msg,parse_mode:'HTML'})
+    });
+    const d=await r.json();
+    return d.ok;
+  }catch(e){return false;}
+}
+async function testTelegram(){
+  const el=document.getElementById('tg-status');
+  el.textContent='กำลังส่ง...';el.style.color='var(--t3)';
+  const ok=await sendTelegram('🌿 <b>SmartFarm Registry v2.7</b>\nทดสอบการแจ้งเตือน — ระบบพร้อมใช้งาน ✅');
+  el.textContent=ok?'✅ ส่งสำเร็จ!':'❌ ส่งไม่ได้ — ตรวจสอบ Token และ Chat ID';
+  el.style.color=ok?'var(--g)':'var(--danger)';
+}
+
+// ── Notification Banner ──
+function showNotif(msg, color){
+  const banner=document.getElementById('notif-banner');
+  const text=document.getElementById('notif-text');
+  if(!banner||!text) return;
+  text.innerHTML=msg;
+  banner.style.borderBottomColor=color||'var(--warn)';
+  banner.classList.add('show');
+  clearTimeout(notifTimer);
+  notifTimer=setTimeout(()=>banner.classList.remove('show'),8000);
+  // Play beep
+  playBeep();
+}
+function dismissNotif(){
+  document.getElementById('notif-banner')?.classList.remove('show');
+}
+
+// ── Care Scheduler — check every minute ──
+function checkCareSchedule(){
+  const today=new Date().toISOString().split('T')[0];
+  const due=plants.filter(p=>p.careDate&&p.careDate<=today&&p.careType);
+  if(!due.length) return;
+  due.forEach(async p=>{
+    const isOD=p.careDate<today;
+    const msg=`🔔 <b>${p.name}</b>\n${p.careType} — ${isOD?'เกินกำหนด!':'วันนี้'}\nรหัส: ${p.id} · โซน: ${p.zone||'—'}`;
+    // Show in-app banner
+    showNotif(`🔔 <strong>${p.name}</strong> — ${p.careType} ${isOD?'<span style="color:var(--danger)">เกินกำหนด!</span>':'<span style="color:var(--warn)">วันนี้</span>'}`, isOD?'var(--danger)':'var(--warn)');
+    // Send Telegram (once per day — check last sent)
+    const key='sf_notif_'+p.id+'_'+today;
+    if(!localStorage.getItem(key)){
+      const ok=await sendTelegram(msg);
+      if(ok) localStorage.setItem(key,'1');
+    }
+  });
+}
+
+// Request browser notification permission
+function requestNotifPermission(){
+  if('Notification' in window && Notification.permission==='default'){
+    Notification.requestPermission().then(p=>{
+      if(p==='granted') toast('เปิดการแจ้งเตือนแล้ว ✓');
+    });
+  }
+}
+
+function showBrowserNotif(title, body){
+  if('Notification' in window && Notification.permission==='granted'){
+    new Notification(title,{body,icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><text y="52" font-size="52">🌿</text></svg>'});
+  }
+}
+
+// ══════════════════════════════════════
+// GRAPHS
+// ══════════════════════════════════════
+function renderGraphs(){
+  if(!window.Chart) return;
+  const hasCost=plants.some(p=>p.cost||p.value);
+  if(!hasCost){
+    const t=document.getElementById('graph-table');
+    if(t) t.innerHTML='<div class="card" style="text-align:center;color:var(--t3);padding:20px">ยังไม่มีข้อมูลต้นทุน/มูลค่า<br><small>เพิ่มข้อมูลในหน้าทะเบียนก่อนครับ</small></div>';
+    return;
+  }
+
+  const data=plants.filter(p=>p.cost||p.value).map(p=>({
+    name:p.name.length>12?p.name.slice(0,12)+'…':p.name,
+    cost:parseFloat(p.cost)||0,
+    value:parseFloat(p.value)||0,
+    profit:(parseFloat(p.value)||0)-(parseFloat(p.cost)||0),
+    cat:p.cat
+  })).sort((a,b)=>b.value-a.value).slice(0,10);
+
+  const labels=data.map(d=>d.name);
+  const chartOpts={responsive:true,plugins:{legend:{labels:{color:'#7aaa88',font:{size:11}}}}};
+
+  // Price comparison chart
+  const ctx1=document.getElementById('chart-price');
+  if(ctx1){
+    if(chartPrice) chartPrice.destroy();
+    chartPrice=new Chart(ctx1,{
+      type:'bar',
+      data:{
+        labels,
+        datasets:[
+          {label:'ต้นทุน (฿)',data:data.map(d=>d.cost),backgroundColor:'rgba(245,166,35,.6)',borderColor:'rgba(245,166,35,1)',borderWidth:1},
+          {label:'มูลค่าตลาด (฿)',data:data.map(d=>d.value),backgroundColor:'rgba(77,184,255,.6)',borderColor:'rgba(77,184,255,1)',borderWidth:1}
+        ]
+      },
+      options:{...chartOpts,scales:{x:{ticks:{color:'#3d5c47',font:{size:10}}},y:{ticks:{color:'#3d5c47'},grid:{color:'#1c3322'}}}}
+    });
+  }
+
+  // Profit chart
+  const ctx2=document.getElementById('chart-profit');
+  if(ctx2){
+    if(chartProfit) chartProfit.destroy();
+    chartProfit=new Chart(ctx2,{
+      type:'bar',
+      data:{
+        labels,
+        datasets:[{
+          label:'กำไร/ขาดทุน (฿)',
+          data:data.map(d=>d.profit),
+          backgroundColor:data.map(d=>d.profit>=0?'rgba(61,220,104,.6)':'rgba(255,85,85,.6)'),
+          borderColor:data.map(d=>d.profit>=0?'var(--g)':'var(--danger)'),
+          borderWidth:1
+        }]
+      },
+      options:{...chartOpts,scales:{x:{ticks:{color:'#3d5c47',font:{size:10}}},y:{ticks:{color:'#3d5c47'},grid:{color:'#1c3322'}}}}
+    });
+  }
+
+  // Category donut
+  const catMap={premium:'✨ Premium',rare:'🔥 Rare',health:'💚 สุขภาพ',collect:'🏆 สะสม'};
+  const catColors={'premium':'rgba(180,122,255,.7)','rare':'rgba(255,85,85,.7)','health':'rgba(61,220,104,.7)','collect':'rgba(77,184,255,.7)'};
+  const catVal={};
+  plants.forEach(p=>{if(p.value) catVal[p.cat]=(catVal[p.cat]||0)+(parseFloat(p.value)||0);});
+  const ctx3=document.getElementById('chart-cat');
+  if(ctx3&&Object.keys(catVal).length){
+    if(chartCat) chartCat.destroy();
+    chartCat=new Chart(ctx3,{
+      type:'doughnut',
+      data:{
+        labels:Object.keys(catVal).map(k=>catMap[k]||k),
+        datasets:[{data:Object.values(catVal),backgroundColor:Object.keys(catVal).map(k=>catColors[k]||'rgba(122,170,136,.7)'),borderWidth:0}]
+      },
+      options:{...chartOpts,cutout:'60%'}
+    });
+  }
+
+  // Summary table
+  const totalCost=plants.reduce((s,p)=>s+(parseFloat(p.cost)||0),0);
+  const totalVal=plants.reduce((s,p)=>s+(parseFloat(p.value)||0),0);
+  const totalProfit=totalVal-totalCost;
+  const t=document.getElementById('graph-table');
+  if(t) t.innerHTML=`
+    <div class="card">
+      <div class="ct">สรุปมูลค่าพอร์ต</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+        <div style="background:var(--s2);border-radius:8px;padding:12px">
+          <div style="font-family:Syne,sans-serif;font-size:18px;font-weight:700;color:var(--warn)">฿${totalCost.toLocaleString()}</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">ต้นทุนรวม</div>
+        </div>
+        <div style="background:var(--s2);border-radius:8px;padding:12px">
+          <div style="font-family:Syne,sans-serif;font-size:18px;font-weight:700;color:var(--blue)">฿${totalVal.toLocaleString()}</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">มูลค่าตลาด</div>
+        </div>
+        <div style="background:var(--s2);border-radius:8px;padding:12px">
+          <div style="font-family:Syne,sans-serif;font-size:18px;font-weight:700;color:${totalProfit>=0?'var(--g)':'var(--danger)'}">฿${totalProfit.toLocaleString()}</div>
+          <div style="font-size:10px;color:var(--t3);margin-top:3px">${totalProfit>=0?'กำไร':'ขาดทุน'}</div>
+        </div>
+      </div>
+    </div>`;
+}
 
 // ══════════════════════════════════════
 // DASHBOARD
@@ -815,6 +1086,89 @@ function downloadQR(){
   toast('บันทึก QR Code แล้ว ✓');
 }
 
+
+// ══════════════════════════════════════
+// TELEGRAM NOTIFICATION
+// ══════════════════════════════════════
+function saveTGSettings(){
+  const token=document.getElementById('tg-token').value.trim();
+  const chatid=document.getElementById('tg-chatid').value.trim();
+  if(!token||!chatid){toast('กรุณาใส่ Token และ Chat ID');return;}
+  localStorage.setItem('tg_token',token);
+  localStorage.setItem('tg_chatid',chatid);
+  toast('บันทึกการตั้งค่า Telegram แล้ว ✓');
+  setTGStatus('✅ บันทึกแล้ว');
+}
+
+function loadTGSettings(){
+  const token=localStorage.getItem('tg_token')||'';
+  const chatid=localStorage.getItem('tg_chatid')||'';
+  const ti=document.getElementById('tg-token');
+  const ci=document.getElementById('tg-chatid');
+  if(ti) ti.value=token;
+  if(ci) ci.value=chatid;
+  if(token&&chatid) setTGStatus('✅ ตั้งค่าแล้ว พร้อมใช้งาน');
+}
+
+function toggleTGToken(){
+  const inp=document.getElementById('tg-token');
+  const btn=document.getElementById('tg-token-eye');
+  if(!inp) return;
+  if(inp.type==='password'){inp.type='text';btn.textContent='🙈 ซ่อน';}
+  else{inp.type='password';btn.textContent='👁 แสดง';}
+}
+
+async function sendTelegram(msg){
+  const token=localStorage.getItem('tg_token');
+  const chatid=localStorage.getItem('tg_chatid');
+  if(!token||!chatid) return false;
+  try{
+    const res=await fetch(`https://api.telegram.org/bot${token}/sendMessage`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({chat_id:chatid,text:msg,parse_mode:'HTML'})
+    });
+    const d=await res.json();
+    return d.ok;
+  }catch(e){return false;}
+}
+
+async function testTelegram(){
+  const token=document.getElementById('tg-token').value.trim();
+  const chatid=document.getElementById('tg-chatid').value.trim();
+  if(!token||!chatid){toast('กรุณาใส่ Token และ Chat ID ก่อน');return;}
+  // Save first
+  localStorage.setItem('tg_token',token);
+  localStorage.setItem('tg_chatid',chatid);
+  setTGStatus('📤 กำลังส่ง...');
+  const now2=new Date().toLocaleString('th-TH');
+  const msg=`🌿 <b>SmartFarm Registry</b>\n✅ ทดสอบการแจ้งเตือนสำเร็จ\n📅 ${now2}\n🌱 ต้นไม้ในระบบ: ${plants.length} ต้น`;
+  const ok=await sendTelegram(msg);
+  if(ok){setTGStatus('✅ ส่ง Telegram สำเร็จ!');toast('ส่ง Telegram สำเร็จ ✓');}
+  else{setTGStatus('❌ ส่งไม่สำเร็จ — ตรวจสอบ Token/Chat ID');toast('❌ ส่ง Telegram ไม่สำเร็จ');}
+}
+
+function setTGStatus(msg){
+  const el=document.getElementById('tg-status');
+  if(el) el.textContent=msg;
+}
+
+// Send care reminder via Telegram
+async function sendCareReminder(){
+  const token=localStorage.getItem('tg_token');
+  const chatid=localStorage.getItem('tg_chatid');
+  if(!token||!chatid) return;
+  const today=new Date().toISOString().split('T')[0];
+  const due=plants.filter(p=>p.careDate&&p.careDate<=today&&p.careType);
+  if(!due.length) return;
+  const lines=due.map(p=>{
+    const diff=Math.round((new Date(today)-new Date(p.careDate))/(1000*60*60*24));
+    return `• <b>${p.name}</b> (${p.id}) — ${p.careType} ${diff>0?'เกิน '+diff+' วัน':'วันนี้'}`;
+  }).join('\n');
+  const msg=`🔔 <b>SmartFarm แจ้งเตือนการดูแล</b>\n\n${lines}\n\n📅 ${new Date().toLocaleString('th-TH')}`;
+  await sendTelegram(msg);
+}
+
 // ── NAV ──
 function nav(id,btn){
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
@@ -823,7 +1177,13 @@ function nav(id,btn){
   if(id==='history') renderAllHistory();
   if(id==='io') updateCounts();
   if(id==='dashboard') renderDashboard();
+  if(id==='system'){renderZones();loadTGSettings();}
+  if(id==='graph') renderGraphs();
+  if(id==='system'){renderZones();loadTgConfig();}
   if(id==='dashboard') renderDashboard();
+  if(id==='system'){renderZones();loadTGSettings();}
+  if(id==='graph') renderGraphs();
+  if(id==='system'){renderZones();loadTgConfig();}
   if(id==='care') renderCare();
   if(id==='cost'){renderCost();}
   if(id==='system') renderZones();
@@ -1044,6 +1404,7 @@ function savePlant(){
   }
   document.getElementById('m-add')._pendingSN=null;
   save();closeM('m-add');renderPlants();renderDashboard();toast(editId?'อัปเดตแล้ว ✓':'เพิ่มต้นไม้แล้ว ✓');
+  if(!editId){const np=plants[plants.length-1];sendTelegram('🌱 <b>เพิ่มต้นไม้ใหม่</b>\n'+np.name+' ('+np.id+')\nโซน: '+(np.zone||'—')+' · ประเภท: '+np.cat);}
 }
 function delPlant(id){
   if(!confirm('ลบต้นไม้นี้?')) return;
@@ -1108,7 +1469,7 @@ async function writeNFC(id){
   try{
     nfcCtrl=new NDEFReader();await nfcCtrl.scan();
     nfcCtrl.onreading=({serialNumber})=>{
-      playBeep();const sn=serialNumber||'unknown';
+      playBeep();const sn=(serialNumber||'unknown').replace(/:/g,'');
       plants.forEach(x=>{if(x.nfcSN===sn&&x.id!==id) delete x.nfcSN;});
       p.nfcSN=sn;(p.history=p.history||[]).push({ts:now(),note:'ผูก NFC S/N: '+sn});
       save();renderPlants();
@@ -1431,6 +1792,9 @@ function checkNFC(){
 }
 injectManifest();
 loadCare();load();renderPlants();renderZones();checkNFC();updateNFCBtn();updateCounts();renderDashboard();
+loadTGSettings();
+// Auto check care reminders
+setTimeout(sendCareReminder, 3000);loadTgConfig();requestNotifPermission();setInterval(checkCareSchedule,60000);setTimeout(checkCareSchedule,3000);
 document.getElementById('sys-ver').textContent=APP_VERSION;
 document.getElementById('sys-build').textContent=APP_BUILD;
 document.getElementById('hdr-ver').textContent='v'+APP_VERSION;
