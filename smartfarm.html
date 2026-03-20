@@ -528,7 +528,7 @@ textarea.fi{resize:vertical;min-height:70px}
     </div>
     <div class="fg"><label class="fl">รอบดูแลถัดไป</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <select class="fi" id="d-care-type"><option value="">-- ประเภท --</option><option>รดน้ำ</option><option>ใส่ปุ๋ย</option><option>ตรวจโรค</option><option>ตัดแต่ง</option><option>ย้ายกระถาง</option><option>ลงขาย</option></select>
+        <select class="fi" id="d-care-type"><option value="">-- ประเภท --</option><option>รดน้ำ</option><option>ใส่ปุ๋ย</option><option>ตรวจโรค</option><option>ตัดแต่ง</option><option>ย้ายกระถาง</option><option>🏷️ ลงขาย</option></select>
         <input class="fi" type="date" id="d-care-date">
       </div>
     </div>
@@ -582,7 +582,7 @@ textarea.fi{resize:vertical;min-height:70px}
     </div>
     <div class="fg"><label class="fl">รอบดูแลถัดไป</label>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <select class="fi" id="f-care-type"><option value="">-- ประเภท --</option><option>รดน้ำ</option><option>ใส่ปุ๋ย</option><option>ตรวจโรค</option><option>ตัดแต่ง</option><option>ย้ายกระถาง</option><option>ลงขาย</option></select>
+        <select class="fi" id="f-care-type"><option value="">-- ประเภท --</option><option>รดน้ำ</option><option>ใส่ปุ๋ย</option><option>ตรวจโรค</option><option>ตัดแต่ง</option><option>ย้ายกระถาง</option><option>🏷️ ลงขาย</option></select>
         <input class="fi" type="date" id="f-care-date">
       </div>
     </div>
@@ -725,6 +725,8 @@ function load(){
   nfcEnabled=localStorage.getItem('sf_nfc')!=='off';
   soundEnabled=localStorage.getItem('sf_sound')!=='off';
   if(!plants.length || !plants[0]?.id) seed();
+  // Normalize existing NFC S/N — strip colons
+  plants.forEach(p=>{ if(p.nfcSN) p.nfcSN=p.nfcSN.replace(/:/g,''); });
 }
 function seed(){
   plants=[
@@ -1153,20 +1155,45 @@ function setTGStatus(msg){
   if(el) el.textContent=msg;
 }
 
-// Send care reminder via Telegram
+// Send care reminder via Telegram — รวม 1 ข้อความ ส่งได้แค่ครั้งเดียวต่อวัน
 async function sendCareReminder(){
   const token=localStorage.getItem('tg_token');
   const chatid=localStorage.getItem('tg_chatid');
   if(!token||!chatid) return;
   const today=new Date().toISOString().split('T')[0];
+  // ตรวจสอบว่าส่งวันนี้ไปแล้วหรือยัง
+  const lastSent=localStorage.getItem('tg_last_care');
+  if(lastSent===today) return;
   const due=plants.filter(p=>p.careDate&&p.careDate<=today&&p.careType);
   if(!due.length) return;
-  const lines=due.map(p=>{
+  // จัดกลุ่มตามประเภทงาน
+  const groups={};
+  due.forEach(p=>{
     const diff=Math.round((new Date(today)-new Date(p.careDate))/(1000*60*60*24));
-    return `• <b>${p.name}</b> (${p.id}) — ${p.careType} ${diff>0?'เกิน '+diff+' วัน':'วันนี้'}`;
-  }).join('\n');
-  const msg=`🔔 <b>SmartFarm แจ้งเตือนการดูแล</b>\n\n${lines}\n\n📅 ${new Date().toLocaleString('th-TH')}`;
-  await sendTelegram(msg);
+    const key=p.careType;
+    if(!groups[key]) groups[key]=[];
+    groups[key].push(`  • ${p.name} (${p.id})${diff>0?' ⚠️เกิน '+diff+'วัน':''}`);
+  });
+  const sections=Object.entries(groups).map(([type,items])=>
+    `<b>${type}</b> (${items.length} ต้น)\n${items.join('\n')}`
+  ).join('\n\n');
+  const total=due.length;
+  const hasSale=due.some(p=>p.careType==='🏷️ ลงขาย');
+  const msg=[
+    `🌿 <b>SmartFarm — สรุปงานประจำวัน</b>`,
+    `📅 ${new Date().toLocaleDateString('th-TH',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}`,
+    `📋 รายการค้างทั้งหมด ${total} รายการ`,
+    '',
+    sections,
+    '',
+    hasSale?'💰 มีต้นไม้พร้อมลงขายวันนี้!':'',
+    `\n🔗 เปิดแอป SmartFarm เพื่อจัดการ`
+  ].filter(x=>x!==undefined).join('\n');
+  const ok=await sendTelegram(msg);
+  if(ok){
+    localStorage.setItem('tg_last_care',today);
+    console.log('Care reminder sent');
+  }
 }
 
 // ── NAV ──
@@ -1423,7 +1450,7 @@ async function openNFCScan(){
   if(!('NDEFReader' in window)){document.getElementById('scan-st').textContent='❌ ต้องใช้ Chrome บน Android';return;}
   try{
     nfcCtrl=new NDEFReader();await nfcCtrl.scan();
-    nfcCtrl.onreading=({serialNumber})=>{playBeep();showNFCRes(serialNumber||'unknown',plants.find(p=>p.nfcSN===serialNumber));};
+    nfcCtrl.onreading=({serialNumber})=>{playBeep();const sn=(serialNumber||'unknown').replace(/:/g,'');showNFCRes(sn,plants.find(p=>p.nfcSN===sn));};
   }catch(e){document.getElementById('scan-st').textContent='❌ '+e.message;}
 }
 function showNFCRes(sn,found){
