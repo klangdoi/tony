@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#050d07">
+<title>SmartFarm — ทะเบียนต้นไม้</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  --bg:#050d07; --s1:#0c1a0f; --s2:#122016; --s3:#172c1c;
+  --bdr:#1c3322; --bdr2:#254530;
+  --g:#3ddc68; --g2:#7fffa8; --gdim:#143322;
+  --warn:#f5a623; --danger:#ff5555; --blue:#4db8ff; --purple:#b47aff;
+  --t1:#e4f5e9; --t2:#7aaa88; --t3:#3d5c47; --t4:#243529;
+  --r:14px; --r2:10px; --r3:20px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--t1);font-family:'Sarabun',sans-serif;font-size:14px;min-height:100vh;overflow-x:hidden}
+
+.hdr{position:sticky;top:0;z-index:50;background:rgba(5,13,7,.95);backdrop-filter:blur(14px);border-bottom:1px solid var(--bdr);padding:12px 16px;display:flex;align-items:center;gap:10px}
+.hdr-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:var(--g);display:flex;align-items:center;gap:7px;flex:1}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--g);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.hdr-count{font-size:11px;color:var(--t3);text-align:right}
+.hdr-count b{color:var(--g);font-size:15px;font-family:'Syne',sans-serif;display:block}
+
+.nav{display:flex;gap:4px;padding:10px 12px;background:var(--s1);border-bottom:1px solid var(--bdr);overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nb{flex-shrink:0;padding:6px 14px;border-radius:20px;border:1px solid var(--bdr);background:transparent;color:var(--t3);font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer;transition:.2s;white-space:nowrap}
+.nb.on{background:var(--g);color:#000;border-color:var(--g);font-weight:700}
+
+.pg{display:none;padding:14px;animation:fadeIn .2s ease}
+.pg.on{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+.card{background:var(--s1);border:1px solid var(--bdr);border-radius:var(--r);padding:16px;margin-bottom:12px}
+.ct{font-family:'Syne',sans-serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.ct::before{content:'';width:3px;height:11px;background:var(--g);border-radius:2px;flex-shrink:0}
+
+.searchbar{display:flex;gap:8px;margin-bottom:10px}
+.search-input{flex:1;padding:10px 13px;background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r2);color:var(--t1);font-family:'Sarabun',sans-serif;font-size:14px;outline:none}
+.search-input:focus{border-color:var(--g)}
+.search-input::placeholder{color:var(--t3)}
+.icon-btn{width:42px;height:42px;border-radius:var(--r2);border:1px solid var(--bdr);background:var(--s2);color:var(--t2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+.chips{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:5px 12px;border-radius:20px;border:1px solid var(--bdr);background:transparent;color:var(--t3);font-size:12px;cursor:pointer;white-space:nowrap}
+.chip.on{font-weight:600}
+.chip-all.on{background:var(--gdim);color:var(--g);border-color:var(--g)}
+.chip-premium.on{background:rgba(180,122,255,.15);color:var(--purple);border-color:rgba(180,122,255,.4)}
+.chip-rare.on{background:rgba(255,85,85,.12);color:var(--danger);border-color:rgba(255,85,85,.3)}
+.chip-health.on{background:rgba(61,220,104,.12);color:var(--g);border-color:rgba(61,220,104,.3)}
+.chip-collect.on{background:rgba(77,184,255,.12);color:var(--blue);border-color:rgba(77,184,255,.3)}
+
+.pcards{display:flex;flex-direction:column;gap:10px}
+.pcard{background:var(--s1);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+.pcard-top{display:flex;gap:12px;padding:14px;border-bottom:1px solid var(--bdr);cursor:pointer;align-items:center}
+.pthumb{width:52px;height:52px;border-radius:var(--r2);background:var(--gdim);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:26px;overflow:hidden}
+.pthumb img{width:100%;height:100%;object-fit:cover}
+.pinfo{flex:1;min-width:0}
+.pname{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pid{font-size:11px;color:var(--t3);margin-top:2px}
+.pbadge{margin-left:auto;flex-shrink:0;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:600;align-self:flex-start}
+.bp{background:rgba(180,122,255,.15);color:var(--purple);border:1px solid rgba(180,122,255,.3)}
+.br{background:rgba(255,85,85,.12);color:var(--danger);border:1px solid rgba(255,85,85,.3)}
+.bh{background:rgba(61,220,104,.12);color:var(--g);border:1px solid rgba(61,220,104,.3)}
+.bc{background:rgba(77,184,255,.12);color:var(--blue);border:1px solid rgba(77,184,255,.3)}
+
+.pcard-body{display:none;padding:12px 14px}
+.pcard-body.open{display:block}
+.pstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.pstat{text-align:center;background:var(--s2);border-radius:8px;padding:10px 6px}
+.pstat-v{font-size:13px;font-weight:600;color:var(--t1)}
+.pstat-l{font-size:10px;color:var(--t3);margin-top:2px}
+
+.hist-list{margin-bottom:10px}
+.hist-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr);font-size:12px;align-items:flex-start}
+.hist-item:last-child{border:none;padding-bottom:0}
+.hist-dot{width:7px;height:7px;border-radius:50%;background:var(--g);flex-shrink:0;margin-top:4px}
+.hist-ts{color:var(--t3);font-size:11px;min-width:76px;flex-shrink:0}
+.hist-note{color:var(--t2);flex:1}
+.hist-add-row{display:flex;gap:8px;margin-top:8px}
+.hist-input{flex:1;padding:8px 10px;background:var(--s2);border:1px solid var(--bdr);border-radius:8px;color:var(--t1);font-family:'Sarabun',sans-serif;font-size:13px;outline:none}
+.hist-input:focus{border-color:var(--g)}
+
+.act-row{display:flex;gap:8px;margin-top:10px}
+.act-btn{flex:1;padding:9px 6px;border-radius:8px;border:1px solid var(--bdr);background:var(--s2);color:var(--t2);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;font-family:'Sarabun',sans-serif}
+.act-edit{border-color:var(--warn);color:var(--warn)}
+.act-del{border-color:var(--danger);color:var(--danger)}
+.act-nfc{border-color:var(--blue);color:var(--blue)}
+
+.fab{position:fixed;bottom:24px;right:18px;z-index:60;width:54px;height:54px;border-radius:50%;background:var(--g);border:none;color:#000;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(61,220,104,.4)}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(5px);z-index:200;align-items:flex-end;justify-content:center}
+.overlay.on{display:flex}
+.modal{background:var(--s1);border:1px solid var(--bdr);border-radius:var(--r3) var(--r3) 0 0;padding:18px 18px 40px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto;animation:up .25s ease}
+@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mhandle{width:36px;height:4px;background:var(--bdr2);border-radius:2px;margin:0 auto 16px}
+.mtitle{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:16px}
+
+.fg{margin-bottom:11px}
+.fl{font-size:12px;color:var(--t3);margin-bottom:5px;display:block}
+.fi{width:100%;padding:10px 12px;background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r2);color:var(--t1);font-family:'Sarabun',sans-serif;font-size:14px;outline:none}
+.fi:focus{border-color:var(--g)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+textarea.fi{resize:vertical;min-height:70px}
+
+.img-wrap{width:100%;height:90px;border:1.5px dashed var(--bdr2);border-radius:var(--r2);display:flex;align-items:center;justify-content:center;gap:8px;color:var(--t3);font-size:13px;cursor:pointer;background:var(--s2);position:relative;overflow:hidden}
+.img-wrap input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.img-wrap img{width:100%;height:100%;object-fit:cover}
+
+.btn-p{width:100%;padding:13px;background:var(--g);color:#000;border:none;border-radius:var(--r2);font-family:'Syne',sans-serif;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px}
+.btn-s{width:100%;padding:11px;background:transparent;color:var(--t2);border:1px solid var(--bdr);border-radius:var(--r2);font-family:'Sarabun',sans-serif;font-size:14px;cursor:pointer;margin-top:6px}
+
+.nfc-anim{text-align:center;padding:24px 0}
+.nfc-ring{width:80px;height:80px;border-radius:50%;border:2px solid var(--blue);margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-size:32px;animation:ringblue 1.5s ease-in-out infinite}
+.nfc-ring-g{border-color:var(--g);animation-name:ringgreen}
+@keyframes ringblue{0%,100%{box-shadow:0 0 0 0 rgba(77,184,255,.4)}50%{box-shadow:0 0 0 16px rgba(77,184,255,0)}}
+@keyframes ringgreen{0%,100%{box-shadow:0 0 0 0 rgba(61,220,104,.4)}50%{box-shadow:0 0 0 16px rgba(61,220,104,0)}}
+.nfc-st{font-size:13px;color:var(--t2);line-height:1.6}
+
+.ie-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.ie-btn{padding:14px 10px;border-radius:var(--r2);border:1px solid var(--bdr);background:var(--s2);color:var(--t2);font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer;text-align:center;position:relative;overflow:hidden}
+.ie-btn input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.ie-icon{font-size:22px;display:block;margin-bottom:6px}
+.ie-sub{font-size:11px;color:var(--t3);margin-top:3px}
+
+.sys-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--bdr)}
+.sys-row:last-child{border:none}
+.sys-ico{width:36px;height:36px;border-radius:9px;background:var(--gdim);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.sys-info{flex:1}
+.sys-n{font-size:14px;font-weight:600}
+.sys-d{font-size:11px;color:var(--t3);margin-top:2px}
+.tog{width:44px;height:24px;border-radius:12px;background:var(--g);position:relative;cursor:pointer;border:none;flex-shrink:0;transition:.2s}
+.tog::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#000;transition:.2s}
+.tog.off{background:var(--bdr2)}
+.tog.off::after{transform:translateX(20px);background:var(--t3)}
+
+.code-blk{background:var(--bg);border-radius:8px;padding:12px;font-size:11px;color:var(--g2);font-family:monospace;line-height:1.9;overflow-x:auto;margin-top:8px}
+
+.toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--s3);border:1px solid var(--bdr2);border-radius:24px;padding:10px 20px;font-size:13px;color:var(--t1);z-index:999;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.empty{text-align:center;padding:48px 20px;color:var(--t3)}
+.empty-icon{font-size:44px;margin-bottom:10px}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo"><div class="live-dot"></div>SmartFarm<span style="color:var(--t2);font-weight:400">Registry</span></div>
+  <div class="hdr-count">ต้นไม้ทั้งหมด<b id="total-count">0</b></div>
+</div>
+
+<div class="nav">
+  <button class="nb on" onclick="nav('plants',this)">🌿 ทะเบียน</button>
+  <button class="nb" onclick="nav('history',this)">📋 ประวัติ</button>
+  <button class="nb" onclick="nav('io',this)">📦 Import/Export</button>
+  <button class="nb" onclick="nav('system',this)">⚙️ ระบบ</button>
+</div>
+
+<!-- PAGE: PLANTS -->
+<div id="pg-plants" class="pg on">
+  <div class="searchbar">
+    <input class="search-input" placeholder="🔍 ค้นหาชื่อ / รหัส..." id="search" oninput="renderPlants()">
+    <button class="icon-btn" onclick="openNFCScan()" title="สแกน NFC">📲</button>
+  </div>
+  <div class="chips">
+    <button class="chip chip-all on" onclick="setFilter('all',this)">ทั้งหมด</button>
+    <button class="chip chip-premium" onclick="setFilter('premium',this)">✨ Premium</button>
+    <button class="chip chip-rare" onclick="setFilter('rare',this)">🔥 Rare</button>
+    <button class="chip chip-health" onclick="setFilter('health',this)">💚 สุขภาพ</button>
+    <button class="chip chip-collect" onclick="setFilter('collect',this)">🏆 สะสม</button>
+  </div>
+  <div class="pcards" id="plant-list"></div>
+  <div style="height:80px"></div>
+</div>
+
+<!-- PAGE: HISTORY -->
+<div id="pg-history" class="pg">
+  <div class="card">
+    <div class="ct">กิจกรรมทั้งหมด</div>
+    <div id="all-history"></div>
+  </div>
+</div>
+
+<!-- PAGE: IMPORT/EXPORT -->
+<div id="pg-io" class="pg">
+  <div class="card">
+    <div class="ct">Export ข้อมูล</div>
+    <p style="font-size:13px;color:var(--t2);line-height:1.7">บันทึกต้นไม้ทั้งหมดพร้อมรูปภาพเป็นไฟล์ <strong style="color:var(--g)">.zip</strong></p>
+    <div class="ie-grid">
+      <button class="ie-btn" onclick="exportZIP()">
+        <span class="ie-icon">📤</span>Export ZIP
+        <div class="ie-sub">ข้อมูล + รูปภาพ</div>
+      </button>
+      <button class="ie-btn" onclick="exportJSON()">
+        <span class="ie-icon">📄</span>Export JSON
+        <div class="ie-sub">เฉพาะข้อมูล</div>
+      </button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct">Import ข้อมูล</div>
+    <p style="font-size:13px;color:var(--t2);line-height:1.7">นำเข้าจากไฟล์ <strong style="color:var(--g)">.zip</strong> หรือ <strong style="color:var(--g)">.json</strong></p>
+    <div class="ie-grid">
+      <label class="ie-btn">
+        <span class="ie-icon">📥</span>Import ZIP
+        <div class="ie-sub">ข้อมูล + รูปภาพ</div>
+        <input type="file" accept=".zip" onchange="importZIP(this)">
+      </label>
+      <label class="ie-btn">
+        <span class="ie-icon">📋</span>Import JSON
+        <div class="ie-sub">เฉพาะข้อมูล</div>
+        <input type="file" accept=".json" onchange="importJSON(this)">
+      </label>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct">สถิติ</div>
+    <div style="font-size:13px;color:var(--t2);line-height:2.2">
+      <div>จำนวนต้นไม้: <strong style="color:var(--g)" id="io-count">0</strong></div>
+      <div>ขนาดข้อมูล: <strong style="color:var(--g)" id="io-size">—</strong></div>
+    </div>
+    <button class="btn-s" style="color:var(--danger);border-color:rgba(255,85,85,.3);margin-top:10px" onclick="clearAll()">🗑️ ลบข้อมูลทั้งหมด</button>
+  </div>
+</div>
+
+<!-- PAGE: SYSTEM -->
+<div id="pg-system" class="pg">
+  <div class="card">
+    <div class="ct">การเชื่อมต่อ</div>
+    <div class="sys-row">
+      <div class="sys-ico">📲</div>
+      <div class="sys-info">
+        <div class="sys-n">NFC Reader/Writer</div>
+        <div class="sys-d" id="nfc-status-txt">ตรวจสอบ...</div>
+      </div>
+      <button class="tog" id="nfc-tog"></button>
+    </div>
+    <div class="sys-row">
+      <div class="sys-ico">💾</div>
+      <div class="sys-info">
+        <div class="sys-n">Local Storage</div>
+        <div class="sys-d">บันทึกข้อมูลในเครื่อง offline</div>
+      </div>
+      <button class="tog"></button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ct">โครงสร้าง NFC Tag (NDEF)</div>
+    <div class="code-blk">
+{<br>
+&nbsp;&nbsp;"id": "PLT-001",<br>
+&nbsp;&nbsp;"name": "Echeveria Lola",<br>
+&nbsp;&nbsp;"zone": "A1",<br>
+&nbsp;&nbsp;"cat": "rare",<br>
+&nbsp;&nbsp;"date": "2024-01-15",<br>
+&nbsp;&nbsp;"temp": "20-28"<br>
+}
+    </div>
+    <p style="font-size:11px;color:var(--t3);margin-top:10px">💡 เขียนเป็น NDEF Text Record — Android Chrome อ่านได้ทันที</p>
+  </div>
+  <div class="card">
+    <div class="ct">เกี่ยวกับ</div>
+    <div style="font-size:13px;color:var(--t2);line-height:2.2">
+      <div>เวอร์ชัน: <strong style="color:var(--g)">2.0.0</strong></div>
+      <div>NFC API: <strong id="nfc-api-txt">ตรวจสอบ...</strong></div>
+      <div>Storage: <strong>localStorage</strong></div>
+    </div>
+  </div>
+</div>
+
+<button class="fab" onclick="openAdd()">＋</button>
+<div class="toast" id="toast"></div>
+
+<!-- MODAL: ADD/EDIT -->
+<div class="overlay" id="m-add" onclick="bgClose(event,'m-add')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" id="m-title">🌱 เพิ่มต้นไม้ใหม่</div>
+    <div class="fg">
+      <label class="fl">รูปภาพ</label>
+      <div class="img-wrap" id="img-area">
+        <input type="file" accept="image/*" onchange="previewImg(this)">
+        <span>📷 แตะเพื่อเลือกรูป</span>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">ชื่อสายพันธุ์ *</label>
+      <input class="fi" id="f-name" placeholder="เช่น Echeveria Lola">
+    </div>
+    <div class="frow">
+      <div class="fg">
+        <label class="fl">รหัสต้น (ว่าง = auto)</label>
+        <input class="fi" id="f-id" placeholder="PLT-001">
+      </div>
+      <div class="fg">
+        <label class="fl">โซน</label>
+        <input class="fi" id="f-zone" placeholder="A1">
+      </div>
+    </div>
+    <div class="frow">
+      <div class="fg">
+        <label class="fl">ประเภท</label>
+        <select class="fi" id="f-cat">
+          <option value="premium">✨ Premium</option>
+          <option value="rare">🔥 Rare</option>
+          <option value="health">💚 สุขภาพ</option>
+          <option value="collect">🏆 สะสม</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">วันที่ปลูก</label>
+        <input class="fi" type="date" id="f-date">
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">ช่วงอุณหภูมิที่เหมาะ (°C)</label>
+      <input class="fi" id="f-temp" placeholder="เช่น 20-28">
+    </div>
+    <div class="fg">
+      <label class="fl">บันทึก / หมายเหตุ</label>
+      <textarea class="fi" id="f-note" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
+    </div>
+    <button class="btn-p" onclick="savePlant()">💾 บันทึก</button>
+    <button class="btn-s" onclick="closeM('m-add')">ยกเลิก</button>
+  </div>
+</div>
+
+<!-- MODAL: NFC SCAN -->
+<div class="overlay" id="m-nfc-scan" onclick="bgClose(event,'m-nfc-scan')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">📲 สแกน NFC Tag</div>
+    <div class="nfc-anim">
+      <div class="nfc-ring" id="scan-ring">📱</div>
+      <div class="nfc-st" id="scan-st">แตะ NFC Tag ที่ต้นไม้...</div>
+    </div>
+    <div id="nfc-res" style="display:none;margin-bottom:12px">
+      <div class="card" style="margin:0">
+        <div class="ct">ข้อมูลที่อ่านได้</div>
+        <div id="nfc-res-data" style="font-size:13px;color:var(--t2);line-height:2"></div>
+      </div>
+    </div>
+    <button class="btn-s" onclick="closeM('m-nfc-scan');stopNFC()">ปิด</button>
+  </div>
+</div>
+
+<!-- MODAL: NFC WRITE -->
+<div class="overlay" id="m-nfc-write" onclick="bgClose(event,'m-nfc-write')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">✍️ เขียน NFC Tag</div>
+    <div class="nfc-anim">
+      <div class="nfc-ring nfc-ring-g">📲</div>
+      <div class="nfc-st" id="write-st">แตะ NFC Tag เพื่อเขียนข้อมูล...</div>
+    </div>
+    <button class="btn-s" onclick="closeM('m-nfc-write');stopNFC()">ยกเลิก</button>
+  </div>
+</div>
+
+<script>
+// ──────────────────────────────────────
+// STATE & STORAGE
+// ──────────────────────────────────────
+const DB='sf_plants_v2', IDB='sf_images_v2';
+let plants=[], images={}, editId=null, activeFilter='all', nfcCtrl=null;
+
+function save(){
+  localStorage.setItem(DB,JSON.stringify(plants));
+  localStorage.setItem(IDB,JSON.stringify(images));
+  updateCounts();
+}
+function load(){
+  try{plants=JSON.parse(localStorage.getItem(DB))||[];}catch{plants=[];}
+  try{images=JSON.parse(localStorage.getItem(IDB))||{};}catch{images={};}
+  if(!plants.length) seed();
+}
+function seed(){
+  plants=[
+    {id:'PLT-001',name:'Echeveria Lola',zone:'A1',cat:'rare',date:'2024-01-15',temp:'20-28',note:'นำเข้าจากญี่ปุ่น',history:[{ts:now(),note:'ลงทะเบียนเข้าระบบ'},{ts:now(),note:'ตรวจสุขภาพ — ปกติดี'}]},
+    {id:'PLT-002',name:'Haworthia Cooper',zone:'A2',cat:'premium',date:'2024-02-20',temp:'18-30',note:'',history:[{ts:now(),note:'ลงทะเบียนเข้าระบบ'}]},
+    {id:'PLT-003',name:'Aloe Vera Gold',zone:'B1',cat:'health',date:'2024-03-01',temp:'22-35',note:'เหมาะกับแสงแดดจัด',history:[{ts:now(),note:'ลงทะเบียนเข้าระบบ'}]},
+  ];
+  save();
+}
+function now(){return new Date().toLocaleString('th-TH',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}
+function genId(){return 'PLT-'+String(plants.length+1).padStart(3,'0');}
+function updateCounts(){
+  document.getElementById('total-count').textContent=plants.length+' ต้น';
+  const ioEl=document.getElementById('io-count');
+  if(ioEl) ioEl.textContent=plants.length;
+  const szEl=document.getElementById('io-size');
+  if(szEl){const sz=new Blob([JSON.stringify(plants)+JSON.stringify(images)]).size;szEl.textContent=sz>1048576?(sz/1048576).toFixed(2)+' MB':Math.round(sz/1024)+' KB';}
+}
+
+// ──────────────────────────────────────
+// NAV
+// ──────────────────────────────────────
+function nav(id,btn){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pg-'+id).classList.add('on');
+  btn.classList.add('on');
+  if(id==='history') renderAllHistory();
+  if(id==='io') updateCounts();
+}
+
+// ──────────────────────────────────────
+// FILTER
+// ──────────────────────────────────────
+function setFilter(f,btn){
+  activeFilter=f;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  btn.classList.add('on');
+  renderPlants();
+}
+
+// ──────────────────────────────────────
+// RENDER
+// ──────────────────────────────────────
+const BADGE={premium:['bp','✨ Premium'],rare:['br','🔥 Rare'],health:['bh','💚 สุขภาพ'],collect:['bc','🏆 สะสม']};
+const EMO={premium:'✨',rare:'🔥',health:'💚',collect:'🏆'};
+
+function renderPlants(){
+  const q=document.getElementById('search').value.toLowerCase();
+  const list=plants.filter(p=>{
+    if(activeFilter!=='all'&&p.cat!==activeFilter) return false;
+    return !q||(p.name.toLowerCase().includes(q)||p.id.toLowerCase().includes(q));
+  });
+  const el=document.getElementById('plant-list');
+  if(!list.length){el.innerHTML=`<div class="empty"><div class="empty-icon">🌿</div><div>ไม่พบต้นไม้</div><div style="font-size:12px;margin-top:6px">กด + เพื่อเพิ่ม</div></div>`;return;}
+  el.innerHTML=list.map(p=>{
+    const [bc,bl]=BADGE[p.cat]||['bh','—'];
+    const img=images[p.id];
+    const thumb=img?`<div class="pthumb"><img src="${img}"></div>`:`<div class="pthumb">${EMO[p.cat]||'🌱'}</div>`;
+    const hist=(p.history||[]).slice().reverse().slice(0,4).map(h=>`
+      <div class="hist-item">
+        <div class="hist-dot"></div>
+        <div class="hist-ts">${h.ts}</div>
+        <div class="hist-note">${h.note}</div>
+      </div>`).join('');
+    return `<div class="pcard">
+      <div class="pcard-top" onclick="toggleBody('b-${p.id}')">
+        ${thumb}
+        <div class="pinfo">
+          <div class="pname">${p.name}</div>
+          <div class="pid">${p.id} · Zone ${p.zone||'—'}</div>
+        </div>
+        <div class="pbadge ${bc}">${bl}</div>
+      </div>
+      <div class="pcard-body" id="b-${p.id}">
+        <div class="pstats">
+          <div class="pstat"><div class="pstat-v">${p.date||'—'}</div><div class="pstat-l">วันที่ปลูก</div></div>
+          <div class="pstat"><div class="pstat-v">${p.temp?p.temp+'°C':'—'}</div><div class="pstat-l">อุณหภูมิ</div></div>
+          <div class="pstat"><div class="pstat-v">${(p.history||[]).length}</div><div class="pstat-l">บันทึก</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;padding:8px 10px;background:var(--s2);border-radius:8px;font-size:12px">${p.nfcSN?(`<span style="color:var(--t3)">📲 S/N:</span> <span style="color:var(--blue);font-family:monospace;font-size:11px">${p.nfcSN}</span>`):("<span style=\"color:var(--t3)\">📲 NFC: ยังไม่ได้ผูก</span>")}</div>
+      ${p.note?`<div style="font-size:12px;color:var(--t3);line-height:1.6;margin-bottom:10px">📝 ${p.note}</div>`:''}
+        <div class="hist-list">${hist||'<div style="color:var(--t3);font-size:12px;padding:6px 0">ยังไม่มีบันทึก</div>'}</div>
+        <div class="hist-add-row">
+          <input class="hist-input" id="hi-${p.id}" placeholder="เพิ่มบันทึก...">
+          <button class="act-btn act-nfc" style="flex:none;padding:8px 14px" onclick="addHist('${p.id}')">＋</button>
+        </div>
+        <div class="act-row">
+          <button class="act-btn act-edit" onclick="openEdit('${p.id}')">✏️ แก้ไข</button>
+          <button class="act-btn act-nfc" onclick="writeNFC('${p.id}')">📲 NFC</button>
+          <button class="act-btn act-del" onclick="delPlant('${p.id}')">🗑️ ลบ</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleBody(id){document.getElementById(id).classList.toggle('open');}
+
+// ──────────────────────────────────────
+// HISTORY
+// ──────────────────────────────────────
+function addHist(id){
+  const inp=document.getElementById('hi-'+id);
+  const note=inp.value.trim();
+  if(!note) return;
+  const p=plants.find(x=>x.id===id);
+  if(!p) return;
+  (p.history=p.history||[]).push({ts:now(),note});
+  inp.value='';
+  save(); renderPlants();
+  setTimeout(()=>{const b=document.getElementById('b-'+id);if(b)b.classList.add('open');},40);
+  toast('บันทึกแล้ว ✓');
+}
+
+function renderAllHistory(){
+  const all=[];
+  plants.forEach(p=>(p.history||[]).forEach(h=>all.push({...h,pname:p.name})));
+  all.sort((a,b)=>b.ts.localeCompare(a.ts));
+  const el=document.getElementById('all-history');
+  if(!all.length){el.innerHTML='<div class="empty"><div class="empty-icon">📋</div><div>ยังไม่มีบันทึก</div></div>';return;}
+  el.innerHTML=all.map(h=>`
+    <div class="hist-item">
+      <div class="hist-dot"></div>
+      <div class="hist-ts">${h.ts}</div>
+      <div class="hist-note"><span style="color:var(--g);font-weight:600">${h.pname}</span> — ${h.note}</div>
+    </div>`).join('');
+}
+
+// ──────────────────────────────────────
+// ADD / EDIT
+// ──────────────────────────────────────
+function openAdd(){
+  editId=null;
+  document.getElementById('m-title').textContent='🌱 เพิ่มต้นไม้ใหม่';
+  ['f-name','f-id','f-zone','f-temp','f-note'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('f-cat').value='rare';
+  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  resetImgArea();
+  openM('m-add');
+}
+
+function openEdit(id){
+  const p=plants.find(x=>x.id===id);if(!p) return;
+  editId=id;
+  document.getElementById('m-title').textContent='✏️ แก้ไขข้อมูล';
+  document.getElementById('f-id').value=p.id;
+  document.getElementById('f-name').value=p.name;
+  document.getElementById('f-zone').value=p.zone||'';
+  document.getElementById('f-cat').value=p.cat||'rare';
+  document.getElementById('f-date').value=p.date||'';
+  document.getElementById('f-temp').value=p.temp||'';
+  document.getElementById('f-note').value=p.note||'';
+  const area=document.getElementById('img-area');
+  if(images[id]){
+    area.innerHTML=`<img src="${images[id]}" style="width:100%;height:100%;object-fit:cover"><input type="file" accept="image/*" onchange="previewImg(this)" style="position:absolute;inset:0;opacity:0;cursor:pointer">`;
+  } else resetImgArea();
+  openM('m-add');
+}
+
+function resetImgArea(){
+  const area=document.getElementById('img-area');
+  area.innerHTML=`<input type="file" accept="image/*" onchange="previewImg(this)"><span>📷 แตะเพื่อเลือกรูป</span>`;
+  area._img=null;
+}
+
+function previewImg(inp){
+  if(!inp.files[0]) return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const area=document.getElementById('img-area');
+    area.innerHTML=`<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover"><input type="file" accept="image/*" onchange="previewImg(this)" style="position:absolute;inset:0;opacity:0;cursor:pointer">`;
+    area._img=e.target.result;
+  };
+  r.readAsDataURL(inp.files[0]);
+}
+
+function savePlant(){
+  const name=document.getElementById('f-name').value.trim();
+  if(!name){toast('กรุณาใส่ชื่อสายพันธุ์');return;}
+  const id=document.getElementById('f-id').value.trim()||(editId||genId());
+  const area=document.getElementById('img-area');
+  const imgData=area._img||(area.querySelector('img')?.src?.startsWith('data')?area.querySelector('img').src:null);
+  const fields={id,name,zone:document.getElementById('f-zone').value.trim(),cat:document.getElementById('f-cat').value,date:document.getElementById('f-date').value,temp:document.getElementById('f-temp').value.trim(),note:document.getElementById('f-note').value.trim()};
+  const pendingSN=document.getElementById('m-add')._pendingSN||null;
+  if(editId){
+    const p=plants.find(x=>x.id===editId);
+    Object.assign(p,fields);
+    if(pendingSN){plants.forEach(x=>{if(x.nfcSN===pendingSN)delete x.nfcSN;});p.nfcSN=pendingSN;}
+    (p.history=p.history||[]).push({ts:now(),note:'แก้ไขข้อมูล'+(pendingSN?' + ผูก NFC S/N: '+pendingSN:'')});
+    if(imgData) images[id]=imgData;
+  } else {
+    const entry={...fields,history:[{ts:now(),note:'ลงทะเบียนเข้าระบบ'+(pendingSN?' + ผูก NFC S/N: '+pendingSN:'')}]};
+    if(pendingSN){plants.forEach(x=>{if(x.nfcSN===pendingSN)delete x.nfcSN;});entry.nfcSN=pendingSN;}
+    plants.push(entry);
+    if(imgData) images[id]=imgData;
+  }
+  document.getElementById('m-add')._pendingSN=null;
+  save(); closeM('m-add'); renderPlants();
+  toast(editId?'อัปเดตแล้ว ✓':'เพิ่มต้นไม้แล้ว ✓');
+}
+
+function delPlant(id){
+  if(!confirm('ลบต้นไม้นี้?')) return;
+  plants=plants.filter(p=>p.id!==id);
+  delete images[id];
+  save(); renderPlants(); toast('ลบแล้ว');
+}
+
+// ──────────────────────────────────────
+// NFC — ใช้ serialNumber เป็น primary key
+// ──────────────────────────────────────
+
+async function openNFCScan(){
+  openM('m-nfc-scan');
+  document.getElementById('nfc-res').style.display='none';
+  document.getElementById('scan-st').textContent='แตะ NFC Tag ที่ต้นไม้...';
+  if(!('NDEFReader' in window)){document.getElementById('scan-st').textContent='❌ ต้องใช้ Chrome บน Android';return;}
+  try{
+    nfcCtrl=new NDEFReader();
+    await nfcCtrl.scan();
+    nfcCtrl.onreading=({serialNumber})=>{
+      const sn=serialNumber||'unknown';
+      const found=plants.find(p=>p.nfcSN===sn);
+      showNFCRes(sn,found);
+    };
+  }catch(e){document.getElementById('scan-st').textContent='❌ '+e.message;}
+}
+
+function showNFCRes(sn,found){
+  document.getElementById('scan-st').textContent='✅ อ่าน S/N สำเร็จ!';
+  document.getElementById('nfc-res').style.display='block';
+  const el=document.getElementById('nfc-res-data');
+  if(found){
+    el.innerHTML=`
+      <div style="margin-bottom:8px"><span style="color:var(--t3)">Serial No.:</span> <strong style="color:var(--blue);font-family:monospace;font-size:12px">${sn}</strong></div>
+      <div style="background:var(--gdim);border:1px solid rgba(61,220,104,.3);border-radius:10px;padding:12px;margin-top:8px">
+        <div style="color:var(--g);font-weight:700;font-size:15px;margin-bottom:6px">✓ พบในระบบ</div>
+        <div style="color:var(--t1);font-size:14px;font-weight:600">${found.name}</div>
+        <div style="color:var(--t3);font-size:12px;margin-top:3px">${found.id} · Zone ${found.zone||'—'}</div>
+      </div>
+      <button class="btn-p" style="margin-top:12px" onclick="closeM('m-nfc-scan');stopNFC();scrollToPlant('${found.id}')">🌿 ดูข้อมูลต้นนี้</button>`;
+    (found.history=found.history||[]).push({ts:now(),note:'สแกน NFC Tag (S/N: '+sn+')'});
+    save();
+  } else {
+    el.innerHTML=`
+      <div style="margin-bottom:8px"><span style="color:var(--t3)">Serial No.:</span> <strong style="color:var(--blue);font-family:monospace;font-size:12px">${sn}</strong></div>
+      <div style="background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.25);border-radius:10px;padding:12px;margin-top:8px">
+        <div style="color:var(--warn);font-weight:700;margin-bottom:4px">⚠️ ยังไม่ได้ผูกกับต้นไม้</div>
+        <div style="color:var(--t3);font-size:12px">เลือกต้นไม้ที่ต้องการผูก Tag นี้</div>
+      </div>
+      <div style="margin-top:12px">
+        <label class="fl">ผูกกับต้นไม้:</label>
+        <select class="fi" id="bind-select">
+          <option value="">— เลือกต้นไม้ —</option>
+          ${plants.map(p=>`<option value="${p.id}">${p.name} (${p.id})</option>`).join('')}
+        </select>
+      </div>
+      <button class="btn-p" style="margin-top:10px" onclick="bindNFC('${sn}')">🔗 ผูก Tag นี้กับต้นไม้</button>
+      <button class="btn-s" onclick="closeM('m-nfc-scan');stopNFC();openAddWithSN('${sn}')">➕ สร้างต้นไม้ใหม่ + ผูก Tag</button>`;
+  }
+}
+
+function bindNFC(sn){
+  const pid=document.getElementById('bind-select')?.value;
+  if(!pid){toast('กรุณาเลือกต้นไม้ก่อน');return;}
+  plants.forEach(p=>{if(p.nfcSN===sn) delete p.nfcSN;});
+  const p=plants.find(x=>x.id===pid);
+  if(!p) return;
+  p.nfcSN=sn;
+  (p.history=p.history||[]).push({ts:now(),note:'ผูก NFC Tag S/N: '+sn});
+  save(); renderPlants();
+  closeM('m-nfc-scan'); stopNFC();
+  toast('ผูก Tag กับ "'+p.name+'" สำเร็จ ✓');
+}
+
+function openAddWithSN(sn){
+  openAdd();
+  document.getElementById('m-add')._pendingSN=sn;
+  document.getElementById('m-title').textContent='🌱 เพิ่มต้นไม้ + ผูก NFC Tag';
+  document.getElementById('f-note').placeholder='จะผูกกับ NFC S/N: '+sn;
+}
+
+function scrollToPlant(id){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pg-plants').classList.add('on');
+  document.querySelector('.nb').classList.add('on');
+  renderPlants();
+  setTimeout(()=>{
+    const filtered=plants.filter(p=>{
+      const q=document.getElementById('search').value.toLowerCase();
+      return (!q||(p.name.toLowerCase().includes(q)||p.id.toLowerCase().includes(q)))&&(activeFilter==='all'||p.cat===activeFilter);
+    });
+    const idx=filtered.findIndex(x=>x.id===id);
+    const cards=document.querySelectorAll('#plant-list .pcard');
+    if(cards[idx]){
+      cards[idx].scrollIntoView({behavior:'smooth',block:'center'});
+      cards[idx].querySelector('.pcard-body')?.classList.add('open');
+      cards[idx].style.borderColor='var(--g)';
+      setTimeout(()=>cards[idx].style.borderColor='',2500);
+    }
+  },120);
+}
+
+async function writeNFC(id){
+  const p=plants.find(x=>x.id===id);if(!p) return;
+  openM('m-nfc-write');
+  document.getElementById('write-st').innerHTML=p.nfcSN
+    ?`Tag ปัจจุบัน: <span style="color:var(--blue);font-family:monospace">${p.nfcSN}</span><br><small style="color:var(--t3)">แตะ Tag ใหม่เพื่อเปลี่ยน</small>`
+    :'แตะ NFC Tag ที่ต้องการผูกกับต้นนี้...';
+  if(!('NDEFReader' in window)){document.getElementById('write-st').textContent='❌ ต้องใช้ Chrome บน Android';return;}
+  try{
+    nfcCtrl=new NDEFReader();
+    await nfcCtrl.scan();
+    nfcCtrl.onreading=({serialNumber})=>{
+      const sn=serialNumber||'unknown';
+      plants.forEach(x=>{if(x.nfcSN===sn&&x.id!==id) delete x.nfcSN;});
+      p.nfcSN=sn;
+      (p.history=p.history||[]).push({ts:now(),note:'ผูก NFC Tag S/N: '+sn});
+      save(); renderPlants();
+      document.getElementById('write-st').innerHTML='✅ ผูก Tag สำเร็จ!<br><span style="color:var(--blue);font-family:monospace;font-size:13px">'+sn+'</span>';
+      setTimeout(()=>{closeM('m-nfc-write');stopNFC();},2000);
+    };
+  }catch(e){document.getElementById('write-st').textContent='❌ '+e.message;}
+}
+
+function stopNFC(){try{nfcCtrl?.stop?.();}catch{}nfcCtrl=null;}
+
+// ──────────────────────────────────────
+// EXPORT
+// ──────────────────────────────────────
+async function exportZIP(){
+  if(!window.JSZip){toast('❌ JSZip ยังโหลดไม่เสร็จ');return;}
+  toast('กำลัง Export...');
+  const zip=new JSZip();
+  zip.file('plants.json',JSON.stringify(plants,null,2));
+  const imgs=zip.folder('images');
+  for(const [id,b64] of Object.entries(images)){
+    const idx=b64.indexOf(',');
+    imgs.file(id+'.jpg',idx>=0?b64.slice(idx+1):b64,{base64:true});
+  }
+  const blob=await zip.generateAsync({type:'blob'});
+  dlBlob(blob,`smartfarm-${dateStr()}.zip`,'application/zip');
+  toast('Export ZIP สำเร็จ ✓');
+}
+
+function exportJSON(){
+  dlBlob(new Blob([JSON.stringify(plants,null,2)],{type:'application/json'}),`smartfarm-${dateStr()}.json`);
+  toast('Export JSON สำเร็จ ✓');
+}
+
+function dlBlob(blob,name){
+  const url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function dateStr(){return new Date().toISOString().split('T')[0];}
+
+async function importZIP(inp){
+  if(!inp.files[0]) return;
+  toast('กำลัง Import...');
+  try{
+    const zip=await JSZip.loadAsync(inp.files[0]);
+    const jf=zip.file('plants.json');
+    if(jf) plants=JSON.parse(await jf.async('string'));
+    const imgF=zip.folder('images');
+    if(imgF){
+      const files=[];imgF.forEach((path,file)=>files.push({path,file}));
+      for(const {path,file} of files){
+        images[path.replace(/\.jpg$/i,'')]='data:image/jpeg;base64,'+(await file.async('base64'));
+      }
+    }
+    save();renderPlants();toast(`Import สำเร็จ ${plants.length} ต้น ✓`);
+  }catch(e){toast('❌ '+e.message);}
+  inp.value='';
+}
+
+function importJSON(inp){
+  if(!inp.files[0]) return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      if(!Array.isArray(d)) throw new Error('รูปแบบไม่ถูกต้อง');
+      plants=d;save();renderPlants();toast(`Import สำเร็จ ${plants.length} ต้น ✓`);
+    }catch(err){toast('❌ '+err.message);}
+  };
+  r.readAsText(inp.files[0]);inp.value='';
+}
+
+function clearAll(){
+  if(!confirm('ลบข้อมูลทั้งหมด? ไม่สามารถย้อนกลับได้')) return;
+  plants=[];images={};save();renderPlants();toast('ลบข้อมูลทั้งหมดแล้ว');
+}
+
+// ──────────────────────────────────────
+// MODAL
+// ──────────────────────────────────────
+function openM(id){document.getElementById(id).classList.add('on');}
+function closeM(id){document.getElementById(id).classList.remove('on');}
+function bgClose(e,id){if(e.target.id===id)closeM(id);}
+
+// ──────────────────────────────────────
+// TOAST
+// ──────────────────────────────────────
+let tt;
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2800);}
+
+// ──────────────────────────────────────
+// NFC CHECK
+// ──────────────────────────────────────
+function checkNFC(){
+  const ok='NDEFReader' in window;
+  document.getElementById('nfc-api-txt').textContent=ok?'✅ รองรับ':'⚠️ ต้องใช้ Chrome Android';
+  document.getElementById('nfc-api-txt').style.color=ok?'var(--g)':'var(--warn)';
+  document.getElementById('nfc-status-txt').textContent=ok?'พร้อมใช้งาน':'ต้องใช้ Chrome บน Android';
+  if(!ok)document.getElementById('nfc-tog').classList.add('off');
+}
+
+// ──────────────────────────────────────
+// INIT
+// ──────────────────────────────────────
+load();renderPlants();checkNFC();
+</script>
+</body>
+</html>
