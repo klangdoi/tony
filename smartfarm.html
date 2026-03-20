@@ -251,23 +251,20 @@ textarea.fi{resize:vertical;min-height:70px}
 <body>
 
 <div class="hdr">
-  <div class="hdr-logo"><div class="live-dot"></div>SmartFarm<span style="color:var(--t2);font-weight:400">Registry</span><span class="ver-badge" id="hdr-ver">v2.3</span></div>
+  <div class="hdr-logo"><div class="live-dot"></div>SmartFarm<span style="color:var(--t2);font-weight:400">Registry</span><span class="ver-badge" id="hdr-ver">v2.6</span></div>
   <div class="hdr-count">ต้นไม้<b id="total-count">0 ต้น</b></div>
 </div>
 
 <div class="nav">
-  <button class="nb" onclick="nav('dashboard',this)">📊 Dashboard</button>
-  <button class="nb" onclick="nav('dashboard',this)">📊 Dashboard</button>
-  <button class="nb on" onclick="nav('plants',this)">🌿 ทะเบียน</button>
+  <button class="nb on" onclick="nav('dashboard',this)">📊 Dashboard</button>
+  <button class="nb" onclick="nav('plants',this)">🌿 ทะเบียน</button>
   <button class="nb" onclick="nav('history',this)">📋 ประวัติ</button>
-  <button class="nb" onclick="nav('care',this)">🔔 ดูแล</button>
-  <button class="nb" onclick="nav('cost',this)">💰 ต้นทุน</button>
   <button class="nb" onclick="nav('io',this)">📦 Import/Export</button>
   <button class="nb" onclick="nav('system',this)">⚙️ ระบบ</button>
 </div>
 
 <!-- PAGE: DASHBOARD -->
-<div id="pg-dashboard" class="pg">
+<div id="pg-dashboard" class="pg on">
   <div class="card">
     <div class="ct">ภาพรวมฟาร์ม</div>
     <div class="dash-grid" id="dash-stats"></div>
@@ -290,7 +287,7 @@ textarea.fi{resize:vertical;min-height:70px}
   </div>
 </div>
 <!-- PAGE: PLANTS -->
-<div id="pg-plants" class="pg on">
+<div id="pg-plants" class="pg">
   <div id="pwa-install-banner" class="pwa-banner">
     <div style="flex:1;font-size:13px"><strong style="color:var(--g)">📱 ติดตั้งเป็น App</strong><div style="color:var(--t3);font-size:11px;margin-top:2px">วางไอคอนบนหน้าจอ Android</div></div>
     <button class="btn-p" style="width:auto;padding:8px 16px;margin:0;font-size:13px" onclick="installPWA()">ติดตั้ง</button>
@@ -395,7 +392,7 @@ textarea.fi{resize:vertical;min-height:70px}
 </div>
 
 <!-- ══ PAGE: DASHBOARD ══ -->
-<div id="pg-dashboard" class="pg">
+<div id="pg-dashboard" class="pg on">
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px" id="dash-stats"></div>
   <div class="card" id="dash-zone-card">
     <div class="ct">สถิติตามโซน</div>
@@ -683,6 +680,7 @@ function load(){
   if(!zones.length) zones=['A1','A2','A3','B1','B2','B3','C1','C2'];
   nfcEnabled=localStorage.getItem('sf_nfc')!=='off';
   soundEnabled=localStorage.getItem('sf_sound')!=='off';
+  // seed ถ้าไม่มีข้อมูล (ครั้งแรกที่ใช้ v2.6)
   if(!plants.length) seed();
 }
 function seed(){
