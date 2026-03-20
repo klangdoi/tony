@@ -925,7 +925,12 @@ if('serviceWorker' in navigator){
     <div class="fg"><label class="fl">ชื่อลูกค้า *</label><input class="fi" id="c-name" placeholder="ชื่อ-นามสกุล"></div>
     <div class="frow">
       <div class="fg"><label class="fl">เบอร์โทร</label><input class="fi" id="c-phone" placeholder="08x-xxx-xxxx"></div>
-      <div class="fg"><label class="fl">Facebook / Messenger</label><input class="fi" id="c-line" placeholder="ชื่อ Facebook"></div>
+      <div class="fg">
+      <label class="fl">Facebook Profile URL</label>
+      <input class="fi" id="c-line" placeholder="https://facebook.com/ชื่อ" 
+        type="url" autocomplete="off" inputmode="url">
+      <div style="font-size:11px;color:var(--t3);margin-top:4px">💡 เปิด Facebook → กด Profile → Copy Link มาวางได้เลย</div>
+    </div>
     </div>
     <div class="fg"><label class="fl">หมายเหตุ</label><textarea class="fi" id="c-note" placeholder="ความสนใจ / ข้อมูลเพิ่มเติม..."></textarea></div>
     <div class="fg">
@@ -1065,7 +1070,7 @@ if('serviceWorker' in navigator){
 </div>
 
 <script>
-const APP_VERSION='4.0.2', APP_BUILD='2026-03-20';
+const APP_VERSION='4.0.4', APP_BUILD='2026-03-20';
 
 
 const DB='sf_plants_v3', IDB='sf_images_v2', ZDB='sf_zones';
@@ -2549,7 +2554,14 @@ function renderCustomerList(){
         <div class="cust-avatar">🤝</div>
         <div style="flex:1">
           <div class="cust-name">${cu.name}</div>
-          <div class="cust-contact">${cu.phone?'📞 '+cu.phone:''} ${cu.phone&&cu.line?' · ':''} ${cu.line?'💬 '+cu.line:''}</div>
+          <div class="cust-contact">
+            ${cu.phone?`<a href="tel:${cu.phone}" style="color:var(--t3);text-decoration:none">📞 ${cu.phone}</a>`:''}
+            ${cu.phone&&cu.line?' · ':''}
+            ${cu.line?`<a href="${cu.line.startsWith('http')?cu.line:'https://'+cu.line}" target="_blank"
+              style="color:var(--blue);text-decoration:none;font-weight:600">
+              💬 ${cu.line.replace(/https?:\/\/(www\.)?(facebook\.com|fb\.com)\//i,'').replace(/\/.*$/,'').slice(0,20)}
+            </a>`:''}
+          </div>
         </div>
         <div style="font-size:11px;color:var(--t3)">${cu.date||''}</div>
       </div>
@@ -2557,6 +2569,7 @@ function renderCustomerList(){
       ${cu.note?`<div style="font-size:12px;color:var(--t3);margin-bottom:10px">📝 ${cu.note}</div>`:''}
       <div class="cust-actions">
         <button class="act-btn" onclick="openCustQR('${cu.id}')" style="flex:1;border-color:var(--purple);color:var(--purple)">📸 QR</button>
+        ${cu.line?`<button class="act-btn" onclick="window.open('${cu.line.startsWith('http')?cu.line:'https://'+cu.line}','_blank')" style="flex:1;border-color:var(--blue);color:var(--blue)">💬 เปิด FB</button>`:''}
         <button class="act-btn act-edit" onclick="openEditCustomer('${cu.id}')" style="flex:1">✏️ แก้ไข</button>
         <button class="act-btn act-del" onclick="deleteCustomer('${cu.id}')">🗑️</button>
       </div>
@@ -2896,6 +2909,27 @@ function fireWaterPush(time, days){
     `เวลา ${time} · ${days==='daily'?'ทุกวัน':days}\nต้นไม้ ${plants.length} ต้น`,
     '💧'
   );
+}
+
+
+// ── FB Autocomplete ──
+function updateFBSuggestions(val){
+  const dl=document.getElementById('fb-suggestions');
+  if(!dl) return;
+  if(!val||val.length<1){dl.innerHTML='';return;}
+  loadCustomers();
+  // ดึงชื่อ Facebook ที่มีในระบบแล้ว (ไม่ซ้ำ)
+  const existing=[...new Set(customers.filter(x=>x.line).map(x=>x.line))];
+  const matched=existing.filter(n=>n.toLowerCase().includes(val.toLowerCase()));
+  dl.innerHTML=matched.map(n=>`<option value="${n}">`).join('');
+}
+
+// ── เปิด Messenger ──
+function openMessenger(fbName){
+  if(!fbName) return;
+  // ลอง deep link Messenger app ก่อน ถ้าไม่มีค่อย fallback เว็บ
+  const url=`https://m.me/${encodeURIComponent(fbName)}`;
+  window.open(url,'_blank');
 }
 
 // ── NAV ──
