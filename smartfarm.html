@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SmartFarm">
 <link rel="manifest" id="pwa-manifest">
-<title>SmartFarm Registry v2.3</title>
+<title>SmartFarm Registry v2.4</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
@@ -184,6 +184,8 @@ textarea.fi{resize:vertical;min-height:70px}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px}
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -292,6 +294,28 @@ textarea.fi{resize:vertical;min-height:70px}
     </div>
     <button class="btn-p" id="pwa-install-btn" onclick="installPWA()" style="display:none">📱 ติดตั้งเป็น App ตอนนี้</button>
     <div id="pwa-status" style="font-size:12px;color:var(--t3);text-align:center;padding:8px">ตรวจสอบสถานะ PWA...</div>
+  </div>
+  <div class="card">
+    <div class="ct">ที่เก็บข้อมูล (Storage Mode)</div>
+    <div class="sys-row">
+      <div class="sys-ico">💾</div>
+      <div class="sys-info"><div class="sys-n">Local Storage</div><div class="sys-d">เก็บในเครื่อง (default, ทำงาน offline)</div></div>
+      <div id="mode-local-dot" style="width:10px;height:10px;border-radius:50%;background:var(--g);flex-shrink:0"></div>
+    </div>
+    <div class="sys-row">
+      <div class="sys-ico">☁️</div>
+      <div class="sys-info"><div class="sys-n">Firebase Cloud</div><div class="sys-d" id="cloud-desc">ต้องการ internet — สำรองข้อมูลขึ้น cloud</div></div>
+      <div id="mode-cloud-dot" style="width:10px;height:10px;border-radius:50%;background:var(--bdr2);flex-shrink:0"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+      <button class="act-btn" id="btn-use-local" onclick="setStorageMode('local')" style="padding:11px;font-size:13px">💾 ใช้ Local</button>
+      <button class="act-btn act-nfc" id="btn-use-cloud" onclick="setStorageMode('cloud')" style="padding:11px;font-size:13px">☁️ ใช้ Cloud</button>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn-p" onclick="syncToCloud()" style="flex:1;margin:0;padding:11px;font-size:13px">⬆️ Upload Local → Cloud</button>
+      <button class="btn-s" onclick="syncFromCloud()" style="flex:1;margin:0;padding:11px;font-size:13px">⬇️ Download Cloud → Local</button>
+    </div>
+    <div id="sync-status" style="margin-top:10px;font-size:12px;color:var(--t3);text-align:center"></div>
   </div>
   <div class="card">
     <div class="ct">เกี่ยวกับ</div>
@@ -410,7 +434,123 @@ textarea.fi{resize:vertical;min-height:70px}
 </div>
 
 <script>
-const APP_VERSION='2.3', APP_BUILD='2026-03-20';
+const APP_VERSION='2.4', APP_BUILD='2026-03-20';
+// ══════════════════════════════════════
+// FIREBASE CONFIG
+// ══════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCKeiqyIuiuCF1NNtgRk73KW22fNsai8VQ",
+  authDomain: "smartfarm-registry-be06c.firebaseapp.com",
+  projectId: "smartfarm-registry-be06c",
+  storageBucket: "smartfarm-registry-be06c.firebasestorage.app",
+  messagingSenderId: "666501945331",
+  appId: "1:666501945331:web:cf51dac33c0b2be1ae486"
+};
+
+let db = null;
+let storageMode = 'local'; // 'local' | 'cloud'
+
+function initFirebase() {
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+    return true;
+  } catch(e) {
+    console.error('Firebase init error:', e);
+    return false;
+  }
+}
+
+function setStorageMode(mode) {
+  if (mode === 'cloud') {
+    if (!initFirebase()) { toast('❌ Firebase เริ่มต้นไม่ได้'); return; }
+    storageMode = 'cloud';
+    localStorage.setItem('sf_storage_mode', 'cloud');
+    toast('☁️ เปลี่ยนเป็น Cloud แล้ว');
+  } else {
+    storageMode = 'local';
+    localStorage.setItem('sf_storage_mode', 'local');
+    toast('💾 เปลี่ยนเป็น Local แล้ว');
+  }
+  updateStorageModeUI();
+}
+
+function updateStorageModeUI() {
+  const isCloud = storageMode === 'cloud';
+  const localDot = document.getElementById('mode-local-dot');
+  const cloudDot = document.getElementById('mode-cloud-dot');
+  const btnLocal = document.getElementById('btn-use-local');
+  const btnCloud = document.getElementById('btn-use-cloud');
+  if (localDot) localDot.style.background = isCloud ? 'var(--bdr2)' : 'var(--g)';
+  if (cloudDot) cloudDot.style.background = isCloud ? 'var(--g)' : 'var(--bdr2)';
+  if (btnLocal) { btnLocal.style.borderColor = isCloud ? 'var(--bdr)' : 'var(--g)'; btnLocal.style.color = isCloud ? 'var(--t2)' : 'var(--g)'; }
+  if (btnCloud) { btnCloud.style.borderColor = isCloud ? 'var(--g)' : 'var(--bdr)'; btnCloud.style.color = isCloud ? 'var(--g)' : 'var(--t2)'; }
+  const desc = document.getElementById('cloud-desc');
+  if (desc) desc.textContent = isCloud ? '✅ กำลังใช้งาน Cloud' : 'ต้องการ internet — สำรองข้อมูลขึ้น cloud';
+  const loc = document.getElementById('db-location');
+  if (loc) loc.textContent = isCloud ? 'Firebase Firestore: smartfarm-registry-be06c / plants' : location.origin + ' → localStorage["sf_plants_v2"]';
+}
+
+// Upload local → Cloud
+async function syncToCloud() {
+  if (!initFirebase()) { toast('❌ Firebase เริ่มต้นไม่ได้'); return; }
+  setSyncStatus('⬆️ กำลัง Upload...');
+  try {
+    const batch = db.batch();
+    // Save metadata doc
+    const metaRef = db.collection('smartfarm').doc('__meta__');
+    batch.set(metaRef, { zones, updatedAt: new Date().toISOString(), version: APP_VERSION });
+    // Save each plant
+    plants.forEach(p => {
+      const ref = db.collection('smartfarm').doc(p.id);
+      const data = { ...p };
+      // include image as base64 field if exists (max ~900KB)
+      if (images[p.id]) data._img = images[p.id];
+      batch.set(ref, data);
+    });
+    await batch.commit();
+    setSyncStatus('✅ Upload สำเร็จ ' + plants.length + ' ต้น — ' + new Date().toLocaleTimeString('th-TH'));
+    toast('☁️ Upload Cloud สำเร็จ ✓');
+  } catch(e) {
+    setSyncStatus('❌ Upload ผิดพลาด: ' + e.message);
+    toast('❌ ' + e.message);
+  }
+}
+
+// Download Cloud → Local
+async function syncFromCloud() {
+  if (!initFirebase()) { toast('❌ Firebase เริ่มต้นไม่ได้'); return; }
+  setSyncStatus('⬇️ กำลัง Download...');
+  try {
+    const snap = await db.collection('smartfarm').get();
+    const newPlants = [], newImages = {};
+    let newZones = zones;
+    snap.forEach(doc => {
+      const d = doc.data();
+      if (doc.id === '__meta__') { if (d.zones) newZones = d.zones; return; }
+      if (d._img) { newImages[d.id] = d._img; delete d._img; }
+      newPlants.push(d);
+    });
+    plants = newPlants;
+    images = newImages;
+    zones = newZones;
+    save();
+    renderPlants();
+    renderZones();
+    setSyncStatus('✅ Download สำเร็จ ' + plants.length + ' ต้น — ' + new Date().toLocaleTimeString('th-TH'));
+    toast('⬇️ Download Cloud สำเร็จ ✓');
+  } catch(e) {
+    setSyncStatus('❌ Download ผิดพลาด: ' + e.message);
+    toast('❌ ' + e.message);
+  }
+}
+
+function setSyncStatus(msg) {
+  const el = document.getElementById('sync-status');
+  if (el) el.textContent = msg;
+}
+
+
 const DB='sf_plants_v2', IDB='sf_images_v2', ZDB='sf_zones';
 let plants=[], images={}, zones=[], editId=null, activeFilter='all', nfcCtrl=null;
 let nfcEnabled=true, soundEnabled=true, detailId=null, deferredPrompt=null;
@@ -844,6 +984,9 @@ function checkNFC(){
 }
 injectManifest();
 load();renderPlants();renderZones();checkNFC();updateNFCBtn();updateCounts();
+storageMode=localStorage.getItem("sf_storage_mode")||"local";
+if(storageMode==="cloud") initFirebase();
+updateStorageModeUI();
 document.getElementById('sys-ver').textContent=APP_VERSION;
 document.getElementById('sys-build').textContent=APP_BUILD;
 document.getElementById('hdr-ver').textContent='v'+APP_VERSION;
