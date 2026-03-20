@@ -313,6 +313,52 @@ textarea.fi{resize:vertical;min-height:70px}
 .map-popup-id{font-size:11px;color:var(--t3);margin-bottom:8px}
 .map-popup-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--bdr)}
 .map-popup-row:last-child{border:none}
+
+/* PLANT STATUS OVERLAYS */
+.node-overlays{
+  position:absolute;top:-6px;left:-6px;right:-6px;
+  display:flex;flex-wrap:wrap;gap:2px;justify-content:center;
+  pointer-events:none;
+}
+.node-ov{
+  width:18px;height:18px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;border:1.5px solid var(--bg);
+  cursor:pointer;pointer-events:all;
+  animation:ovPop .2s ease;
+  position:relative;
+}
+@keyframes ovPop{from{transform:scale(0)}to{transform:scale(1)}}
+.ov-water{background:#1a6fa8;}
+.ov-water.active{background:#4db8ff;box-shadow:0 0 6px rgba(77,184,255,.7);}
+.ov-fert{background:#3a5a1a;}
+.ov-fert.active{background:#7ec832;box-shadow:0 0 6px rgba(126,200,50,.7);}
+.ov-sale{background:#4a2a6a;}
+.ov-sale.active{background:#b47aff;box-shadow:0 0 6px rgba(180,122,255,.7);}
+.ov-repot{background:#5a3a1a;}
+.ov-repot.active{background:#f5a623;box-shadow:0 0 6px rgba(245,166,35,.7);}
+.ov-inspect{background:#5a1a1a;}
+.ov-inspect.active{background:#ff5555;box-shadow:0 0 6px rgba(255,85,85,.7);}
+
+/* Water drop animation */
+@keyframes waterDrop{
+  0%{transform:translateY(0);opacity:1}
+  100%{transform:translateY(20px);opacity:0}
+}
+.water-drop{
+  position:absolute;font-size:10px;
+  animation:waterDrop .8s ease-in forwards;
+  pointer-events:none;z-index:50;
+}
+
+/* WATER SCHEDULE */
+.water-sched-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bdr);font-size:13px}
+.water-sched-row:last-child{border:none}
+.water-toggle{width:36px;height:20px;border-radius:10px;position:relative;cursor:pointer;border:none;transition:.2s;flex-shrink:0}
+.water-toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s}
+.water-toggle.on{background:var(--blue);}
+.water-toggle.off{background:var(--bdr2);}
+.water-toggle.off::after{transform:translateX(16px);}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px}
 </style>
@@ -567,6 +613,21 @@ textarea.fi{resize:vertical;min-height:70px}
   </div>
   
   <div class="card">
+    <div class="ct">💧 ตั้งเวลารดน้ำ</div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:10px">ระบบจะแจ้งเตือน + ส่ง Telegram ตามเวลาที่กำหนด</div>
+    <div id="water-schedule-list"></div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <input class="fi" id="water-time-input" type="time" style="flex:1">
+      <select class="fi" id="water-days-input" style="flex:1">
+        <option value="daily">ทุกวัน</option>
+        <option value="mon,wed,fri">จ/พ/ศ</option>
+        <option value="tue,thu,sat">อ/พฤ/ส</option>
+        <option value="custom">กำหนดเอง</option>
+      </select>
+      <button class="btn-p" style="margin:0;padding:10px 14px;width:auto;font-size:13px" onclick="addWaterSchedule()">＋</button>
+    </div>
+  </div>
+  <div class="card">
     <div class="ct">เกี่ยวกับ</div>
     <div style="font-size:13px;color:var(--t2);line-height:2.3">
       <div>เวอร์ชัน: <strong style="color:var(--g)" id="sys-ver">—</strong></div>
@@ -676,9 +737,14 @@ textarea.fi{resize:vertical;min-height:70px}
   <div class="map-popup-row"><span style="color:var(--t3)">โซน</span><span id="popup-zone">—</span></div>
   <div class="map-popup-row"><span style="color:var(--t3)">สถานะ</span><span id="popup-status">—</span></div>
   <div class="map-popup-row"><span style="color:var(--t3)">งานถัดไป</span><span id="popup-care">—</span></div>
+  <div id="popup-overlay-section" style="display:none;margin-bottom:10px">
+    <div style="font-size:11px;color:var(--t3);margin-bottom:6px">สถานะ / กิจกรรม:</div>
+    <div id="popup-overlay-picker" style="display:flex;flex-direction:column;gap:5px"></div>
+  </div>
   <div style="display:flex;gap:6px;margin-top:10px">
-    <button onclick="openDetailFromPopup()" class="btn-p" style="flex:1;margin:0;padding:8px;font-size:12px">🔍 ดูรายละเอียด</button>
-    <button onclick="closePopup()" class="btn-s" style="flex:none;margin:0;padding:8px 12px;font-size:12px">✕</button>
+    <button onclick="openDetailFromPopup()" class="btn-p" style="flex:1;margin:0;padding:8px;font-size:12px">🔍 รายละเอียด</button>
+    <button onclick="openOverlayPicker()" style="flex:none;margin:0;padding:8px;font-size:12px;border-radius:var(--r2);border:1px solid var(--blue);background:rgba(77,184,255,.1);color:var(--blue);cursor:pointer">⚙️ สถานะ</button>
+    <button onclick="closePopup()" class="btn-s" style="flex:none;margin:0;padding:8px 10px;font-size:12px">✕</button>
   </div>
 </div>
 
@@ -797,7 +863,7 @@ textarea.fi{resize:vertical;min-height:70px}
 </div>
 
 <script>
-const APP_VERSION='3.4', APP_BUILD='2026-03-20';
+const APP_VERSION='3.5', APP_BUILD='2026-03-20';
 
 
 const DB='sf_plants_v3', IDB='sf_images_v2', ZDB='sf_zones';
@@ -1619,12 +1685,14 @@ function renderFarmMap(){
     node.style.left=pos.x+'px';
     node.style.top=pos.y+'px';
     node.innerHTML=`
+      <div class="node-overlays" id="ovl-${p.id}"></div>
       <div class="node-img" style="border-color:${sc}">
         ${img?`<img src="${img}" alt="">`:`<span>${emo}</span>`}
         <div class="node-status" style="background:${sc}"></div>
       </div>
       <div class="node-label">${p.name.length>9?p.name.slice(0,9)+'…':p.name}</div>
       <div class="node-id">${p.id}</div>`;
+    setTimeout(()=>renderNodeOverlays(p.id),0);
 
     // Events
     if(mapEditMode){
@@ -1852,6 +1920,192 @@ function renderDashStats(){
     <div class="dash-stat"><div class="dash-stat-v" style="color:var(--warn);font-size:${totalVal>=10000?'14px':'18px'}">${totalVal>0?fmt(totalVal):'—'}</div><div class="dash-stat-l">มูลค่าตลาด</div></div>`;
 }
 
+
+// ══════════════════════════════════════
+// PLANT STATUS OVERLAYS & WATER SCHEDULE
+// ══════════════════════════════════════
+
+const OV_DEFS=[
+  {key:'water',  icon:'💧', label:'รดน้ำ',       cls:'ov-water'},
+  {key:'fert',   icon:'🧪', label:'ใส่ปุ๋ย/ยา',  cls:'ov-fert'},
+  {key:'sale',   icon:'💰', label:'พร้อมขาย',    cls:'ov-sale'},
+  {key:'repot',  icon:'🪴', label:'ย้ายกระถาง', cls:'ov-repot'},
+  {key:'inspect',icon:'🔍', label:'ตรวจโรค',     cls:'ov-inspect'},
+];
+
+function renderNodeOverlays(pid){
+  const el=document.getElementById('ovl-'+pid);
+  if(!el) return;
+  const p=plants.find(x=>x.id===pid);
+  if(!p) return;
+  const active=(p.overlays||[]);
+  el.innerHTML=OV_DEFS.filter(d=>active.includes(d.key)).map(d=>`
+    <div class="node-ov ${d.cls} active" 
+      onclick="event.stopPropagation();toggleOverlay('${pid}','${d.key}')"
+      title="${d.label}">${d.icon}</div>`).join('');
+}
+
+function toggleOverlay(pid, key){
+  const p=plants.find(x=>x.id===pid);
+  if(!p) return;
+  p.overlays=p.overlays||[];
+  const idx=p.overlays.indexOf(key);
+  if(idx>=0){
+    p.overlays.splice(idx,1);
+    // Log removal
+    (p.history=p.history||[]).push({ts:now(),note:`ปิดสถานะ: ${OV_DEFS.find(d=>d.key===key)?.label}`});
+  } else {
+    p.overlays.push(key);
+    // Log + animate
+    (p.history=p.history||[]).push({ts:now(),note:`เปิดสถานะ: ${OV_DEFS.find(d=>d.key===key)?.label}`});
+    if(key==='water') spawnWaterDrops(pid);
+  }
+  save();
+  renderNodeOverlays(pid);
+  // Update node border color
+  const nodeEl=document.getElementById('node-'+pid);
+  if(nodeEl){
+    const st=getStatus(p);
+    const sc=STATUS_COLOR[st];
+    const imgEl=nodeEl.querySelector('.node-img');
+    if(imgEl) imgEl.style.borderColor=sc;
+    const stEl=nodeEl.querySelector('.node-status');
+    if(stEl) stEl.style.background=sc;
+  }
+}
+
+// Open overlay picker from popup
+function openOverlayPicker(){
+  if(!popupPlantId) return;
+  const p=plants.find(x=>x.id===popupPlantId);
+  if(!p) return;
+  const active=p.overlays||[];
+  const html=OV_DEFS.map(d=>`
+    <button onclick="toggleOverlay('${p.id}','${d.key}');updateOverlayPicker('${p.id}')"
+      style="padding:8px 12px;border-radius:10px;border:1px solid ${active.includes(d.key)?'var(--g)':'var(--bdr)'};
+      background:${active.includes(d.key)?'rgba(61,220,104,.15)':'var(--s2)'};
+      color:${active.includes(d.key)?'var(--g)':'var(--t2)'};
+      font-family:Sarabun,sans-serif;font-size:13px;cursor:pointer;
+      display:flex;align-items:center;gap:6px;width:100%">
+      <span>${d.icon}</span><span>${d.label}</span>
+      ${active.includes(d.key)?'<span style="margin-left:auto;color:var(--g)">✓</span>':''}
+    </button>`).join('');
+  document.getElementById('popup-overlay-picker').innerHTML=html;
+  document.getElementById('popup-overlay-section').style.display='block';
+}
+function updateOverlayPicker(pid){
+  openOverlayPicker();
+  renderNodeOverlays(pid);
+}
+
+// Water drop animation
+function spawnWaterDrops(pid){
+  const node=document.getElementById('node-'+pid);
+  if(!node) return;
+  const mapEl=document.getElementById('farm-map');
+  const nr=node.getBoundingClientRect();
+  const mr=mapEl.getBoundingClientRect();
+  for(let i=0;i<5;i++){
+    setTimeout(()=>{
+      const drop=document.createElement('div');
+      drop.className='water-drop';
+      drop.textContent='💧';
+      drop.style.left=(nr.left-mr.left+Math.random()*40-10)+'px';
+      drop.style.top=(nr.top-mr.top+20)+'px';
+      mapEl.appendChild(drop);
+      setTimeout(()=>drop.remove(),900);
+    },i*120);
+  }
+}
+
+// ── WATER SCHEDULE ──
+const WS_KEY='sf_water_sched';
+let waterSchedules=[];
+
+function loadWaterSchedules(){
+  try{waterSchedules=JSON.parse(localStorage.getItem(WS_KEY))||[];}catch{waterSchedules=[];}
+}
+function saveWaterSchedules(){localStorage.setItem(WS_KEY,JSON.stringify(waterSchedules));}
+
+function renderWaterScheduleList(){
+  const el=document.getElementById('water-schedule-list');
+  if(!el) return;
+  loadWaterSchedules();
+  if(!waterSchedules.length){
+    el.innerHTML='<div style="color:var(--t3);font-size:12px;padding:6px 0">ยังไม่มีตารางรดน้ำ</div>';
+    return;
+  }
+  const dayTH={'daily':'ทุกวัน','mon,wed,fri':'จ/พ/ศ','tue,thu,sat':'อ/พฤ/ส','custom':'กำหนดเอง'};
+  el.innerHTML=waterSchedules.map((s,i)=>`
+    <div class="water-sched-row">
+      <button class="water-toggle ${s.active?'on':'off'}" onclick="toggleWaterSched(${i})"></button>
+      <span style="font-family:Syne,sans-serif;font-weight:700;font-size:16px;color:var(--blue)">${s.time}</span>
+      <span style="color:var(--t3);font-size:12px;flex:1">${dayTH[s.days]||s.days}</span>
+      <span style="font-size:11px;color:var(--t3)">${s.lastRun||'ยังไม่เคยทำงาน'}</span>
+      <button onclick="deleteWaterSched(${i})" style="background:none;border:none;color:var(--danger);font-size:16px;cursor:pointer;padding:0">×</button>
+    </div>`).join('');
+}
+
+function addWaterSchedule(){
+  const time=document.getElementById('water-time-input').value;
+  const days=document.getElementById('water-days-input').value;
+  if(!time){toast('กรุณาเลือกเวลา');return;}
+  loadWaterSchedules();
+  waterSchedules.push({time,days,active:true,lastRun:''});
+  saveWaterSchedules();
+  renderWaterScheduleList();
+  toast('💧 เพิ่มตารางรดน้ำแล้ว ✓');
+}
+
+function toggleWaterSched(i){
+  loadWaterSchedules();
+  waterSchedules[i].active=!waterSchedules[i].active;
+  saveWaterSchedules();
+  renderWaterScheduleList();
+}
+function deleteWaterSched(i){
+  if(!confirm('ลบตารางรดน้ำนี้?')) return;
+  loadWaterSchedules();
+  waterSchedules.splice(i,1);
+  saveWaterSchedules();
+  renderWaterScheduleList();
+}
+
+// Check water schedule every minute
+function checkWaterSchedule(){
+  loadWaterSchedules();
+  const now2=new Date();
+  const hhmm=now2.getHours().toString().padStart(2,'0')+':'+now2.getMinutes().toString().padStart(2,'0');
+  const dayNames=['sun','mon','tue','wed','thu','fri','sat'];
+  const today=dayNames[now2.getDay()];
+  const todayKey='wrun_'+hhmm+'_'+now2.toDateString();
+
+  waterSchedules.forEach((s,i)=>{
+    if(!s.active) return;
+    if(s.time!==hhmm) return;
+    if(localStorage.getItem(todayKey+i)) return; // already ran
+    // Check day
+    const daysOk=s.days==='daily'||s.days.split(',').includes(today);
+    if(!daysOk) return;
+    // FIRE!
+    localStorage.setItem(todayKey+i,'1');
+    waterSchedules[i].lastRun=now2.toLocaleString('th-TH',{hour:'2-digit',minute:'2-digit'});
+    saveWaterSchedules();
+    // Show in-app banner
+    showNotif(`💧 <strong>ถึงเวลารดน้ำ!</strong> ${s.time} — ${s.days==='daily'?'ทุกวัน':s.days}`, 'var(--blue)');
+    // Send Telegram
+    sendTelegram(`💧 <b>SmartFarm — ถึงเวลารดน้ำ!</b>\nเวลา ${s.time}\nต้นไม้ทั้งหมด ${plants.length} ต้น\n📅 ${now2.toLocaleString('th-TH')}`);
+    // Auto-activate water overlay on all plants
+    plants.forEach(p=>{
+      p.overlays=p.overlays||[];
+      if(!p.overlays.includes('water')) p.overlays.push('water');
+    });
+    save();
+    if(document.getElementById('pg-dashboard').classList.contains('on')) renderFarmMap();
+    renderWaterScheduleList();
+  });
+}
+
 // ── NAV ──
 function nav(id,btn){
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
@@ -1861,7 +2115,7 @@ function nav(id,btn){
   if(id==='io') updateCounts();
   if(id==='dashboard') renderFarmMap();
   if(id==='analytics'){populateAnSelect();renderAnalytics();}
-  if(id==='system'){renderZones();loadTGSettings();}
+  if(id==='system'){renderZones();loadTGSettings();renderWaterScheduleList();}
   if(id==='graph') renderGraphs();
   if(id==='system'){renderZones();loadTgConfig();}
   if(id==='dashboard') renderFarmMap();
@@ -2500,7 +2754,10 @@ function checkNFC(){
 injectManifest();
 loadCare();load();renderPlants();renderZones();checkNFC();updateNFCBtn();updateCounts();
 loadTGSettings();
-setTimeout(()=>{renderFarmMap();sendCareReminder();},500);loadTgConfig();requestNotifPermission();setInterval(checkCareSchedule,60000);setTimeout(checkCareSchedule,3000);
+loadWaterSchedules();
+setTimeout(()=>{renderFarmMap();sendCareReminder();},500);
+setInterval(checkWaterSchedule,60000);
+setTimeout(checkWaterSchedule,2000);loadTgConfig();requestNotifPermission();setInterval(checkCareSchedule,60000);setTimeout(checkCareSchedule,3000);
 document.getElementById('sys-ver').textContent=APP_VERSION;
 document.getElementById('sys-build').textContent=APP_BUILD;
 document.getElementById('hdr-ver').textContent='v'+APP_VERSION;
