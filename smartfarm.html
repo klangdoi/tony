@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SmartFarm">
 <link rel="manifest" id="pwa-manifest">
-<title>SmartFarm Registry v2.9</title>
+<title>SmartFarm Registry v3.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
@@ -497,35 +497,7 @@ textarea.fi{resize:vertical;min-height:70px}
     </div>
     <div id="tg-status" style="font-size:12px;color:var(--t3);text-align:center;margin-top:8px"></div>
   </div>
-  <div class="card">
-    <div class="ct">📣 Telegram Notification</div>
-    <div class="fg">
-      <label class="fl">Bot Token</label>
-      <input class="fi" id="tg-token" type="password" placeholder="110201543:AAHdqTcvCH1vGWJxfSeofSs0K6oJXoRiLrw">
-      <div style="display:flex;justify-content:flex-end;margin-top:4px">
-        <button onclick="toggleTGToken()" style="background:none;border:none;color:var(--t3);font-size:11px;cursor:pointer" id="tg-token-eye">👁 แสดง</button>
-      </div>
-    </div>
-    <div class="fg">
-      <label class="fl">Chat ID</label>
-      <input class="fi" id="tg-chatid" placeholder="-1001234567890 หรือ 123456789">
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
-      <button class="btn-p" style="margin:0;padding:11px;font-size:13px" onclick="saveTGSettings()">💾 บันทึก</button>
-      <button class="btn-s" style="margin:0;padding:11px;font-size:13px" onclick="testTelegram()">🔔 ทดสอบส่ง</button>
-    </div>
-    <div id="tg-status" style="margin-top:10px;font-size:12px;color:var(--t3);text-align:center;min-height:18px"></div>
-    <div style="margin-top:10px;padding:10px 12px;background:var(--s2);border-radius:8px;font-size:11px;color:var(--t3);line-height:1.9">
-      <div>วิธีสร้าง Bot Token:</div>
-      <div>1. เปิด Telegram → ค้นหา <strong style="color:var(--t1)">@BotFather</strong></div>
-      <div>2. พิมพ์ <strong style="color:var(--g)">/newbot</strong> แล้วตั้งชื่อ</div>
-      <div>3. Copy Token มาวางด้านบน</div>
-      <div style="margin-top:6px">วิธีหา Chat ID:</div>
-      <div>1. เพิ่ม Bot เข้า Group แล้วพิมพ์ <strong style="color:var(--g)">/start</strong></div>
-      <div>2. เปิด: api.telegram.org/bot<em>TOKEN</em>/getUpdates</div>
-      <div>3. ดูค่า <strong style="color:var(--t1)">chat.id</strong></div>
-    </div>
-  </div>
+  
   <div class="card">
     <div class="ct">เกี่ยวกับ</div>
     <div style="font-size:13px;color:var(--t2);line-height:2.3">
@@ -742,7 +714,7 @@ textarea.fi{resize:vertical;min-height:70px}
 </div>
 
 <script>
-const APP_VERSION='2.9', APP_BUILD='2026-03-20';
+const APP_VERSION='3.0', APP_BUILD='2026-03-20';
 
 
 const DB='sf_plants_v3', IDB='sf_images_v2', ZDB='sf_zones';
@@ -884,7 +856,7 @@ async function sendTelegram(msg){
 async function testTelegram(){
   const el=document.getElementById('tg-status');
   el.textContent='กำลังส่ง...';el.style.color='var(--t3)';
-  const ok=await sendTelegram('🌿 <b>SmartFarm Registry v2.9</b>\nทดสอบการแจ้งเตือน — ระบบพร้อมใช้งาน ✅');
+  const ok=await sendTelegram('🌿 <b>SmartFarm Registry v3.0</b>\nทดสอบการแจ้งเตือน — ระบบพร้อมใช้งาน ✅');
   el.textContent=ok?'✅ ส่งสำเร็จ!':'❌ ส่งไม่ได้ — ตรวจสอบ Token และ Chat ID';
   el.style.color=ok?'var(--g)':'var(--danger)';
 }
@@ -1310,16 +1282,21 @@ function acknowledgeCare(id){
   const p=plants.find(x=>x.id===id);
   if(!p) return;
   const today=new Date().toISOString().split('T')[0];
+  // Mark ack + log history
   p.careAckDate=today;
-  (p.history=p.history||[]).push({ts:now(),note:'✅ รับทราบงาน: '+p.careType+' (กำหนด '+p.careDate+')'});
+  (p.history=p.history||[]).push({ts:now(),note:'✅ ดำเนินการแล้ว: '+p.careType+' ('+p.careDate+')'});
+  // Clear careDate so it won't keep showing (user must set next round manually)
+  p.careDate='';
   const el=document.getElementById('care-'+id);
   if(el){
     el.style.transition='opacity .3s,transform .3s';
     el.style.opacity='0';
     el.style.transform='translateX(20px)';
-    setTimeout(()=>{save();renderDashboard();},320);
-  } else {save();renderDashboard();}
+    setTimeout(()=>{save();renderDashboard();renderAllHistory();},320);
+  } else {save();renderDashboard();renderAllHistory();}
   toast('✅ รับทราบ: '+p.name+' — บันทึกลงประวัติแล้ว');
+  // Send Telegram for this single item
+  sendTelegram('✅ <b>ดำเนินการแล้ว</b>\n'+p.name+' ('+p.id+')\n'+p.careType+'\n📅 '+now());
 }
 
 // ── NAV ──
@@ -1330,14 +1307,13 @@ function nav(id,btn){
   if(id==='history') renderAllHistory();
   if(id==='io') updateCounts();
   if(id==='dashboard') renderDashboard();
-  if(id==='analytics'){populateAnSelect();renderAnalytics();}
+  if(id==='analytics'){populateAnSelect();}
   if(id==='system'){renderZones();loadTGSettings();}
   if(id==='graph') renderGraphs();
   if(id==='system'){renderZones();loadTgConfig();}
   if(id==='dashboard') renderDashboard();
-  if(id==='analytics'){populateAnSelect();renderAnalytics();}
-  if(id==='system'){renderZones();loadTGSettings();}
-  if(id==='graph') renderGraphs();
+  if(id==='analytics'){populateAnSelect();}
+    if(id==='graph') renderGraphs();
   if(id==='system'){renderZones();loadTgConfig();}
   if(id==='care') renderCare();
   if(id==='cost'){renderCost();}
@@ -1496,11 +1472,29 @@ function addHist(id){
   toast('บันทึกแล้ว ✓');
 }
 function renderAllHistory(){
-  const all=[];plants.forEach(p=>(p.history||[]).forEach(h=>all.push({...h,pname:p.name})));
+  const all=[];
+  plants.forEach((p,pi)=>(p.history||[]).forEach((h,hi)=>all.push({...h,pname:p.name,pid:p.id,hi})));
   all.sort((a,b)=>b.ts.localeCompare(a.ts));
   const el=document.getElementById('all-history');
-  el.innerHTML=all.length?all.map(h=>`<div class="hist-item"><div class="hist-dot"></div><div class="hist-ts">${h.ts}</div><div class="hist-note"><span style="color:var(--g);font-weight:600">${h.pname}</span> — ${h.note}</div></div>`).join('')
+  el.innerHTML=all.length?all.map((h,i)=>`
+    <div class="hist-item" id="hallitem-${h.pid}-${h.hi}">
+      <div class="hist-dot"></div>
+      <div class="hist-ts">${h.ts}</div>
+      <div class="hist-note" style="flex:1"><span style="color:var(--g);font-weight:600">${h.pname}</span> — ${h.note}</div>
+      <button onclick="deleteHistItem('${h.pid}',${h.hi})" style="background:none;border:none;color:var(--danger);font-size:16px;cursor:pointer;padding:0 4px;flex-shrink:0" title="ลบ">×</button>
+    </div>`).join('')
     :'<div class="empty"><div class="empty-icon">📋</div><div>ยังไม่มีบันทึก</div></div>';
+}
+
+function deleteHistItem(pid,hi){
+  if(!confirm('ลบบันทึกนี้?')) return;
+  const p=plants.find(x=>x.id===pid);
+  if(!p||!p.history) return;
+  p.history.splice(hi,1);
+  save();renderAllHistory();
+  // refresh detail if open
+  if(detailId===pid) renderDetailHist(p);
+  toast('ลบบันทึกแล้ว');
 }
 
 // ── ADD / EDIT ──
