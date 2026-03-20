@@ -392,31 +392,7 @@ textarea.fi{resize:vertical;min-height:70px}
 </div>
 
 <!-- ══ PAGE: DASHBOARD ══ -->
-<div id="pg-dashboard" class="pg on">
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px" id="dash-stats"></div>
-  <div class="card" id="dash-zone-card">
-    <div class="ct">สถิติตามโซน</div>
-    <div id="dash-zones"></div>
-  </div>
-  <div class="card">
-    <div class="ct">สถิติตามประเภท</div>
-    <div id="dash-cats"></div>
-  </div>
-  <div class="card">
-    <div class="ct">อายุเฉลี่ยต้นไม้</div>
-    <div id="dash-age"></div>
-  </div>
-  <div class="card" id="dash-care-upcoming">
-    <div class="ct">แจ้งเตือนใกล้ครบกำหนด</div>
-    <div id="dash-alerts-list"></div>
-  </div>
-  <div class="card">
-    <div class="ct">สรุปมูลค่า</div>
-    <div id="dash-cost"></div>
-  </div>
-</div>
 
-<!-- ══ PAGE: CARE SCHEDULE ══ -->
 <div id="pg-care" class="pg">
   <div class="card">
     <div class="ct">กำหนดการดูแลวันนี้ & ใกล้ถึง</div>
@@ -620,16 +596,9 @@ textarea.fi{resize:vertical;min-height:70px}
 
 <script>
 const APP_VERSION='2.6', APP_BUILD='2026-03-20';
-}
-  if (btnCloud) { btnCloud.style.borderColor = isCloud ? 'var(--g)' : 'var(--bdr)'; btnCloud.style.color = isCloud ? 'var(--g)' : 'var(--t2)'; }
-  const desc = document.getElementById('cloud-desc');
-  if (desc) desc.textContent = isCloud ? '✅ กำลังใช้งาน Cloud' : 'ต้องการ internet — สำรองข้อมูลขึ้น cloud';
-  const loc = document.getElementById('db-location');
-  if (loc) loc.textContent = location.origin + ' → localStorage["sf_plants_v2"]';
-}
 
 
-const DB='sf_plants_v2', IDB='sf_images_v2', ZDB='sf_zones';
+const DB='sf_plants_v3', IDB='sf_images_v2', ZDB='sf_zones';
 let plants=[], images={}, zones=[], editId=null, activeFilter='all', nfcCtrl=null;
 let nfcEnabled=true, soundEnabled=true, detailId=null, deferredPrompt=null;
 
@@ -680,14 +649,13 @@ function load(){
   if(!zones.length) zones=['A1','A2','A3','B1','B2','B3','C1','C2'];
   nfcEnabled=localStorage.getItem('sf_nfc')!=='off';
   soundEnabled=localStorage.getItem('sf_sound')!=='off';
-  // seed ถ้าไม่มีข้อมูล (ครั้งแรกที่ใช้ v2.6)
-  if(!plants.length) seed();
+  if(!plants.length || !plants[0]?.id) seed();
 }
 function seed(){
   plants=[
-    {id:'KLD-001',name:'Echeveria Lola',zone:'A1',cat:'rare',date:'2024-01-15',temp:'20-28',note:'นำเข้าจากญี่ปุ่น',history:[{ts:now(),note:'ลงทะเบียนเข้าระบบ'}]},
-    {id:'KLD-002',name:'Haworthia Cooper',zone:'A2',cat:'premium',date:'2024-02-20',temp:'18-30',note:'',history:[{ts:now(),note:'ลงทะเบียนเข้าระบบ'}]},
-    {id:'KLD-003',name:'Aloe Vera Gold',zone:'B1',cat:'health',date:'2024-03-01',temp:'22-35',note:'เหมาะกับแสงแดดจัด',history:[{ts:now(),note:'ลงทะเบียนเข้าระบบ'}]},
+    {id:'KLD-001',name:'Echeveria Lola',zone:'A1',cat:'rare',date:'2024-01-15',temp:'20-28',note:'นำเข้าจากญี่ปุ่น',cost:'800',value:'1200',careType:'รดน้ำ',careDate:'2026-03-21',history:[{ts:now(),note:'ลงทะเบียนเข้าระบบ'}]},
+    {id:'KLD-002',name:'Haworthia Cooper',zone:'A2',cat:'premium',date:'2024-02-20',temp:'18-30',note:'',cost:'500',value:'850',careType:'ใส่ปุ๋ย',careDate:'2026-03-25',history:[{ts:now(),note:'ลงทะเบียนเข้าระบบ'}]},
+    {id:'KLD-003',name:'Aloe Vera Gold',zone:'B1',cat:'health',date:'2024-03-01',temp:'22-35',note:'เหมาะกับแสงแดดจัด',cost:'200',value:'450',careType:'ตรวจโรค',careDate:'2026-03-20',history:[{ts:now(),note:'ลงทะเบียนเข้าระบบ'}]},
   ];save();
 }
 function now(){return new Date().toLocaleString('th-TH',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}
@@ -775,7 +743,7 @@ function renderDashboard(){
         <div style="color:var(--g);font-weight:700;min-width:24px;text-align:right">${n}</div>
         <div style="color:var(--t3);font-size:11px">ต้น</div>
       </div>`).join('')
-    :'<div style="color:var(--t3);font-size:13px;padding:8px 0">ยังไม่มีต้นไม้</div>';
+    :'<div style="color:var(--t3);font-size:13px;padding:8px 0">ยังไม่มีต้นไม้ — กด + เพื่อเพิ่ม</div>';
 
   // Care alerts today
   const today=new Date().toISOString().split('T')[0];
