@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SmartFarm">
 <link rel="manifest" id="pwa-manifest">
-<title>SmartFarm Registry v2.7</title>
+<title>SmartFarm Registry v2.9</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
@@ -213,10 +213,10 @@ textarea.fi{resize:vertical;min-height:70px}
 .cost-profit{font-size:13px;font-weight:700;text-align:right;flex-shrink:0}
 
 /* DASHBOARD */
-.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-.dash-stat{background:var(--s1);border:1px solid var(--bdr);border-radius:var(--r2);padding:14px;text-align:center}
-.dash-stat-v{font-family:'Syne',sans-serif;font-size:28px;font-weight:800}
-.dash-stat-l{font-size:11px;color:var(--t3);margin-top:4px}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.dash-stat{background:var(--s1);border:1px solid var(--bdr);border-radius:var(--r2);padding:12px 8px;text-align:center;overflow:hidden}
+.dash-stat-v{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.dash-stat-l{font-size:10px;color:var(--t3);margin-top:4px}
 .dash-zone-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bdr);font-size:13px}
 .dash-zone-row:last-child{border:none}
 .dash-zone-bar{flex:1;height:6px;background:var(--bdr);border-radius:3px;overflow:hidden}
@@ -252,10 +252,26 @@ textarea.fi{resize:vertical;min-height:70px}
 .notif-close{background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer}
 /* TELEGRAM CONFIG */
 .tg-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+
+/* ANALYTICS */
+.an-filter{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.an-select{flex:1;min-width:140px;padding:9px 12px;background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r2);color:var(--t1);font-family:'Sarabun',sans-serif;font-size:13px;outline:none}
+.an-select:focus{border-color:var(--g)}
+.chart-wrap{position:relative;width:100%;margin-bottom:4px}
+.chart-canvas{width:100%!important;max-height:220px}
+.kpi-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+.kpi{background:var(--s2);border-radius:var(--r2);padding:12px;text-align:center}
+.kpi-v{font-family:'Syne',sans-serif;font-size:20px;font-weight:800}
+.kpi-l{font-size:10px;color:var(--t3);margin-top:3px}
+.roi-bar{height:20px;border-radius:6px;background:var(--bdr);overflow:hidden;margin:6px 0}
+.roi-fill{height:100%;border-radius:6px;transition:width .8s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:10px;font-weight:700;color:#000}
+.plant-row-an{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bdr);font-size:12px}
+.plant-row-an:last-child{border:none}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
@@ -269,7 +285,7 @@ textarea.fi{resize:vertical;min-height:70px}
   <button class="nb on" onclick="nav('dashboard',this)">📊 Dashboard</button>
   <button class="nb" onclick="nav('plants',this)">🌿 ทะเบียน</button>
   <button class="nb" onclick="nav('history',this)">📋 ประวัติ</button>
-  <button class="nb" onclick="nav('graph',this)">📈 กราฟราคา</button>
+  <button class="nb" onclick="nav('analytics',this)">📈 วิเคราะห์</button>
   <button class="nb" onclick="nav('io',this)">📦 Import/Export</button>
   <button class="nb" onclick="nav('system',this)">⚙️ ระบบ</button>
 </div>
@@ -319,6 +335,62 @@ textarea.fi{resize:vertical;min-height:70px}
   <div style="height:80px"></div>
 </div>
 
+<!-- PAGE: ANALYTICS -->
+<div id="pg-analytics" class="pg">
+
+  <!-- Filter Bar -->
+  <div class="an-filter">
+    <select class="an-select" id="an-plant" onchange="renderAnalytics()">
+      <option value="all">🌿 ทุกสายพันธุ์</option>
+    </select>
+    <select class="an-select" id="an-period" onchange="renderAnalytics()" style="flex:none;width:110px">
+      <option value="all">ทั้งหมด</option>
+      <option value="year">1 ปี</option>
+      <option value="6m">6 เดือน</option>
+      <option value="3m">3 เดือน</option>
+    </select>
+  </div>
+
+  <!-- KPI Summary -->
+  <div class="kpi-grid" id="an-kpi"></div>
+
+  <!-- ROI Card -->
+  <div class="card" id="an-roi-card">
+    <div class="ct">📊 ROI / กำไร-ขาดทุน</div>
+    <div id="an-roi"></div>
+  </div>
+
+  <!-- Cost vs Value Chart -->
+  <div class="card">
+    <div class="ct">💰 ต้นทุน vs มูลค่าตลาด</div>
+    <div class="chart-wrap"><canvas id="chart-costvval" class="chart-canvas"></canvas></div>
+  </div>
+
+  <!-- Age Distribution Chart -->
+  <div class="card">
+    <div class="ct">🌱 การกระจายอายุต้นไม้</div>
+    <div class="chart-wrap"><canvas id="chart-age" class="chart-canvas"></canvas></div>
+  </div>
+
+  <!-- Category Pie -->
+  <div class="card">
+    <div class="ct">🏷️ สัดส่วนตามประเภท</div>
+    <div class="chart-wrap" style="max-width:260px;margin:0 auto"><canvas id="chart-cat" class="chart-canvas"></canvas></div>
+  </div>
+
+  <!-- Zone Bar -->
+  <div class="card">
+    <div class="ct">📍 จำนวนต้นตามโซน</div>
+    <div class="chart-wrap"><canvas id="chart-zone" class="chart-canvas"></canvas></div>
+  </div>
+
+  <!-- Plant Table -->
+  <div class="card">
+    <div class="ct">📋 รายการต้นไม้</div>
+    <div id="an-table"></div>
+  </div>
+
+</div>
 <!-- PAGE: HISTORY -->
 <div id="pg-history" class="pg">
   <div class="card"><div class="ct">กิจกรรมทั้งหมด</div><div id="all-history"></div></div>
@@ -670,7 +742,7 @@ textarea.fi{resize:vertical;min-height:70px}
 </div>
 
 <script>
-const APP_VERSION='2.7', APP_BUILD='2026-03-20';
+const APP_VERSION='2.9', APP_BUILD='2026-03-20';
 
 
 const DB='sf_plants_v3', IDB='sf_images_v2', ZDB='sf_zones';
@@ -812,7 +884,7 @@ async function sendTelegram(msg){
 async function testTelegram(){
   const el=document.getElementById('tg-status');
   el.textContent='กำลังส่ง...';el.style.color='var(--t3)';
-  const ok=await sendTelegram('🌿 <b>SmartFarm Registry v2.7</b>\nทดสอบการแจ้งเตือน — ระบบพร้อมใช้งาน ✅');
+  const ok=await sendTelegram('🌿 <b>SmartFarm Registry v2.9</b>\nทดสอบการแจ้งเตือน — ระบบพร้อมใช้งาน ✅');
   el.textContent=ok?'✅ ส่งสำเร็จ!':'❌ ส่งไม่ได้ — ตรวจสอบ Token และ Chat ID';
   el.style.color=ok?'var(--g)':'var(--danger)';
 }
@@ -986,11 +1058,13 @@ function renderDashboard(){
   const avgAge=ages.length?(ages.reduce((a,b)=>a+b,0)/ages.length).toFixed(1):'—';
 
   // Stats grid
+  // Format number — abbrev if large
+  const fmt=n=>n>=1000000?'฿'+(n/1000000).toFixed(1)+'M':n>=1000?'฿'+(n/1000).toFixed(1)+'K':'฿'+n.toLocaleString();
   document.getElementById('dash-stats').innerHTML=`
     <div class="dash-stat"><div class="dash-stat-v" style="color:var(--g)">${total}</div><div class="dash-stat-l">ต้นทั้งหมด</div></div>
-    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--blue)">${avgAge}</div><div class="dash-stat-l">อายุเฉลี่ย (ปี)</div></div>
-    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--warn)">${totalCost>0?'฿'+totalCost.toLocaleString():'—'}</div><div class="dash-stat-l">ต้นทุนรวม</div></div>
-    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--purple)">${totalVal>0?'฿'+totalVal.toLocaleString():'—'}</div><div class="dash-stat-l">มูลค่าตลาดรวม</div></div>`;
+    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--blue);font-size:16px">${avgAge} ปี</div><div class="dash-stat-l">อายุเฉลี่ย</div></div>
+    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--warn);font-size:${totalCost>=10000?'14px':'18px'}">${totalCost>0?fmt(totalCost):'—'}</div><div class="dash-stat-l">ต้นทุนรวม</div></div>
+    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--purple);font-size:${totalVal>=10000?'14px':'18px'}">${totalVal>0?fmt(totalVal):'—'}</div><div class="dash-stat-l">มูลค่าตลาด</div></div>`;
 
   // Categories
   const catMap={premium:{l:'✨ Premium',c:'var(--purple)'},rare:{l:'🔥 Rare',c:'var(--danger)'},health:{l:'💚 สุขภาพ',c:'var(--g)'},collect:{l:'🏆 สะสม',c:'var(--blue)'}};
@@ -1018,25 +1092,26 @@ function renderDashboard(){
       </div>`).join('')
     :'<div style="color:var(--t3);font-size:13px;padding:8px 0">ยังไม่มีต้นไม้ — กด + เพื่อเพิ่ม</div>';
 
-  // Care alerts today
+  // Care alerts today — แสดงเฉพาะที่ยังไม่ได้รับทราบ
   const today=new Date().toISOString().split('T')[0];
   const overdue=plants.filter(p=>p.careDate&&p.careDate<=today&&p.careType);
+  const pending=overdue.filter(p=>p.careAckDate!==today);
   const careEl=document.getElementById('dash-care-alert');
-  if(overdue.length){
-    careEl.innerHTML=overdue.slice(0,5).map(p=>{
+  if(pending.length){
+    careEl.innerHTML=pending.map(p=>{
       const diff=Math.round((new Date(today)-new Date(p.careDate))/(1000*60*60*24));
-      const isOD=diff>0, isToday=diff===0;
-      return `<div class="care-item">
+      const isOD=diff>0,isToday=diff===0;
+      return `<div class="care-item" id="care-${p.id}">
         <div class="care-dot ${isOD?'care-overdue':isToday?'care-today':'care-soon'}"></div>
         <div class="care-info">
           <div class="care-name">${p.name}</div>
           <div class="care-detail">${p.careType} · ${p.careDate}</div>
         </div>
-        <div class="care-badge" style="background:${isOD?'rgba(255,85,85,.15)':isToday?'rgba(245,166,35,.15)':'rgba(61,220,104,.12)'};color:${isOD?'var(--danger)':isToday?'var(--warn)':'var(--g)'}">
-          ${isOD?'เกิน '+diff+' วัน':isToday?'วันนี้':'เร็วๆนี้'}
-        </div>
+        <button onclick="acknowledgeCare('${p.id}')" style="flex-shrink:0;padding:5px 10px;border-radius:8px;border:1px solid rgba(61,220,104,.3);background:rgba(61,220,104,.1);color:var(--g);font-size:11px;cursor:pointer;font-family:Sarabun,sans-serif">✅ รับทราบ</button>
       </div>`;
     }).join('');
+  } else if(overdue.length){
+    careEl.innerHTML='<div style="color:var(--g);font-size:13px;padding:8px 0">✅ รับทราบทุกรายการแล้ววันนี้</div>';
   } else {
     careEl.innerHTML='<div style="color:var(--t3);font-size:13px;padding:8px 0">✅ ไม่มีงานค้าง</div>';
   }
@@ -1196,6 +1271,57 @@ async function sendCareReminder(){
   }
 }
 
+
+// ══════════════════════════════════════
+// CARE ACKNOWLEDGE
+// ══════════════════════════════════════
+function acknowledgeCare(id){
+  const p=plants.find(x=>x.id===id);
+  if(!p) return;
+  const today=new Date().toISOString().split('T')[0];
+  // Mark as acknowledged today
+  p.careAckDate=today;
+  // Log to history
+  const logNote=`✅ รับทราบงาน: ${p.careType} (กำหนด ${p.careDate})`;
+  (p.history=p.history||[]).push({ts:now(), note:logNote});
+  // Animate and remove card
+  const el=document.getElementById('care-'+id);
+  if(el){
+    el.style.transition='opacity .3s, transform .3s';
+    el.style.opacity='0';
+    el.style.transform='translateX(20px)';
+    setTimeout(()=>{
+      save();
+      renderDashboard();
+      renderAllHistory();
+    }, 300);
+  } else {
+    save();
+    renderDashboard();
+  }
+  toast('✅ รับทราบ: '+p.name);
+}
+
+
+// ══════════════════════════════════════
+// CARE ACKNOWLEDGE
+// ══════════════════════════════════════
+function acknowledgeCare(id){
+  const p=plants.find(x=>x.id===id);
+  if(!p) return;
+  const today=new Date().toISOString().split('T')[0];
+  p.careAckDate=today;
+  (p.history=p.history||[]).push({ts:now(),note:'✅ รับทราบงาน: '+p.careType+' (กำหนด '+p.careDate+')'});
+  const el=document.getElementById('care-'+id);
+  if(el){
+    el.style.transition='opacity .3s,transform .3s';
+    el.style.opacity='0';
+    el.style.transform='translateX(20px)';
+    setTimeout(()=>{save();renderDashboard();},320);
+  } else {save();renderDashboard();}
+  toast('✅ รับทราบ: '+p.name+' — บันทึกลงประวัติแล้ว');
+}
+
 // ── NAV ──
 function nav(id,btn){
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
@@ -1204,10 +1330,12 @@ function nav(id,btn){
   if(id==='history') renderAllHistory();
   if(id==='io') updateCounts();
   if(id==='dashboard') renderDashboard();
+  if(id==='analytics'){populateAnSelect();renderAnalytics();}
   if(id==='system'){renderZones();loadTGSettings();}
   if(id==='graph') renderGraphs();
   if(id==='system'){renderZones();loadTgConfig();}
   if(id==='dashboard') renderDashboard();
+  if(id==='analytics'){populateAnSelect();renderAnalytics();}
   if(id==='system'){renderZones();loadTGSettings();}
   if(id==='graph') renderGraphs();
   if(id==='system'){renderZones();loadTgConfig();}
