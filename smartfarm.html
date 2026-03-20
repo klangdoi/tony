@@ -466,6 +466,7 @@ if('serviceWorker' in navigator){
   <button class="nb" onclick="nav('plants',this)">🌿 ทะเบียน</button>
   <button class="nb" onclick="nav('history',this)">📋 ประวัติ</button>
   <button class="nb" onclick="nav('growth',this)">📈 Growth</button>
+  <button class="nb" onclick="nav('analytics',this)">📊 กราฟ</button>
   <button class="nb" onclick="nav('io',this)">📦 Import/Export</button>
   <button class="nb" onclick="nav('customers',this)">🤝 ลูกค้า</button>
   <button class="nb" onclick="nav('system',this)">⚙️ ระบบ</button>
@@ -1070,7 +1071,7 @@ if('serviceWorker' in navigator){
 </div>
 
 <script>
-const APP_VERSION='4.0.4', APP_BUILD='2026-03-20';
+const APP_VERSION='4.0.6', APP_BUILD='2026-03-20';
 
 
 const DB='sf_plants_v3', IDB='sf_images_v2', ZDB='sf_zones';
@@ -2483,7 +2484,7 @@ function renderGrowthTimeline(){
     <div class="card" style="margin-bottom:12px">
       <div style="display:flex;gap:12px;align-items:center">
         <div style="width:56px;height:56px;border-radius:50%;overflow:hidden;background:var(--gdim);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px">
-          ${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`:{premium:'✨',rare:'🔥',health:'💚',collect:'🏆'}[p.cat]||'🌱'}
+          ${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`:`<span>${{premium:'✨',rare:'🔥',health:'💚',collect:'🏆'}[p.cat]||'🌱'}</span>`}
         </div>
         <div style="flex:1">
           <div style="font-family:Syne,sans-serif;font-weight:800;font-size:16px">${p.name}</div>
@@ -2936,20 +2937,15 @@ function openMessenger(fbName){
 function nav(id,btn){
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
-  document.getElementById('pg-'+id).classList.add('on');btn.classList.add('on');
+  document.getElementById('pg-'+id).classList.add('on');
+  btn.classList.add('on');
   if(id==='history') renderAllHistory();
   if(id==='io') updateCounts();
-  if(id==='dashboard') renderFarmMap();
+  if(id==='dashboard'){renderFarmMap();fetchWeather();}
   if(id==='analytics'){populateAnSelect();renderAnalytics();}
+  if(id==='growth'){populateGrowthSelect();renderGrowthTimeline();}
+  if(id==='customers'){loadCustomers();renderCustomerList();}
   if(id==='system'){renderZones();loadTGSettings();renderWaterScheduleList();loadWxSettingsUI();initPushNotification();}
-  if(id==='graph') renderGraphs();
-  if(id==='system'){renderZones();loadTgConfig();}
-  if(id==='dashboard') renderFarmMap();
-      if(id==='graph') renderGraphs();
-  if(id==='system'){renderZones();loadTgConfig();}
-  if(id==='care') renderCare();
-  if(id==='cost'){renderCost();}
-  if(id==='system') renderZones();
 }
 
 // ── FILTER ──
