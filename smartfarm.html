@@ -716,6 +716,10 @@ if('serviceWorker' in navigator){
       </div>
       <button class="tog off" id="push-tog" onclick="togglePushNotif(this)"></button>
     </div>
+    <div style="display:flex;gap:8px;padding:10px 0;border-bottom:1px solid var(--bdr)">
+      <button onclick="testPushNow()" style="flex:1;padding:9px;border-radius:8px;border:1px solid rgba(61,220,104,.3);background:rgba(61,220,104,.1);color:var(--g);font-size:12px;cursor:pointer;font-family:Sarabun,sans-serif">🔔 ทดสอบ Notification ตอนนี้</button>
+      <button onclick="fireDailyCareNotif()" style="flex:1;padding:9px;border-radius:8px;border:1px solid rgba(245,166,35,.3);background:rgba(245,166,35,.1);color:var(--warn);font-size:12px;cursor:pointer;font-family:Sarabun,sans-serif">📋 ทดสอบ Care Alert</button>
+    </div>
     <div class="sys-row">
       <div class="sys-ico">🔔</div>
       <div class="sys-info"><div class="sys-n">เสียงแจ้งเตือน NFC</div><div class="sys-d">เล่นเสียงทุกครั้งที่สแกน</div></div>
@@ -1060,7 +1064,7 @@ if('serviceWorker' in navigator){
 </div>
 
 <script>
-const APP_VERSION='4.0', APP_BUILD='2026-03-20';
+const APP_VERSION='4.0.1', APP_BUILD='2026-03-20';
 
 
 const DB='sf_plants_v3', IDB='sf_images_v2', ZDB='sf_zones';
@@ -2825,12 +2829,14 @@ async function togglePushNotif(btn){
     localStorage.setItem('sf_push','on');
     document.getElementById('push-status-txt').textContent = '✅ เปิดใช้งานแล้ว';
     toast('🔔 เปิดการแจ้งเตือนแล้ว ✓');
-    // Send welcome notification
-    sendPushNotif(
-      'SmartFarm Registry 🌿',
-      'ระบบแจ้งเตือนพร้อมทำงานแล้ว! งานดูแลต้นไม้จะแจ้งเตือนที่นี่',
-      '🌿'
-    );
+    // ส่ง welcome notification ทันที
+    setTimeout(()=>{
+      sendPushNotif(
+        'SmartFarm 🌿 พร้อมแจ้งเตือนแล้ว!',
+        'งานดูแลต้นไม้และตารางรดน้ำจะแจ้งเตือนที่นี่ ✅',
+        '🌿'
+      );
+    }, 1000);
   } else {
     btn.classList.add('off');
     document.getElementById('push-status-txt').textContent = '❌ ถูกปฏิเสธ — ตั้งค่าใน Chrome';
@@ -2841,34 +2847,20 @@ async function togglePushNotif(btn){
 function sendPushNotif(title, body, icon='🌿'){
   if(!pushEnabled) return;
   if(Notification.permission !== 'granted') return;
-  // Use Service Worker notification for background support
-  // Use Service Worker for better background support
+  const iconSVG=`data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='52' font-size='52'>${icon}</text></svg>`;
+  const opts={body,icon:iconSVG,badge:iconSVG,vibrate:[200,100,200],tag:'sf-'+Date.now(),requireInteraction:false};
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.ready.then(reg=>{
-      // Via postMessage (works when app open)
-      if(navigator.serviceWorker.controller){
-        navigator.serviceWorker.controller.postMessage({
-          type:'SHOW_NOTIF', title, body, icon
-        });
-      } else {
-        // Direct showNotification
-        reg.showNotification(title,{
-          body,
-          icon:`data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='52' font-size='52'>${icon}</text></svg>`,
-          badge:`data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='52' font-size='52'>🌿</text></svg>`,
-          vibrate:[200,100,200],
-          tag:'smartfarm-'+Date.now(),
-          data:{url:location.href}
-        });
-      }
-    }).catch(()=>{});
+    navigator.serviceWorker.ready
+      .then(reg=>reg.showNotification(title,opts))
+      .catch(()=>{try{new Notification(title,{body,icon:iconSVG});}catch(e){}});
   } else {
-    // Fallback — regular notification
-    new Notification(title,{
-      body,
-      icon: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='52' font-size='52'>${icon}</text></svg>`,
-    });
+    try{new Notification(title,{body,icon:iconSVG});}catch(e){}
   }
+}
+
+function testPushNow(){
+  sendPushNotif('SmartFarm 🌿 ทดสอบ','ระบบแจ้งเตือนทำงานปกติ! เวลา '+new Date().toLocaleTimeString('th-TH'),'✅');
+  toast('ส่ง notification แล้ว — ดูที่ status bar ครับ');
 }
 
 // ── Schedule daily care push at 7:00 AM ──
