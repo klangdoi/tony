@@ -267,6 +267,52 @@ textarea.fi{resize:vertical;min-height:70px}
 .roi-fill{height:100%;border-radius:6px;transition:width .8s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:10px;font-weight:700;color:#000}
 .plant-row-an{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bdr);font-size:12px}
 .plant-row-an:last-child{border:none}
+
+/* FARM MAP */
+.plant-node{
+  position:absolute;width:58px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;
+  transition:transform .15s;user-select:none;
+}
+.plant-node:active{transform:scale(.92)}
+.plant-node.dragging{opacity:.85;z-index:100;transition:none}
+.plant-node.edit-mode{cursor:grab}
+.plant-node.edit-mode:active{cursor:grabbing}
+.node-img{
+  width:48px;height:48px;border-radius:50%;
+  background:var(--s2);border:2.5px solid var(--bdr2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;overflow:hidden;position:relative;
+  flex-shrink:0;
+}
+.node-img img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.node-status{
+  position:absolute;bottom:0;right:0;
+  width:12px;height:12px;border-radius:50%;
+  border:2px solid var(--bg);
+}
+.node-label{
+  font-size:9px;color:var(--t2);text-align:center;
+  margin-top:3px;width:58px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  line-height:1.3;
+}
+.node-id{font-size:8px;color:var(--t3);text-align:center}
+
+/* POPUP */
+.map-popup{
+  position:fixed;z-index:400;
+  background:var(--s1);border:1px solid var(--bdr2);
+  border-radius:var(--r);padding:14px;
+  width:220px;box-shadow:0 8px 32px rgba(0,0,0,.5);
+  animation:fadeIn .15s ease;
+}
+.map-popup-img{width:100%;height:100px;object-fit:cover;border-radius:8px;margin-bottom:10px;display:block}
+.map-popup-ph{width:100%;height:70px;background:var(--gdim);border-radius:8px;margin-bottom:10px;display:flex;align-items:center;justify-content:center;font-size:32px}
+.map-popup-name{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;margin-bottom:2px}
+.map-popup-id{font-size:11px;color:var(--t3);margin-bottom:8px}
+.map-popup-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--bdr)}
+.map-popup-row:last-child{border:none}
 ::-webkit-scrollbar{width:3px}
 ::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:2px}
 </style>
@@ -292,27 +338,42 @@ textarea.fi{resize:vertical;min-height:70px}
 
 <!-- PAGE: DASHBOARD -->
 <div id="pg-dashboard" class="pg on">
-  <div class="card">
-    <div class="ct">ภาพรวมฟาร์ม</div>
-    <div class="dash-grid" id="dash-stats"></div>
+
+  <!-- Toolbar -->
+  <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
+    <div style="flex:1;font-family:Syne,sans-serif;font-weight:700;font-size:15px;color:var(--g)">🗺️ แผนผังแปลงปลูก</div>
+    <button id="map-edit-btn" onclick="toggleMapEdit()" style="padding:6px 12px;border-radius:8px;border:1px solid var(--bdr);background:var(--s2);color:var(--t2);font-size:12px;cursor:pointer;font-family:Sarabun,sans-serif">✏️ จัดตำแหน่ง</button>
+    <button onclick="resetMapPositions()" style="padding:6px 10px;border-radius:8px;border:1px solid var(--bdr);background:var(--s2);color:var(--t3);font-size:12px;cursor:pointer;font-family:Sarabun,sans-serif" title="Reset">↺</button>
   </div>
-  <div class="card">
-    <div class="ct">สัดส่วนตามประเภท</div>
-    <div id="dash-cats" style="display:flex;flex-wrap:wrap;padding:4px 0"></div>
+
+  <!-- Edit mode hint -->
+  <div id="map-edit-hint" style="display:none;background:rgba(61,220,104,.1);border:1px solid rgba(61,220,104,.25);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--g);margin-bottom:10px;text-align:center">
+    📌 กดค้างที่ต้นไม้แล้วลากเพื่อย้ายตำแหน่ง — กด "เสร็จแล้ว" เพื่อบันทึก
   </div>
-  <div class="card">
-    <div class="ct">ต้นไม้ตามโซน</div>
-    <div id="dash-zones"></div>
+
+  <!-- Farm Map Canvas -->
+  <div id="farm-map" style="position:relative;width:100%;height:520px;background:var(--s1);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden;touch-action:none">
+    <!-- Grid background -->
+    <svg style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none" id="map-grid-svg"></svg>
+    <!-- Zone labels -->
+    <div id="map-zone-labels"></div>
+    <!-- Plant nodes -->
+    <div id="map-nodes"></div>
   </div>
-  <div class="card">
-    <div class="ct">🔔 แจ้งเตือนวันดูแลวันนี้</div>
-    <div id="dash-care-alert"></div>
+
+  <!-- Legend -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--t3)">
+    <div style="display:flex;align-items:center;gap:4px"><div style="width:10px;height:10px;border-radius:50%;background:var(--g)"></div>ปกติ</div>
+    <div style="display:flex;align-items:center;gap:4px"><div style="width:10px;height:10px;border-radius:50%;background:var(--danger)"></div>ดูแลด่วน</div>
+    <div style="display:flex;align-items:center;gap:4px"><div style="width:10px;height:10px;border-radius:50%;background:var(--purple)"></div>พร้อมขาย</div>
+    <div style="display:flex;align-items:center;gap:4px"><div style="width:10px;height:10px;border-radius:50%;background:var(--warn)"></div>ถึงกำหนดดูแล</div>
   </div>
-  <div class="card">
-    <div class="ct">ต้นไม้เพิ่งเพิ่มล่าสุด</div>
-    <div id="dash-recent"></div>
-  </div>
+
+  <!-- Summary strip -->
+  <div class="dash-grid" id="dash-stats" style="margin-top:12px"></div>
+
 </div>
+
 <!-- PAGE: PLANTS -->
 <div id="pg-plants" class="pg">
   <div id="pwa-install-banner" class="pwa-banner">
@@ -605,6 +666,21 @@ textarea.fi{resize:vertical;min-height:70px}
   </div>
 </div>
 
+<!-- FARM MAP POPUP -->
+<div id="map-popup" class="map-popup" style="display:none" onclick="event.stopPropagation()">
+  <div id="popup-img-area"></div>
+  <div class="map-popup-name" id="popup-name">—</div>
+  <div class="map-popup-id" id="popup-id">—</div>
+  <div class="map-popup-row"><span style="color:var(--t3)">อายุ</span><span id="popup-age">—</span></div>
+  <div class="map-popup-row"><span style="color:var(--t3)">โซน</span><span id="popup-zone">—</span></div>
+  <div class="map-popup-row"><span style="color:var(--t3)">สถานะ</span><span id="popup-status">—</span></div>
+  <div class="map-popup-row"><span style="color:var(--t3)">งานถัดไป</span><span id="popup-care">—</span></div>
+  <div style="display:flex;gap:6px;margin-top:10px">
+    <button onclick="openDetailFromPopup()" class="btn-p" style="flex:1;margin:0;padding:8px;font-size:12px">🔍 ดูรายละเอียด</button>
+    <button onclick="closePopup()" class="btn-s" style="flex:none;margin:0;padding:8px 12px;font-size:12px">✕</button>
+  </div>
+</div>
+
 <!-- MODAL: ADD -->
 <div class="overlay" id="m-add" onclick="bgClose(event,'m-add')">
   <div class="modal">
@@ -720,7 +796,7 @@ textarea.fi{resize:vertical;min-height:70px}
 </div>
 
 <script>
-const APP_VERSION='3.2', APP_BUILD='2026-03-20';
+const APP_VERSION='3.3', APP_BUILD='2026-03-20';
 
 
 const DB='sf_plants_v3', IDB='sf_images_v2', ZDB='sf_zones';
@@ -1269,12 +1345,12 @@ function acknowledgeCare(id){
     el.style.transform='translateX(20px)';
     setTimeout(()=>{
       save();
-      renderDashboard();
+      renderFarmMap();
       renderAllHistory();
     }, 300);
   } else {
     save();
-    renderDashboard();
+    renderFarmMap();
   }
   toast('✅ รับทราบ: '+p.name);
 }
@@ -1297,8 +1373,8 @@ function acknowledgeCare(id){
     el.style.transition='opacity .3s,transform .3s';
     el.style.opacity='0';
     el.style.transform='translateX(20px)';
-    setTimeout(()=>{save();renderDashboard();renderAllHistory();},320);
-  } else {save();renderDashboard();renderAllHistory();}
+    setTimeout(()=>{save();renderFarmMap();renderAllHistory();},320);
+  } else {save();renderFarmMap();renderAllHistory();}
   toast('✅ รับทราบ: '+p.name+' — บันทึกลงประวัติแล้ว');
   // Send Telegram for this single item
   sendTelegram('✅ <b>ดำเนินการแล้ว</b>\n'+p.name+' ('+p.id+')\n'+p.careType+'\n📅 '+now());
@@ -1455,6 +1531,253 @@ function renderAnalytics(){
   }
 }
 
+
+// ══════════════════════════════════════
+// FARM MAP
+// ══════════════════════════════════════
+const MAP_KEY='sf_map_pos';
+let mapPositions={};   // {plantId: {x,y}}
+let mapEditMode=false;
+let popupPlantId=null;
+let dragState=null;
+
+function loadMapPositions(){
+  try{mapPositions=JSON.parse(localStorage.getItem(MAP_KEY))||{};}catch{mapPositions={};}
+}
+function saveMapPositions(){
+  localStorage.setItem(MAP_KEY,JSON.stringify(mapPositions));
+}
+
+// Auto layout: arrange in rows by zone
+function autoLayout(){
+  const mapEl=document.getElementById('farm-map');
+  if(!mapEl) return;
+  const W=mapEl.offsetWidth||360, H=mapEl.offsetHeight||520;
+  const NODE_W=64, NODE_H=72, PAD=16;
+  const cols=Math.floor((W-PAD*2)/NODE_W);
+
+  // Group by zone
+  const zones={};
+  plants.forEach(p=>{const z=p.zone||'—';(zones[z]=zones[z]||[]).push(p);});
+  let row=0,col=0;
+  Object.entries(zones).forEach(([zone,ps])=>{
+    ps.forEach(p=>{
+      if(!mapPositions[p.id]){
+        mapPositions[p.id]={
+          x:PAD+col*NODE_W,
+          y:PAD+row*NODE_H
+        };
+        col++;
+        if(col>=cols){col=0;row++;}
+      }
+    });
+    // new row per zone
+    if(col>0){col=0;row++;}
+  });
+  saveMapPositions();
+}
+
+function getStatus(p){
+  const today=new Date().toISOString().split('T')[0];
+  if(p.careType==='🏷️ ลงขาย'&&p.careDate<=today) return 'sale';
+  if(p.careDate&&p.careDate<=today&&p.careType&&p.careAckDate!==today) return 'urgent';
+  if(p.careDate&&p.careDate>today) return 'care';
+  return 'ok';
+}
+const STATUS_COLOR={ok:'var(--g)',urgent:'var(--danger)',sale:'var(--purple)',care:'var(--warn)'};
+const STATUS_LABEL={ok:'ปกติ',urgent:'ดูแลด่วน',sale:'พร้อมขาย',care:'ถึงกำหนดดูแล'};
+
+function renderFarmMap(){
+  const mapEl=document.getElementById('farm-map');
+  const nodesEl=document.getElementById('map-nodes');
+  const zoneEl=document.getElementById('map-zone-labels');
+  const gridEl=document.getElementById('map-grid-svg');
+  if(!mapEl||!nodesEl) return;
+
+  loadMapPositions();
+  autoLayout();
+
+  const W=mapEl.offsetWidth||360;
+  const H=mapEl.offsetHeight||520;
+
+  // Draw subtle grid
+  let gridLines='';
+  for(let x=0;x<W;x+=60) gridLines+=`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="rgba(255,255,255,.03)" stroke-width="1"/>`;
+  for(let y=0;y<H;y+=60) gridLines+=`<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="rgba(255,255,255,.03)" stroke-width="1"/>`;
+  gridEl.innerHTML=gridLines;
+
+  // Draw zone colored areas (background blobs per zone)
+  const zoneColors={'A':'rgba(61,220,104,.05)','B':'rgba(77,184,255,.05)','C':'rgba(180,122,255,.05)','D':'rgba(245,166,35,.05)'};
+  zoneEl.innerHTML=''; // clear
+
+  // Render plant nodes
+  nodesEl.innerHTML='';
+  plants.forEach(p=>{
+    const pos=mapPositions[p.id]||{x:16,y:16};
+    const img=images[p.id];
+    const st=getStatus(p);
+    const sc=STATUS_COLOR[st];
+    const emo={premium:'✨',rare:'🔥',health:'💚',collect:'🏆'}[p.cat]||'🌱';
+
+    const node=document.createElement('div');
+    node.className='plant-node'+(mapEditMode?' edit-mode':'');
+    node.id='node-'+p.id;
+    node.style.left=pos.x+'px';
+    node.style.top=pos.y+'px';
+    node.innerHTML=`
+      <div class="node-img" style="border-color:${sc}">
+        ${img?`<img src="${img}" alt="">`:`<span>${emo}</span>`}
+        <div class="node-status" style="background:${sc}"></div>
+      </div>
+      <div class="node-label">${p.name.length>9?p.name.slice(0,9)+'…':p.name}</div>
+      <div class="node-id">${p.id}</div>`;
+
+    // Events
+    if(mapEditMode){
+      setupDrag(node, p.id);
+    } else {
+      node.addEventListener('click', ()=>showPopup(p.id, node));
+      node.addEventListener('touchend', e=>{e.preventDefault();showPopup(p.id,node);});
+    }
+    nodesEl.appendChild(node);
+  });
+
+  renderDashStats();
+}
+
+function setupDrag(node, pid){
+  let startX,startY,origX,origY,moved=false;
+
+  const onStart=(ex,ey)=>{
+    startX=ex; startY=ey;
+    const pos=mapPositions[pid]||{x:0,y:0};
+    origX=pos.x; origY=pos.y;
+    moved=false;
+    node.classList.add('dragging');
+    node.style.zIndex=100;
+  };
+  const onMove=(ex,ey)=>{
+    const dx=ex-startX, dy=ey-startY;
+    if(Math.abs(dx)>4||Math.abs(dy)>4) moved=true;
+    if(!moved) return;
+    const mapEl=document.getElementById('farm-map');
+    const rect=mapEl.getBoundingClientRect();
+    const newX=Math.max(0,Math.min(rect.width-58, origX+dx));
+    const newY=Math.max(0,Math.min(rect.height-72, origY+dy));
+    node.style.left=newX+'px';
+    node.style.top=newY+'px';
+    mapPositions[pid]={x:newX,y:newY};
+  };
+  const onEnd=()=>{
+    node.classList.remove('dragging');
+    node.style.zIndex='';
+    if(moved) saveMapPositions();
+  };
+
+  // Mouse
+  node.addEventListener('mousedown',e=>{e.preventDefault();onStart(e.clientX,e.clientY);
+    const mm=e2=>{onMove(e2.clientX,e2.clientY);};
+    const mu=()=>{onEnd();document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu);};
+    document.addEventListener('mousemove',mm);document.addEventListener('mouseup',mu);
+  });
+  // Touch
+  node.addEventListener('touchstart',e=>{const t=e.touches[0];onStart(t.clientX,t.clientY);},{passive:true});
+  node.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];onMove(t.clientX,t.clientY);},{passive:false});
+  node.addEventListener('touchend',()=>onEnd(),{passive:true});
+}
+
+function toggleMapEdit(){
+  mapEditMode=!mapEditMode;
+  const btn=document.getElementById('map-edit-btn');
+  const hint=document.getElementById('map-edit-hint');
+  if(mapEditMode){
+    btn.textContent='✅ เสร็จแล้ว';
+    btn.style.background='var(--g)';
+    btn.style.color='#000';
+    hint.style.display='block';
+  } else {
+    btn.textContent='✏️ จัดตำแหน่ง';
+    btn.style.background='var(--s2)';
+    btn.style.color='var(--t2)';
+    hint.style.display='none';
+    saveMapPositions();
+    toast('💾 บันทึกตำแหน่งแล้ว ✓');
+  }
+  renderFarmMap();
+}
+
+function resetMapPositions(){
+  if(!confirm('รีเซ็ตตำแหน่งต้นไม้ทั้งหมด?')) return;
+  mapPositions={};
+  saveMapPositions();
+  renderFarmMap();
+  toast('รีเซ็ตตำแหน่งแล้ว');
+}
+
+// ── POPUP ──
+function showPopup(id, nodeEl){
+  const p=plants.find(x=>x.id===id);if(!p) return;
+  popupPlantId=id;
+  const img=images[id];
+  const st=getStatus(p);
+  const sc=STATUS_COLOR[st];
+  const sl=STATUS_LABEL[st];
+  const emo={premium:'✨',rare:'🔥',health:'💚',collect:'🏆'}[p.cat]||'🌱';
+
+  document.getElementById('popup-img-area').innerHTML=img
+    ?`<img class="map-popup-img" src="${img}">`
+    :`<div class="map-popup-ph">${emo}</div>`;
+  document.getElementById('popup-name').textContent=p.name;
+  document.getElementById('popup-id').textContent=p.id+' · Zone '+(p.zone||'—');
+  document.getElementById('popup-age').textContent=calcAge(p.date);
+  document.getElementById('popup-zone').textContent=p.zone||'—';
+  document.getElementById('popup-status').innerHTML=`<span style="color:${sc};font-weight:600">${sl}</span>`;
+  document.getElementById('popup-care').textContent=p.careType&&p.careDate?(p.careType+' '+p.careDate):'—';
+
+  // Position popup near node
+  const popup=document.getElementById('map-popup');
+  popup.style.display='block';
+  const nodeRect=nodeEl.getBoundingClientRect();
+  const popW=230, popH=280;
+  let px=nodeRect.right+8;
+  let py=nodeRect.top;
+  if(px+popW>window.innerWidth) px=nodeRect.left-popW-8;
+  if(py+popH>window.innerHeight) py=window.innerHeight-popH-16;
+  popup.style.left=Math.max(8,px)+'px';
+  popup.style.top=Math.max(8,py)+'px';
+}
+function closePopup(){
+  document.getElementById('map-popup').style.display='none';
+  popupPlantId=null;
+}
+function openDetailFromPopup(){
+  if(!popupPlantId) return;
+  closePopup();
+  openDetail(popupPlantId);
+}
+// Close popup on map tap
+document.addEventListener('click',e=>{
+  const popup=document.getElementById('map-popup');
+  if(popup&&popup.style.display!=='none'&&!popup.contains(e.target)&&!e.target.closest('.plant-node')){
+    closePopup();
+  }
+});
+
+function renderDashStats(){
+  const el=document.getElementById('dash-stats');
+  if(!el) return;
+  const total=plants.length;
+  const urgent=plants.filter(p=>getStatus(p)==='urgent').length;
+  const sale=plants.filter(p=>getStatus(p)==='sale').length;
+  const totalVal=plants.reduce((s,p)=>s+(parseFloat(p.value)||0),0);
+  const fmt=n=>n>=1000?'฿'+(n/1000).toFixed(1)+'K':'฿'+n.toLocaleString();
+  el.innerHTML=`
+    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--g)">${total}</div><div class="dash-stat-l">ต้นทั้งหมด</div></div>
+    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--danger)">${urgent}</div><div class="dash-stat-l">ดูแลด่วน</div></div>
+    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--purple)">${sale}</div><div class="dash-stat-l">พร้อมขาย</div></div>
+    <div class="dash-stat"><div class="dash-stat-v" style="color:var(--warn);font-size:${totalVal>=10000?'14px':'18px'}">${totalVal>0?fmt(totalVal):'—'}</div><div class="dash-stat-l">มูลค่าตลาด</div></div>`;
+}
+
 // ── NAV ──
 function nav(id,btn){
   document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
@@ -1462,12 +1785,12 @@ function nav(id,btn){
   document.getElementById('pg-'+id).classList.add('on');btn.classList.add('on');
   if(id==='history') renderAllHistory();
   if(id==='io') updateCounts();
-  if(id==='dashboard') renderDashboard();
+  if(id==='dashboard') renderFarmMap();
   if(id==='analytics'){populateAnSelect();renderAnalytics();}
   if(id==='system'){renderZones();loadTGSettings();}
   if(id==='graph') renderGraphs();
   if(id==='system'){renderZones();loadTgConfig();}
-  if(id==='dashboard') renderDashboard();
+  if(id==='dashboard') renderFarmMap();
       if(id==='graph') renderGraphs();
   if(id==='system'){renderZones();loadTgConfig();}
   if(id==='care') renderCare();
@@ -1714,7 +2037,7 @@ function savePlant(){
     plants.push(entry);if(imgData) images[id]=imgData;
   }
   document.getElementById('m-add')._pendingSN=null;
-  save();closeM('m-add');renderPlants();renderDashboard();toast(editId?'อัปเดตแล้ว ✓':'เพิ่มต้นไม้แล้ว ✓');
+  save();closeM('m-add');renderPlants();renderFarmMap();toast(editId?'อัปเดตแล้ว ✓':'เพิ่มต้นไม้แล้ว ✓');
 }
 function delPlant(id){
   if(!confirm('ลบต้นไม้นี้?')) return;
@@ -1859,7 +2182,7 @@ function saveCare(){
   const note=document.getElementById('care-note').value.trim();
   if(!date){toast('กรุณาเลือกวันที่');return;}
   careList.push({id:'C'+Date.now(),plantId:pid,type,date,repeat,note,done:false});
-  saveCare2();closeM('m-care');renderCare();renderDashboard();
+  saveCare2();closeM('m-care');renderCare();renderFarmMap();
   toast('เพิ่มกำหนดการแล้ว ✓');
 }
 
@@ -1876,13 +2199,13 @@ function doneCare(id){
   } else {
     careList=careList.filter(x=>x.id!==id);
   }
-  saveCare2();renderCare();renderDashboard();renderPlants();
+  saveCare2();renderCare();renderFarmMap();renderPlants();
   toast('บันทึกเสร็จแล้ว ✓');
 }
 
 function delCare(id){
   careList=careList.filter(x=>x.id!==id);
-  saveCare2();renderCare();renderDashboard();
+  saveCare2();renderCare();renderFarmMap();
   toast('ลบกำหนดการแล้ว');
 }
 
@@ -1950,7 +2273,7 @@ function saveCost(){
   p.value=parseFloat(document.getElementById('value-input').value)||0;
   p.costNote=document.getElementById('cost-note').value.trim();
   (p.history=p.history||[]).push({ts:now(),note:`บันทึกต้นทุน ${p.cost.toLocaleString()} ฿ / มูลค่า ${p.value.toLocaleString()} ฿`});
-  save();closeM('m-cost');renderCost();renderDashboard();
+  save();closeM('m-cost');renderCost();renderFarmMap();
   toast('บันทึกต้นทุนแล้ว ✓');
 }
 
@@ -2101,10 +2424,9 @@ function checkNFC(){
   if(!deferredPrompt) document.getElementById('pwa-status').textContent=navigator.standalone||window.matchMedia('(display-mode: standalone)').matches?'✅ ติดตั้งแล้ว':'ใช้เมนู Chrome → เพิ่มลงหน้าจอหลัก';
 }
 injectManifest();
-loadCare();load();renderPlants();renderZones();checkNFC();updateNFCBtn();updateCounts();renderDashboard();
+loadCare();load();renderPlants();renderZones();checkNFC();updateNFCBtn();updateCounts();
 loadTGSettings();
-// Auto check care reminders
-setTimeout(sendCareReminder, 3000);loadTgConfig();requestNotifPermission();setInterval(checkCareSchedule,60000);setTimeout(checkCareSchedule,3000);
+setTimeout(()=>{renderFarmMap();sendCareReminder();},500);loadTgConfig();requestNotifPermission();setInterval(checkCareSchedule,60000);setTimeout(checkCareSchedule,3000);
 document.getElementById('sys-ver').textContent=APP_VERSION;
 document.getElementById('sys-build').textContent=APP_BUILD;
 document.getElementById('hdr-ver').textContent='v'+APP_VERSION;
