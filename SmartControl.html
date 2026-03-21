@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SmartControl">
-<title>SmartControl v1.3.0 — Farm Intelligence</title>
+<title>SmartControl v1.4.1 — Farm Intelligence</title>
 <link rel="manifest" href="#" id="manifest-link">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -750,24 +750,11 @@ select.field-input option { background: #0c1a30; }
         <div class="env-chip light" onclick="openGraphPage('lux')">☀️ <span class="ev" id="ev-lux">-- lux</span> <span>แสง</span></div>
       </div>
 
-      <!-- Sensor Source Selector -->
-      <div class="sensor-source-bar">
-        <button class="src-btn" id="src-sonoff" onclick="setSensorSource('sonoff')">
-          <span class="src-icon">🔌</span>Sonoff<br>Sensor
-        </button>
-        <button class="src-btn active" id="src-satellite" onclick="setSensorSource('satellite')">
-          <span class="src-icon">🛰️</span>ดาวเทียม<br>Open-Meteo
-        </button>
-        <button class="src-btn" id="src-auto" onclick="setSensorSource('auto')">
-          <span class="src-icon">🔄</span>อัตโนมัติ<br>+สำรอง
-        </button>
-        <button class="src-btn" id="src-sim" onclick="setSensorSource('sim')">
-          <span class="src-icon">🎲</span>จำลอง<br>Demo
-        </button>
-      </div>
-      <div class="sensor-status-row">
+      <!-- Sensor source mini indicator only — ย้ายปุ่มเลือกแหล่งไปหน้าตั้งค่าแล้ว -->
+      <div class="sensor-status-row" style="cursor:pointer;" onclick="showPageMore('settings')" title="เปลี่ยนแหล่งข้อมูล → ตั้งค่า">
         <div class="sensor-src-dot satellite" id="sensor-src-dot"></div>
-        <span id="sensor-src-label">ดาวเทียม Open-Meteo (ฟรี) — กำลังระบุตำแหน่ง...</span>
+        <span id="sensor-src-label" style="flex:1;">ดาวเทียม Open-Meteo — กำลังระบุตำแหน่ง...</span>
+        <span style="font-size:10px;color:var(--text-dim);margin-left:4px;">⚙️ เปลี่ยน</span>
       </div>
 
       <div class="section-title">โซนการเพาะปลูก</div>
@@ -809,6 +796,29 @@ select.field-input option { background: #0c1a30; }
     <div class="page" id="page-settings">
       <div class="section-title">แหล่งข้อมูลเซ็นเซอร์</div>
       <div style="padding:0 18px 12px;">
+
+        <!-- Source selector moved here from dashboard -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;">
+          <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;letter-spacing:0.5px;">เลือกแหล่งข้อมูลอุณหภูมิ / ความชื้น / แสง</div>
+          <div class="sensor-source-bar" style="border-radius:10px;margin:0;">
+            <button class="src-btn" id="src-sonoff" onclick="setSensorSource('sonoff')">
+              <span class="src-icon">🔌</span>Sonoff<br>Sensor
+            </button>
+            <button class="src-btn active" id="src-satellite" onclick="setSensorSource('satellite')">
+              <span class="src-icon">🛰️</span>ดาวเทียม<br>Open-Meteo
+            </button>
+            <button class="src-btn" id="src-auto" onclick="setSensorSource('auto')">
+              <span class="src-icon">🔄</span>อัตโนมัติ<br>+สำรอง
+            </button>
+            <button class="src-btn" id="src-sim" onclick="setSensorSource('sim')">
+              <span class="src-icon">🎲</span>จำลอง<br>Demo
+            </button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 10px;background:rgba(0,0,0,0.2);border-radius:8px;">
+            <div class="sensor-src-dot satellite" id="sensor-src-dot-settings"></div>
+            <span id="sensor-src-label-settings" style="font-size:11px;color:var(--text-dim);flex:1;">ดาวเทียม Open-Meteo</span>
+          </div>
+        </div>
         <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;">
           <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--accent);">🔌 Sonoff Sensor Node</div>
           <div class="field-label" style="margin-bottom:6px;">IP ของ Sensor Node (TH Elite / ESP32)</div>
@@ -1112,7 +1122,7 @@ select.field-input option { background: #0c1a30; }
       <span class="nav-icon">⋯</span>เพิ่มเติม
     </button>
   </nav>
-  <div class="version-badge">v1.4.0</div>
+  <div class="version-badge">v1.4.1</div>
 </div>
 
 <!-- MORE PANEL -->
@@ -2000,10 +2010,16 @@ function setSensorSource(src) {
 }
 
 function setSensorStatusUI(type, msg) {
+  // Dashboard mini indicator
   const dot = document.getElementById('sensor-src-dot');
   const label = document.getElementById('sensor-src-label');
-  if (dot) { dot.className = 'sensor-src-dot ' + type; }
+  if (dot) dot.className = 'sensor-src-dot ' + type;
   if (label) label.textContent = msg;
+  // Settings page indicator (mirror)
+  const dot2 = document.getElementById('sensor-src-dot-settings');
+  const label2 = document.getElementById('sensor-src-label-settings');
+  if (dot2) dot2.className = 'sensor-src-dot ' + type;
+  if (label2) label2.textContent = msg;
 }
 
 // ─── MAIN ENTRY ───
@@ -2699,7 +2715,7 @@ function initGraph() {
 }
 
 // ═══════════════════════════════════════════════
-//  📷 CAMERA  v1.4.0
+//  📷 CAMERA  v1.4.1
 // ═══════════════════════════════════════════════
 let cameras=[];
 const CAM_KEY='sc_cameras_v1';
@@ -2756,7 +2772,7 @@ function removeCamera(id){cameras=cameras.filter(c=>c.id!==id);saveCameras();ren
 function refreshAllCams(){cameras.forEach((cam,idx)=>{if(cam.type==='snapshot'){const img=document.getElementById('cam-feed-'+idx);if(img)img.src=cam.url+'?t='+Date.now();}});showToast('🔄 รีเฟรชกล้อง');}
 
 // ═══════════════════════════════════════════════
-//  🗺️ FARM MAP  v1.4.0
+//  🗺️ FARM MAP  v1.4.1
 // ═══════════════════════════════════════════════
 const MAP_KEY='sc_map_v1';
 let mapObjects=[],mapTool='select',mapDragging=null,mapDrawStart=null,selectedObj=null,mapCanvas,mapCtx;
@@ -2836,7 +2852,7 @@ function clearMapConfirm(){if(confirm('ล้างแผนที่?')){mapObj
 function exportMapImg(){const a=document.createElement('a');a.download='farmmap.png';a.href=mapCanvas.toDataURL();a.click();showToast('💾 บันทึกรูปแล้ว');}
 
 // ═══════════════════════════════════════════════
-//  🌧️ WEATHER  v1.4.0
+//  🌧️ WEATHER  v1.4.1
 // ═══════════════════════════════════════════════
 const WX_ICONS={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'⛈️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',99:'⛈️'};
 const WX_DESC={0:'ท้องฟ้าแจ่มใส',1:'มีเมฆบางส่วน',2:'มีเมฆปานกลาง',3:'ท้องฟ้าครึ้ม',45:'หมอก',51:'ฝนปรอย',61:'ฝนเบา',63:'ฝนปานกลาง',65:'ฝนหนัก',80:'ฝนฟ้าคะนอง',81:'ฝนฟ้าคะนอง',82:'ฝนหนักมาก',95:'พายุฝน',99:'พายุรุนแรง'};
@@ -2890,7 +2906,7 @@ function renderWeather(j){
 }
 
 // ═══════════════════════════════════════════════
-//  📊 EXPORT  v1.4.0
+//  📊 EXPORT  v1.4.1
 // ═══════════════════════════════════════════════
 function getGSScript(){return`function doPost(e){
   var ss=SpreadsheetApp.getActiveSpreadsheet();
