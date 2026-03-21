@@ -1,0 +1,1583 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a1628">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SmartControl">
+<title>SmartControl v1.1.0 — Farm Intelligence</title>
+<link rel="manifest" href="#" id="manifest-link">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg-deep: #060d1a;
+  --bg-panel: #0a1628;
+  --bg-glass: rgba(10, 22, 40, 0.72);
+  --bg-card: rgba(16, 30, 56, 0.8);
+  --border: rgba(0, 200, 160, 0.18);
+  --border-bright: rgba(0, 200, 160, 0.5);
+  --accent: #00c8a0;
+  --accent2: #0af0c8;
+  --accent-orange: #ff7c2a;
+  --accent-blue: #2af0ff;
+  --accent-yellow: #f0d62a;
+  --accent-red: #ff3a5c;
+  --text-primary: #e8f4f0;
+  --text-secondary: rgba(200, 230, 220, 0.6);
+  --text-dim: rgba(150, 190, 180, 0.4);
+  --glow: 0 0 20px rgba(0, 200, 160, 0.3);
+  --glow-strong: 0 0 40px rgba(0, 200, 160, 0.5);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255,255,255,0.04) inset;
+  --font-display: 'Rajdhani', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  --font-thai: 'Sarabun', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  width: 100%; height: 100%;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-thai);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── ANIMATED BACKGROUND ─── */
+.bg-layer {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(0,200,160,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 80% 90%, rgba(42,240,255,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 100% 100% at 50% 50%, rgba(6,13,26,1) 0%, #030810 100%);
+}
+.grid-overlay {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.07;
+  background-image:
+    linear-gradient(rgba(0,200,160,0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,200,160,0.5) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse at center, black 30%, transparent 80%);
+}
+
+/* ─── LAYOUT ─── */
+#app { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ─── TOP BAR ─── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px 10px;
+  background: linear-gradient(180deg, rgba(6,13,26,0.98) 0%, transparent 100%);
+  position: sticky; top: 0; z-index: 100;
+  border-bottom: 1px solid rgba(0,200,160,0.08);
+  backdrop-filter: blur(20px);
+}
+.logo {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 700; letter-spacing: 2px;
+  color: var(--accent);
+  text-shadow: 0 0 20px rgba(0,200,160,0.6);
+  display: flex; align-items: center; gap: 8px;
+}
+.logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: pulse-dot 2s infinite; }
+@keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(1.4)} }
+
+.topbar-right { display: flex; gap: 10px; align-items: center; }
+.icon-btn {
+  width: 38px; height: 38px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--bg-card);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary); cursor: pointer; transition: all 0.2s;
+  font-size: 18px;
+}
+.icon-btn:hover, .icon-btn.active { border-color: var(--accent); color: var(--accent); box-shadow: var(--glow); }
+.status-dot-online { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse-dot 1.5s infinite; }
+
+/* ─── SECTION TITLES ─── */
+.section-title {
+  font-family: var(--font-display);
+  font-size: 11px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--text-dim); padding: 20px 18px 10px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+
+/* ─── FARM SUMMARY CARD ─── */
+.summary-card {
+  margin: 6px 18px 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 18px 20px;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(12px);
+  position: relative; overflow: hidden;
+}
+.summary-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,200,160,0.4), transparent);
+}
+.sum-item { text-align: center; }
+.sum-val {
+  font-family: var(--font-mono); font-size: 22px; font-weight: 700;
+  color: var(--accent); line-height: 1;
+}
+.sum-label { font-size: 11px; color: var(--text-dim); margin-top: 4px; letter-spacing: 0.5px; }
+
+/* ─── ENV GRID ─── */
+.env-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 10px 18px;
+}
+.env-chip {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 9px 14px;
+  font-size: 13px;
+  backdrop-filter: blur(8px);
+}
+.env-chip .ev { font-family: var(--font-mono); font-size: 15px; font-weight: 700; }
+.env-chip.temp .ev { color: var(--accent-orange); }
+.env-chip.hum  .ev { color: var(--accent-blue); }
+.env-chip.soil .ev { color: #8be24a; }
+.env-chip.light .ev { color: var(--accent-yellow); }
+
+/* ─── STUDIO FOOTER ─── */
+.studio-footer {
+  text-align: center;
+  padding: 18px 0 10px;
+  font-family: var(--font-display);
+  font-size: 11px; letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  border-top: 1px solid rgba(0,200,160,0.07);
+  margin-top: 10px;
+  user-select: none;
+}
+.studio-footer span { color: rgba(0,200,160,0.35); }
+
+/* ─── VERSION BADGE ─── */
+.version-badge {
+  position: fixed; bottom: 68px; right: 10px; z-index: 99;
+  font-family: var(--font-mono); font-size: 9px;
+  color: rgba(0,200,160,0.3); letter-spacing: 1px;
+  pointer-events: none;
+}
+
+/* ─── ZONE TABS ─── */
+.zone-tabs {
+  display: flex; gap: 8px; padding: 4px 18px 8px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.zone-tabs::-webkit-scrollbar { display: none; }
+.ztab {
+  flex-shrink: 0; padding: 7px 16px; border-radius: 20px;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text-secondary); font-family: var(--font-thai);
+  font-size: 13px; cursor: pointer; transition: all 0.2s;
+}
+.ztab.active {
+  background: rgba(0,200,160,0.15); border-color: var(--accent);
+  color: var(--accent); box-shadow: 0 0 12px rgba(0,200,160,0.2);
+}
+
+/* ─── DEVICE GRID ─── */
+.device-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  padding: 0 18px 18px;
+}
+
+/* ─── ISOLATION GLASS CARD ─── */
+.device-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 18px 16px;
+  cursor: pointer;
+  position: relative; overflow: hidden;
+  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+  backdrop-filter: blur(16px) saturate(160%);
+  box-shadow: var(--shadow-card);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+}
+.device-card::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+}
+.device-card::after {
+  content: ''; position: absolute; inset: 0; border-radius: 20px;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.04) 0%, transparent 70%);
+  pointer-events: none;
+}
+.device-card:active { transform: scale(0.97); }
+.device-card.ON { border-color: rgba(0,200,160,0.4); box-shadow: 0 0 20px rgba(0,200,160,0.15), var(--shadow-card); }
+.device-card.ON::after { background: radial-gradient(circle at 30% 30%, rgba(0,200,160,0.07) 0%, transparent 70%); }
+.device-card.OFFLINE { opacity: 0.5; }
+
+.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.dev-icon {
+  width: 44px; height: 44px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; position: relative;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.device-card.ON .dev-icon { box-shadow: 0 0 16px currentColor; }
+
+/* Toggle Switch */
+.toggle-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.toggle {
+  width: 44px; height: 24px; border-radius: 12px;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+  position: relative; cursor: pointer; transition: all 0.3s;
+}
+.toggle.on { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px rgba(0,200,160,0.5); }
+.toggle-knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: white; transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+.toggle.on .toggle-knob { transform: translateX(20px); }
+
+.dev-name { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+.dev-ip { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); }
+.dev-status-row { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.dev-state {
+  font-family: var(--font-display); font-size: 12px; letter-spacing: 2px; font-weight: 600;
+}
+.dev-state.on { color: var(--accent); }
+.dev-state.off { color: var(--text-dim); }
+.dev-state.offline { color: var(--accent-red); }
+.ping-dot { width: 6px; height: 6px; border-radius: 50%; }
+.ping-dot.ok { background: var(--accent); box-shadow: 0 0 6px var(--accent); animation: pulse-dot 2s infinite; }
+.ping-dot.fail { background: var(--accent-red); }
+
+/* Timer badge */
+.timer-badge {
+  position: absolute; top: 10px; right: 54px;
+  background: rgba(240,214,42,0.15); border: 1px solid rgba(240,214,42,0.3);
+  border-radius: 8px; padding: 2px 7px;
+  font-family: var(--font-mono); font-size: 10px; color: var(--accent-yellow);
+}
+
+/* ─── WIDE CARD (full width) ─── */
+.device-card.wide { grid-column: 1 / -1; display: flex; gap: 16px; align-items: center; }
+.device-card.wide .card-body { flex: 1; }
+.device-card.wide .dev-extra {
+  display: flex; gap: 10px; margin-top: 12px;
+}
+.meter-bar {
+  height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px;
+  margin-top: 8px; overflow: hidden;
+}
+.meter-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+
+/* ─── SCHEDULE PANEL ─── */
+.panel-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(3,8,16,0.85); backdrop-filter: blur(8px);
+  display: none; align-items: flex-end; justify-content: center;
+}
+.panel-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+.panel-sheet {
+  width: 100%; max-width: 480px;
+  background: #0c1a30; border-radius: 24px 24px 0 0;
+  border-top: 1px solid var(--border);
+  padding: 0 0 40px;
+  animation: slideUp 0.3s cubic-bezier(0.4,0,0.2,1);
+  max-height: 85vh; overflow-y: auto;
+}
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.panel-handle { width: 40px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.12); margin: 12px auto 20px; }
+.panel-title { font-family: var(--font-display); font-size: 18px; letter-spacing: 1px; padding: 0 20px; margin-bottom: 18px; color: var(--accent); }
+
+.field-group { padding: 0 20px; margin-bottom: 16px; }
+.field-label { font-size: 11px; letter-spacing: 2px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 8px; }
+.field-row { display: flex; gap: 10px; }
+.field-input {
+  flex: 1; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+  border-radius: 10px; padding: 10px 14px; color: var(--text-primary);
+  font-family: var(--font-thai); font-size: 14px; outline: none;
+  transition: border-color 0.2s;
+}
+.field-input:focus { border-color: var(--accent); }
+.field-input::placeholder { color: var(--text-dim); }
+select.field-input { cursor: pointer; }
+select.field-input option { background: #0c1a30; }
+
+.btn {
+  padding: 12px 20px; border-radius: 12px; border: none; cursor: pointer;
+  font-family: var(--font-thai); font-size: 14px; font-weight: 600;
+  transition: all 0.2s;
+}
+.btn-primary { background: var(--accent); color: #020a10; }
+.btn-primary:active { background: var(--accent2); transform: scale(0.97); }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+.btn-full { width: calc(100% - 40px); margin: 0 20px; display: block; text-align: center; }
+.btn-danger { background: rgba(255,58,92,0.15); border: 1px solid rgba(255,58,92,0.3); color: var(--accent-red); }
+
+/* ─── SCHEDULE LIST ─── */
+.schedule-list { padding: 0 20px; }
+.sched-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--bg-card);
+  margin-bottom: 8px; position: relative;
+}
+.sched-time { font-family: var(--font-mono); font-size: 14px; color: var(--accent); min-width: 50px; }
+.sched-info { flex: 1; }
+.sched-dev { font-size: 13px; font-weight: 600; }
+.sched-desc { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.sched-del { color: var(--accent-red); font-size: 16px; background: none; border: none; cursor: pointer; padding: 4px 8px; }
+.sched-badge {
+  font-family: var(--font-mono); font-size: 10px; padding: 2px 8px;
+  border-radius: 6px; letter-spacing: 1px;
+}
+.sched-badge.on { background: rgba(0,200,160,0.12); color: var(--accent); border: 1px solid rgba(0,200,160,0.2); }
+.sched-badge.off { background: rgba(255,255,255,0.04); color: var(--text-dim); border: 1px solid var(--border); }
+
+/* ─── ADD DEVICE FORM ─── */
+.add-device-form { padding: 0 20px; }
+
+/* ─── LOG PANEL ─── */
+.log-list { padding: 0 20px; max-height: 320px; overflow-y: auto; }
+.log-item {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 12px;
+}
+.log-time { font-family: var(--font-mono); color: var(--text-dim); flex-shrink: 0; width: 54px; }
+.log-type { flex-shrink: 0; width: 52px; }
+.log-msg { color: var(--text-secondary); line-height: 1.5; }
+.badge { display: inline-block; padding: 1px 7px; border-radius: 5px; font-size: 10px; letter-spacing: 1px; font-family: var(--font-mono); }
+.badge-on { background: rgba(0,200,160,0.12); color: var(--accent); }
+.badge-off { background: rgba(255,255,255,0.06); color: var(--text-dim); }
+.badge-warn { background: rgba(255,124,42,0.12); color: var(--accent-orange); }
+.badge-err { background: rgba(255,58,92,0.12); color: var(--accent-red); }
+.badge-nfc { background: rgba(42,240,255,0.12); color: var(--accent-blue); }
+.badge-sched { background: rgba(240,214,42,0.12); color: var(--accent-yellow); }
+
+/* ─── SETTINGS PAGE ─── */
+.settings-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.settings-label { font-size: 14px; }
+.settings-sub { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+.settings-val { font-family: var(--font-mono); font-size: 12px; color: var(--accent); }
+
+/* ─── BOTTOM NAV ─── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
+  display: flex; background: rgba(6,13,26,0.95);
+  border-top: 1px solid rgba(0,200,160,0.1);
+  backdrop-filter: blur(20px); padding-bottom: env(safe-area-inset-bottom, 8px);
+}
+.nav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 10px 0 8px; cursor: pointer; transition: all 0.2s; color: var(--text-dim);
+  font-size: 10px; letter-spacing: 0.5px; gap: 4px; font-family: var(--font-thai);
+  border: none; background: none;
+}
+.nav-icon { font-size: 22px; line-height: 1; }
+.nav-item.active { color: var(--accent); }
+.nav-item.active .nav-icon { filter: drop-shadow(0 0 6px var(--accent)); }
+#main-content { padding-bottom: 80px; }
+
+/* ─── PAGES ─── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ─── NFC SCAN SCREEN ─── */
+.nfc-screen {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 60vh; padding: 40px;
+}
+.nfc-ring {
+  width: 150px; height: 150px; border-radius: 50%; position: relative; margin-bottom: 30px;
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 30px rgba(0,200,160,0.3), inset 0 0 30px rgba(0,200,160,0.05);
+  display: flex; align-items: center; justify-content: center; font-size: 60px;
+}
+.nfc-ring::before {
+  content: ''; position: absolute; inset: -12px; border-radius: 50%;
+  border: 1px solid rgba(0,200,160,0.2); animation: nfc-pulse 2s infinite;
+}
+.nfc-ring::after {
+  content: ''; position: absolute; inset: -24px; border-radius: 50%;
+  border: 1px solid rgba(0,200,160,0.1); animation: nfc-pulse 2s infinite 0.5s;
+}
+@keyframes nfc-pulse { 0%{transform:scale(1);opacity:1} 100%{transform:scale(1.3);opacity:0} }
+.nfc-title { font-family: var(--font-display); font-size: 20px; letter-spacing: 2px; color: var(--accent); margin-bottom: 8px; }
+.nfc-sub { font-size: 13px; color: var(--text-dim); text-align: center; line-height: 1.6; }
+.nfc-log { margin-top: 20px; width: 100%; max-height: 200px; overflow-y: auto; }
+.nfc-tag-list { }
+.nfc-tag-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: 12px;
+  background: var(--bg-card); border: 1px solid var(--border); margin-bottom: 8px;
+}
+.nfc-tag-id { font-family: var(--font-mono); font-size: 11px; color: var(--accent-blue); }
+.nfc-tag-name { font-size: 13px; font-weight: 600; }
+.nfc-tag-action { font-size: 11px; color: var(--text-dim); }
+
+/* ─── TELEGRAM CONFIG ─── */
+.tg-status {
+  display: flex; align-items: center; gap: 10px; padding: 14px 18px;
+  background: var(--bg-card); border-radius: 14px; margin: 0 18px 14px;
+  border: 1px solid var(--border);
+}
+.tg-icon { font-size: 28px; }
+.tg-info { flex: 1; }
+.tg-name { font-weight: 600; font-size: 14px; }
+.tg-val { font-family: var(--font-mono); font-size: 11px; color: var(--accent); }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 360px) {
+  .device-grid { grid-template-columns: 1fr; }
+  .device-card.wide { flex-direction: column; }
+}
+
+/* ─── TOAST ─── */
+.toast {
+  position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,200,160,0.9); color: #020a10;
+  padding: 10px 20px; border-radius: 30px;
+  font-family: var(--font-thai); font-size: 14px; font-weight: 600;
+  z-index: 999; white-space: nowrap;
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.5s forwards;
+  box-shadow: 0 4px 20px rgba(0,200,160,0.4);
+}
+.toast.error { background: rgba(255,58,92,0.9); }
+.toast.warn { background: rgba(255,124,42,0.9); }
+@keyframes toastIn { from{opacity:0;transform:translateX(-50%) translateY(-10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+@keyframes toastOut { from{opacity:1} to{opacity:0} }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,200,160,0.2); border-radius: 2px; }
+
+/* ─── CONNECTING SPINNER ─── */
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* inline-flex utility */
+.flex-row { display:flex; align-items:center; gap:8px; }
+.mt4 { margin-top:4px; }
+.ml-auto { margin-left: auto; }
+</style>
+</head>
+<body>
+<div class="bg-layer"></div>
+<div class="grid-overlay"></div>
+
+<div id="app">
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      SmartControl
+    </div>
+    <div class="topbar-right">
+      <div id="net-indicator" class="status-dot-online" title="LAN Online"></div>
+      <button class="icon-btn" onclick="openPanel('log-panel')" title="Activity Log">📋</button>
+      <button class="icon-btn" onclick="openPanel('add-device-panel')" title="Add Device">＋</button>
+    </div>
+  </div>
+
+  <div id="main-content">
+    <!-- PAGE: DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="summary-card">
+        <div class="sum-item">
+          <div class="sum-val" id="sum-online">0</div>
+          <div class="sum-label">อุปกรณ์ออนไลน์</div>
+        </div>
+        <div class="sum-item">
+          <div class="sum-val" id="sum-on">0</div>
+          <div class="sum-label">เปิดอยู่</div>
+        </div>
+        <div class="sum-item">
+          <div class="sum-val" id="sum-sched">0</div>
+          <div class="sum-label">ตั้งเวลา</div>
+        </div>
+      </div>
+
+      <div class="env-strip" id="env-strip">
+        <div class="env-chip temp">🌡️ <span class="ev" id="ev-temp">--°C</span> <span>อุณหภูมิ</span></div>
+        <div class="env-chip hum">💧 <span class="ev" id="ev-hum">--%</span> <span>ความชื้น</span></div>
+        <div class="env-chip soil">🌱 <span class="ev" id="ev-soil">--%</span> <span>ความชื้นดิน</span></div>
+        <div class="env-chip light">☀️ <span class="ev" id="ev-lux">-- lux</span> <span>แสง</span></div>
+      </div>
+
+      <div class="section-title">โซนการเพาะปลูก</div>
+      <div class="zone-tabs" id="zone-tabs">
+        <button class="ztab active" data-zone="all" onclick="filterZone(this,'all')">ทั้งหมด</button>
+      </div>
+
+      <div class="section-title">อุปกรณ์ควบคุม</div>
+      <div class="device-grid" id="device-grid"></div>
+
+      <div class="studio-footer"><span>✦</span> KLANGDOI STUDIO GARDEN <span>✦</span></div>
+    </div>
+
+    <!-- PAGE: SCHEDULE -->
+    <div class="page" id="page-schedule">
+      <div class="section-title">ตารางเวลาอัตโนมัติ</div>
+      <div class="schedule-list" id="schedule-list"></div>
+      <br>
+      <button class="btn btn-primary btn-full" onclick="openPanel('add-sched-panel')">+ เพิ่มตารางเวลา</button>
+    </div>
+
+    <!-- PAGE: NFC -->
+    <div class="page" id="page-nfc">
+      <div class="nfc-screen">
+        <div class="nfc-ring">📡</div>
+        <div class="nfc-title">NFC SCANNER</div>
+        <div class="nfc-sub">แตะแท็ก NFC เพื่อสั่งงานอุปกรณ์<br>หรือเพิ่ม/อ่านข้อมูลอัตโนมัติ</div>
+        <div style="margin-top:16px;display:flex;gap:10px;">
+          <button class="btn btn-primary" onclick="startNFC()">เปิด NFC</button>
+          <button class="btn btn-outline" onclick="openPanel('add-nfc-panel')">+ ผูกแท็ก</button>
+        </div>
+        <div id="nfc-status" style="margin-top:12px;font-size:12px;color:var(--text-dim);">พร้อมสแกน...</div>
+      </div>
+      <div class="section-title">แท็ก NFC ที่ผูกไว้</div>
+      <div class="nfc-tag-list" id="nfc-tag-list" style="padding:0 18px 20px;"></div>
+    </div>
+
+    <!-- PAGE: SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="section-title">Telegram แจ้งเตือน</div>
+      <div class="tg-status" id="tg-status-card">
+        <div class="tg-icon">✈️</div>
+        <div class="tg-info">
+          <div class="tg-name">Telegram Bot</div>
+          <div class="tg-val" id="tg-bot-display">ยังไม่ตั้งค่า</div>
+        </div>
+        <button class="btn btn-outline" style="padding:8px 14px;font-size:12px;" onclick="openPanel('tg-panel')">ตั้งค่า</button>
+      </div>
+      <div class="section-title">การแจ้งเตือน</div>
+      <div class="settings-row">
+        <div><div class="settings-label">แจ้งเตือนเปิด/ปิดอุปกรณ์</div><div class="settings-sub">ส่ง Telegram ทุกครั้งที่มีการสั่งงาน</div></div>
+        <label style="cursor:pointer"><input type="checkbox" id="notif-toggle" onchange="saveSetting('notif_on_off',this.checked)" checked style="accent-color:var(--accent);width:18px;height:18px;"></label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">แจ้งเตือนอุปกรณ์ออฟไลน์</div><div class="settings-sub">เมื่ออุปกรณ์ไม่ตอบสนอง</div></div>
+        <label style="cursor:pointer"><input type="checkbox" id="notif-offline" onchange="saveSetting('notif_offline',this.checked)" checked style="accent-color:var(--accent);width:18px;height:18px;"></label>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">Push Notification</div><div class="settings-sub">แจ้งเตือนผ่านระบบ (ต้องอนุญาต)</div></div>
+        <button class="btn btn-outline" style="padding:7px 12px;font-size:12px;" onclick="requestPush()">ขอสิทธิ์</button>
+      </div>
+      <div class="section-title">Ping อัตโนมัติ</div>
+      <div class="settings-row">
+        <div><div class="settings-label">ความถี่ Ping</div><div class="settings-sub">ตรวจสอบสถานะอุปกรณ์</div></div>
+        <select class="field-input" style="width:110px;padding:6px 10px;font-size:13px;" onchange="saveSetting('ping_interval',this.value)" id="ping-interval-sel">
+          <option value="10000">10 วิ</option>
+          <option value="30000" selected>30 วิ</option>
+          <option value="60000">1 นาที</option>
+        </select>
+      </div>
+      <div class="section-title">ข้อมูล PWA</div>
+      <div class="settings-row">
+        <div><div class="settings-label">Service Worker</div></div>
+        <div class="settings-val" id="sw-status">กำลังตรวจสอบ...</div>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label">โหมด Offline</div></div>
+        <div class="settings-val" id="offline-status">🟢 พร้อม</div>
+      </div>
+      <br>
+      <button class="btn btn-danger btn-full" onclick="if(confirm('ล้างข้อมูลทั้งหมด?'))clearAll()">🗑️ ล้างข้อมูลทั้งหมด</button>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="showPage('dashboard',this)">
+      <span class="nav-icon">🌿</span>แดชบอร์ด
+    </button>
+    <button class="nav-item" onclick="showPage('schedule',this)">
+      <span class="nav-icon">⏰</span>ตารางเวลา
+    </button>
+    <button class="nav-item" onclick="showPage('nfc',this)">
+      <span class="nav-icon">📡</span>NFC
+    </button>
+    <button class="nav-item" onclick="showPage('settings',this)">
+      <span class="nav-icon">⚙️</span>ตั้งค่า
+    </button>
+  </nav>
+  <div class="version-badge">v1.1.0</div>
+</div>
+
+<!-- ═══ PANELS ═══ -->
+
+<!-- ADD DEVICE -->
+<div class="panel-overlay" id="add-device-panel">
+  <div class="panel-sheet">
+    <div class="panel-handle"></div>
+    <div class="panel-title">➕ เพิ่มอุปกรณ์ Sonoff</div>
+    <div class="add-device-form">
+      <div class="field-group">
+        <div class="field-label">ชื่ออุปกรณ์</div>
+        <input class="field-input" id="nd-name" placeholder="เช่น ปั๊มน้ำโซน A">
+      </div>
+      <div class="field-group">
+        <div class="field-label">IP Address (LAN)</div>
+        <input class="field-input" id="nd-ip" placeholder="192.168.1.x" type="text" inputmode="decimal">
+      </div>
+      <div class="field-group">
+        <div class="field-label">พอร์ต</div>
+        <input class="field-input" id="nd-port" value="8081" type="number">
+      </div>
+      <div class="field-group">
+        <div class="field-label">ชนิดอุปกรณ์</div>
+        <select class="field-input" id="nd-type">
+          <option value="water">💧 ระบบน้ำ / ปั๊ม</option>
+          <option value="light">💡 ไฟแสงสว่าง</option>
+          <option value="fan">🌀 พัดลม</option>
+          <option value="mist">🌫️ หัวพ่นหมอก</option>
+          <option value="heater">🔥 ฮีตเตอร์</option>
+          <option value="sensor">📊 เซ็นเซอร์</option>
+          <option value="plug">🔌 ปลั๊กทั่วไป</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <div class="field-label">โซน</div>
+        <input class="field-input" id="nd-zone" placeholder="เช่น โซน A, โรงเรือน 1">
+      </div>
+      <div class="field-group">
+        <div class="field-label">Sonoff API Channel</div>
+        <select class="field-input" id="nd-channel">
+          <option value="0">Channel 1 (switch/0)</option>
+          <option value="1">Channel 2 (switch/1)</option>
+          <option value="2">Channel 3 (switch/2)</option>
+          <option value="3">Channel 4 (switch/3)</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Sonoff API Key (ถ้ามี)</div>
+        <input class="field-input" id="nd-apikey" placeholder="เว้นว่างถ้าไม่ได้ตั้ง">
+      </div>
+      <div class="field-row" style="padding:0 0 16px 0;gap:10px;">
+        <button class="btn btn-outline" style="flex:1" onclick="closePanel('add-device-panel')">ยกเลิก</button>
+        <button class="btn btn-primary" style="flex:2" onclick="testAndAddDevice()">🔗 ทดสอบ & เพิ่ม</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCHEDULE PANEL -->
+<div class="panel-overlay" id="add-sched-panel">
+  <div class="panel-sheet">
+    <div class="panel-handle"></div>
+    <div class="panel-title">⏰ เพิ่มตารางเวลา</div>
+    <div class="field-group">
+      <div class="field-label">อุปกรณ์</div>
+      <select class="field-input" id="sched-dev-sel"></select>
+    </div>
+    <div class="field-group">
+      <div class="field-label">การกระทำ</div>
+      <select class="field-input" id="sched-action">
+        <option value="on">เปิด (ON)</option>
+        <option value="off">ปิด (OFF)</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <div class="field-label">เวลา</div>
+      <input class="field-input" id="sched-time" type="time" value="06:00">
+    </div>
+    <div class="field-group">
+      <div class="field-label">วันที่ทำงาน</div>
+      <div class="field-row" style="flex-wrap:wrap;gap:6px;">
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox" class="day-cb" value="1" checked style="accent-color:var(--accent)"> จ</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox" class="day-cb" value="2" checked style="accent-color:var(--accent)"> อ</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox" class="day-cb" value="3" checked style="accent-color:var(--accent)"> พ</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox" class="day-cb" value="4" checked style="accent-color:var(--accent)"> พฤ</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox" class="day-cb" value="5" checked style="accent-color:var(--accent)"> ศ</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox" class="day-cb" value="6" style="accent-color:var(--accent)"> ส</label>
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;"><input type="checkbox" class="day-cb" value="0" style="accent-color:var(--accent)"> อา</label>
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">ระยะเวลา (นาที) — 0 = ไม่จำกัด</div>
+      <input class="field-input" id="sched-duration" type="number" value="30" min="0" max="1440">
+    </div>
+    <div class="field-row" style="padding:0 20px 20px;gap:10px;">
+      <button class="btn btn-outline" style="flex:1" onclick="closePanel('add-sched-panel')">ยกเลิก</button>
+      <button class="btn btn-primary" style="flex:2" onclick="addSchedule()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEVICE DETAIL PANEL -->
+<div class="panel-overlay" id="device-detail-panel">
+  <div class="panel-sheet">
+    <div class="panel-handle"></div>
+    <div class="panel-title" id="detail-title">รายละเอียด</div>
+    <div style="padding:0 20px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">สถานะ</div>
+          <div id="detail-state" style="font-family:var(--font-mono);font-size:18px;color:var(--accent);">--</div>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center;">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">Ping (ms)</div>
+          <div id="detail-ping" style="font-family:var(--font-mono);font-size:18px;color:var(--accent-blue);">--</div>
+        </div>
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px;font-size:12px;line-height:2;">
+        <div>🌐 IP: <span id="detail-ip" style="font-family:var(--font-mono);color:var(--accent)">--</span></div>
+        <div>📍 โซน: <span id="detail-zone" style="color:var(--text-secondary)">--</span></div>
+        <div>🔌 Channel: <span id="detail-ch" style="font-family:var(--font-mono);color:var(--accent-blue)">--</span></div>
+        <div>🕐 เปิดล่าสุด: <span id="detail-last" style="color:var(--text-secondary)">--</span></div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:8px;" id="detail-toggle-btn" onclick="toggleDetailDevice()">สั่งงาน</button>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <button class="btn btn-outline" style="flex:1;font-size:12px;" onclick="pingDetailDevice()">📶 Ping</button>
+        <button class="btn btn-outline" style="flex:1;font-size:12px;" onclick="openPanel('add-sched-panel')">⏰ ตั้งเวลา</button>
+      </div>
+      <button class="btn btn-danger" style="width:100%;" onclick="removeDetailDevice()">🗑️ ลบอุปกรณ์</button>
+    </div>
+    <br>
+  </div>
+</div>
+
+<!-- TELEGRAM PANEL -->
+<div class="panel-overlay" id="tg-panel">
+  <div class="panel-sheet">
+    <div class="panel-handle"></div>
+    <div class="panel-title">✈️ ตั้งค่า Telegram</div>
+    <div class="field-group">
+      <div class="field-label">Bot Token</div>
+      <input class="field-input" id="tg-token" placeholder="123456789:AAxxxxxx-xxxxxxxxx" type="text">
+      <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">สร้างบอทได้ที่ @BotFather บน Telegram</div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Chat ID</div>
+      <input class="field-input" id="tg-chatid" placeholder="-100xxxxxxxxxx หรือ @username" type="text">
+      <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">ดู Chat ID ได้ที่ @userinfobot</div>
+    </div>
+    <div class="field-row" style="padding:0 20px 8px;gap:10px;">
+      <button class="btn btn-outline" style="flex:1" onclick="closePanel('tg-panel')">ยกเลิก</button>
+      <button class="btn btn-outline" style="flex:1" onclick="testTelegram()">🧪 ทดสอบ</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveTelegram()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- NFC BIND PANEL -->
+<div class="panel-overlay" id="add-nfc-panel">
+  <div class="panel-sheet">
+    <div class="panel-handle"></div>
+    <div class="panel-title">📡 ผูก NFC Tag</div>
+    <div class="field-group">
+      <div class="field-label">Tag ID (แตะหรือกรอกเอง)</div>
+      <div class="field-row">
+        <input class="field-input" id="nfc-tag-id" placeholder="เช่น 04:AB:CD:EF">
+        <button class="btn btn-outline" onclick="scanNFCForBind()">แสกน</button>
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">ชื่อ Tag</div>
+      <input class="field-input" id="nfc-tag-name" placeholder="เช่น โซน A ปั๊มน้ำ">
+    </div>
+    <div class="field-group">
+      <div class="field-label">อุปกรณ์ที่ผูก</div>
+      <select class="field-input" id="nfc-tag-dev"></select>
+    </div>
+    <div class="field-group">
+      <div class="field-label">การกระทำ</div>
+      <select class="field-input" id="nfc-tag-action">
+        <option value="toggle">Toggle (สลับสถานะ)</option>
+        <option value="on">เปิด (ON)</option>
+        <option value="off">ปิด (OFF)</option>
+      </select>
+    </div>
+    <div class="field-row" style="padding:0 20px 20px;gap:10px;">
+      <button class="btn btn-outline" style="flex:1" onclick="closePanel('add-nfc-panel')">ยกเลิก</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveNFCTag()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOG PANEL -->
+<div class="panel-overlay" id="log-panel">
+  <div class="panel-sheet" style="max-height:70vh;">
+    <div class="panel-handle"></div>
+    <div class="panel-title" style="display:flex;justify-content:space-between;align-items:center;padding-right:20px;">
+      <span>📋 Activity Log</span>
+      <button class="btn btn-danger" style="padding:6px 12px;font-size:11px;" onclick="clearLog()">ล้าง</button>
+    </div>
+    <div class="log-list" id="log-list"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  SmartControl — Core Application
+// ═══════════════════════════════════════════════
+
+const DB_KEY = 'sc_db_v2';
+let db = {
+  devices: [],
+  schedules: [],
+  nfcTags: [],
+  logs: [],
+  settings: { notif_on_off: true, notif_offline: true, ping_interval: 30000 },
+  telegram: { token: '', chatid: '' }
+};
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(DB_KEY);
+    if (raw) db = { ...db, ...JSON.parse(raw) };
+  } catch(e) {}
+}
+function saveDB() {
+  try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch(e) {}
+}
+
+// ─── DEVICE TYPE CONFIG ───
+const DEV_TYPES = {
+  water:  { icon: '💧', color: '#2af0ff', label: 'ปั๊มน้ำ' },
+  light:  { icon: '💡', color: '#f0d62a', label: 'ไฟ' },
+  fan:    { icon: '🌀', color: '#8be24a', label: 'พัดลม' },
+  mist:   { icon: '🌫️', color: '#a0d4ff', label: 'หมอก' },
+  heater: { icon: '🔥', color: '#ff7c2a', label: 'ฮีต' },
+  sensor: { icon: '📊', color: '#c8a0ff', label: 'เซ็นเซอร์' },
+  plug:   { icon: '🔌', color: '#e0e0e0', label: 'ปลั๊ก' },
+};
+
+// ─── SONOFF HTTP API ───
+// Supports: eWeLink DIY Mode / LAN API (port 8081)
+// GET http://IP:8081/zeroconf/switch → info
+// POST http://IP:8081/zeroconf/switch → {deviceid,data:{switch:"on"/"off"}}
+
+async function sonoffRequest(device, action) {
+  const base = `http://${device.ip}:${device.port || 8081}`;
+  const payload = {
+    deviceid: device.id || '',
+    data: {}
+  };
+  if (action === 'on')  payload.data.switch = 'on';
+  if (action === 'off') payload.data.switch = 'off';
+  if (action === 'get') {
+    // GET info
+    try {
+      const r = await fetch(`${base}/zeroconf/switch`, {
+        method: 'GET', mode: 'no-cors',
+        signal: AbortSignal.timeout(3000)
+      });
+      return { ok: true };
+    } catch(e) {
+      return { ok: false, err: e.message };
+    }
+  }
+  // Channel support for multi-relay (Basic R4, 4CHPRO)
+  if (device.channel !== undefined && device.channel !== 0) {
+    payload.data = { switches: [] };
+    for (let i = 0; i < 4; i++) {
+      payload.data.switches.push({ switch: i === device.channel ? action : undefined, outlet: i });
+    }
+    payload.data.switches = payload.data.switches.filter(s => s.switch !== undefined);
+  }
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (device.apikey) headers['Authorization'] = `Bearer ${device.apikey}`;
+    const r = await fetch(`${base}/zeroconf/switch`, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers,
+      body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(4000)
+    });
+    return { ok: true };
+  } catch(e) {
+    // no-cors can throw CORS but still may succeed on LAN
+    if (e.name === 'TypeError' && e.message.includes('Failed to fetch')) {
+      return { ok: false, err: 'ไม่สามารถเชื่อมต่อ — ตรวจสอบ IP และ LAN' };
+    }
+    return { ok: true }; // no-cors: assume ok
+  }
+}
+
+async function pingDevice(device) {
+  const t0 = Date.now();
+  try {
+    await fetch(`http://${device.ip}:${device.port || 8081}/zeroconf/switch`, {
+      method: 'GET', mode: 'no-cors', signal: AbortSignal.timeout(3000)
+    });
+    return { ok: true, ms: Date.now() - t0 };
+  } catch(e) {
+    return { ok: false, ms: -1 };
+  }
+}
+
+// ─── TOGGLE DEVICE ───
+async function toggleDevice(id) {
+  const dev = db.devices.find(d => d.id === id);
+  if (!dev) return;
+  const newState = dev.state === 'ON' ? 'off' : 'on';
+  addLog('info', `${dev.name}: สั่ง ${newState.toUpperCase()}...`, newState === 'on' ? 'on' : 'off');
+  const res = await sonoffRequest(dev, newState);
+  if (res.ok) {
+    dev.state = newState.toUpperCase();
+    dev.lastToggle = new Date().toLocaleString('th-TH');
+    saveDB();
+    renderDevices();
+    updateSummary();
+    addLog(newState === 'on' ? 'on' : 'off', `${dev.name}: ${newState.toUpperCase()} สำเร็จ`);
+    sendTelegramAlert(`🌿 SmartControl\n${dev.name}: *${newState.toUpperCase()}*\n🕐 ${dev.lastToggle}`);
+    showToast(`${dev.name} → ${newState.toUpperCase()}`);
+  } else {
+    addLog('err', `${dev.name}: ERROR — ${res.err}`);
+    showToast(`❌ ${dev.name}: เชื่อมต่อไม่ได้`, 'error');
+  }
+}
+
+// ─── RENDER DEVICES ───
+let activeZone = 'all';
+function renderDevices() {
+  const grid = document.getElementById('device-grid');
+  const devs = activeZone === 'all' ? db.devices : db.devices.filter(d => d.zone === activeZone);
+  if (devs.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--text-dim);">
+      <div style="font-size:40px;margin-bottom:10px;">🌱</div>
+      ยังไม่มีอุปกรณ์<br>
+      <span style="font-size:12px;">กด + เพื่อเพิ่มอุปกรณ์ Sonoff</span>
+    </div>`;
+    return;
+  }
+  grid.innerHTML = devs.map(d => renderCard(d)).join('');
+  renderZoneTabs();
+}
+
+function renderCard(d) {
+  const tc = DEV_TYPES[d.type] || DEV_TYPES.plug;
+  const isOn = d.state === 'ON';
+  const isOff = d.state === 'OFFLINE';
+  const stateClass = isOn ? 'ON' : (isOff ? 'OFFLINE' : '');
+  const sched = db.schedules.filter(s => s.devId === d.id);
+  const timerBadge = sched.length > 0 ? `<div class="timer-badge">⏰${sched.length}</div>` : '';
+  return `
+  <div class="device-card ${stateClass}" onclick="openDeviceDetail('${d.id}')">
+    ${timerBadge}
+    <div class="card-header">
+      <div class="dev-icon" style="color:${tc.color}">${tc.icon}</div>
+      <div class="toggle-wrap">
+        <div class="toggle ${isOn ? 'on' : ''}" onclick="event.stopPropagation();toggleDevice('${d.id}')">
+          <div class="toggle-knob"></div>
+        </div>
+      </div>
+    </div>
+    <div class="dev-name">${d.name}</div>
+    <div class="dev-ip">${d.ip}:${d.port||8081}</div>
+    <div class="dev-status-row">
+      <div class="dev-state ${isOn?'on':isOff?'offline':'off'}">${d.state}</div>
+      <div class="ping-dot ${isOff?'fail':'ok'}"></div>
+    </div>
+    ${d.zone ? `<div style="font-size:10px;color:var(--text-dim);margin-top:4px;">📍 ${d.zone}</div>` : ''}
+  </div>`;
+}
+
+function renderZoneTabs() {
+  const zones = ['all', ...new Set(db.devices.map(d => d.zone).filter(Boolean))];
+  const tabs = document.getElementById('zone-tabs');
+  tabs.innerHTML = zones.map(z => `
+    <button class="ztab ${activeZone===z?'active':''}" onclick="filterZone(this,'${z}')">
+      ${z==='all'?'ทั้งหมด':z}
+    </button>`).join('');
+}
+
+function filterZone(el, zone) {
+  activeZone = zone;
+  document.querySelectorAll('.ztab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderDevices();
+}
+
+// ─── SUMMARY ───
+function updateSummary() {
+  const online = db.devices.filter(d => d.state !== 'OFFLINE').length;
+  const on = db.devices.filter(d => d.state === 'ON').length;
+  document.getElementById('sum-online').textContent = online;
+  document.getElementById('sum-on').textContent = on;
+  document.getElementById('sum-sched').textContent = db.schedules.length;
+}
+
+// ─── ADD DEVICE ───
+async function testAndAddDevice() {
+  const name = document.getElementById('nd-name').value.trim();
+  const ip = document.getElementById('nd-ip').value.trim();
+  const port = parseInt(document.getElementById('nd-port').value) || 8081;
+  const type = document.getElementById('nd-type').value;
+  const zone = document.getElementById('nd-zone').value.trim();
+  const channel = parseInt(document.getElementById('nd-channel').value) || 0;
+  const apikey = document.getElementById('nd-apikey').value.trim();
+  if (!name || !ip) return showToast('กรอกชื่อและ IP', 'error');
+  showToast('กำลังทดสอบการเชื่อมต่อ...');
+  const id = 'dev_' + Date.now();
+  const newDev = { id, name, ip, port, type, zone, channel, apikey, state: 'OFF', lastToggle: null };
+  const ping = await pingDevice(newDev);
+  newDev.state = ping.ok ? 'OFF' : 'OFFLINE';
+  db.devices.push(newDev);
+  saveDB();
+  renderDevices();
+  updateSummary();
+  closePanel('add-device-panel');
+  addLog('info', `เพิ่มอุปกรณ์: ${name} (${ip}) — ${ping.ok ? '✅ ออนไลน์' : '⚠️ ออฟไลน์'}`);
+  showToast(ping.ok ? `✅ ${name} เชื่อมต่อได้` : `⚠️ ${name} เพิ่มแล้ว (ออฟไลน์)`, ping.ok ? null : 'warn');
+  ['nd-name','nd-ip','nd-apikey','nd-zone'].forEach(i => document.getElementById(i).value = '');
+}
+
+// ─── DEVICE DETAIL ───
+let currentDetailId = null;
+function openDeviceDetail(id) {
+  const dev = db.devices.find(d => d.id === id);
+  if (!dev) return;
+  currentDetailId = id;
+  const tc = DEV_TYPES[dev.type] || DEV_TYPES.plug;
+  document.getElementById('detail-title').textContent = tc.icon + ' ' + dev.name;
+  document.getElementById('detail-state').textContent = dev.state;
+  document.getElementById('detail-state').style.color = dev.state==='ON' ? 'var(--accent)' : dev.state==='OFFLINE' ? 'var(--accent-red)' : 'var(--text-dim)';
+  document.getElementById('detail-ip').textContent = `${dev.ip}:${dev.port||8081}`;
+  document.getElementById('detail-zone').textContent = dev.zone || '-';
+  document.getElementById('detail-ch').textContent = `CH ${dev.channel}`;
+  document.getElementById('detail-last').textContent = dev.lastToggle || '-';
+  document.getElementById('detail-ping').textContent = '...';
+  document.getElementById('detail-toggle-btn').textContent = dev.state === 'ON' ? '⛔ ปิด' : '✅ เปิด';
+  openPanel('device-detail-panel');
+  pingDevice(dev).then(r => {
+    document.getElementById('detail-ping').textContent = r.ok ? r.ms + 'ms' : 'ไม่ตอบ';
+  });
+  // Pre-select device for schedule
+  populateSchedSelect(id);
+}
+
+function toggleDetailDevice() {
+  if (currentDetailId) {
+    toggleDevice(currentDetailId);
+    closePanel('device-detail-panel');
+  }
+}
+
+function pingDetailDevice() {
+  const dev = db.devices.find(d => d.id === currentDetailId);
+  if (!dev) return;
+  document.getElementById('detail-ping').textContent = '...';
+  pingDevice(dev).then(r => {
+    document.getElementById('detail-ping').textContent = r.ok ? r.ms + 'ms' : 'ไม่ตอบ';
+    showToast(r.ok ? `📶 Ping: ${r.ms}ms` : '❌ ไม่ตอบสนอง', r.ok ? null : 'error');
+  });
+}
+
+function removeDetailDevice() {
+  if (!currentDetailId) return;
+  if (!confirm('ลบอุปกรณ์นี้?')) return;
+  db.devices = db.devices.filter(d => d.id !== currentDetailId);
+  db.schedules = db.schedules.filter(s => s.devId !== currentDetailId);
+  saveDB();
+  renderDevices();
+  updateSummary();
+  renderSchedules();
+  closePanel('device-detail-panel');
+  showToast('ลบอุปกรณ์แล้ว', 'warn');
+}
+
+// ─── SCHEDULES ───
+function populateSchedSelect(selectedId = null) {
+  const sel = document.getElementById('sched-dev-sel');
+  sel.innerHTML = db.devices.map(d => `<option value="${d.id}" ${d.id===selectedId?'selected':''}>${d.name}</option>`).join('');
+}
+
+function addSchedule() {
+  const devId = document.getElementById('sched-dev-sel').value;
+  const action = document.getElementById('sched-action').value;
+  const time = document.getElementById('sched-time').value;
+  const duration = parseInt(document.getElementById('sched-duration').value) || 0;
+  const days = [...document.querySelectorAll('.day-cb:checked')].map(c => parseInt(c.value));
+  if (!devId || !time) return showToast('กรอกข้อมูลให้ครบ', 'error');
+  const dev = db.devices.find(d => d.id === devId);
+  db.schedules.push({ id: 'sch_'+Date.now(), devId, action, time, days, duration });
+  saveDB();
+  renderSchedules();
+  updateSummary();
+  closePanel('add-sched-panel');
+  addLog('sched', `ตั้งเวลา ${dev?.name}: ${action.toUpperCase()} ${time}`);
+  showToast('✅ บันทึกตารางเวลาแล้ว');
+}
+
+function renderSchedules() {
+  const list = document.getElementById('schedule-list');
+  if (db.schedules.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text-dim);">
+      <div style="font-size:36px;margin-bottom:10px;">⏰</div>
+      ยังไม่มีตารางเวลา
+    </div>`;
+    return;
+  }
+  const dayNames = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+  list.innerHTML = db.schedules.sort((a,b) => a.time.localeCompare(b.time)).map(s => {
+    const dev = db.devices.find(d => d.id === s.devId);
+    const dayStr = s.days.sort().map(d => dayNames[d]).join(' ');
+    const dur = s.duration ? ` (${s.duration} นาที)` : '';
+    return `<div class="sched-item">
+      <div class="sched-time">${s.time}</div>
+      <div class="sched-info">
+        <div class="sched-dev">${dev?.name || 'อุปกรณ์ถูกลบ'}</div>
+        <div class="sched-desc">${dayStr}${dur}</div>
+      </div>
+      <span class="sched-badge ${s.action}">${s.action.toUpperCase()}</span>
+      <button class="sched-del" onclick="removeSchedule('${s.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function removeSchedule(id) {
+  db.schedules = db.schedules.filter(s => s.id !== id);
+  saveDB();
+  renderSchedules();
+  updateSummary();
+}
+
+// ─── SCHEDULER RUNNER ───
+function runScheduler() {
+  const now = new Date();
+  const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const dow = now.getDay();
+  db.schedules.forEach(s => {
+    if (s.time !== hhmm) return;
+    if (!s.days.includes(dow)) return;
+    if (s._lastRun === hhmm + '_' + now.toDateString()) return; // dedup
+    s._lastRun = hhmm + '_' + now.toDateString();
+    const dev = db.devices.find(d => d.id === s.devId);
+    if (!dev) return;
+    const action = s.action;
+    addLog('sched', `⏰ ตั้งเวลา: ${dev.name} → ${action.toUpperCase()}`);
+    sonoffRequest(dev, action).then(r => {
+      if (r.ok) {
+        dev.state = action.toUpperCase();
+        dev.lastToggle = now.toLocaleString('th-TH');
+        saveDB();
+        renderDevices();
+        updateSummary();
+        sendTelegramAlert(`⏰ SmartControl (ตั้งเวลา)\n${dev.name}: *${action.toUpperCase()}*\n🕐 ${hhmm}`);
+        pushNotify(`${dev.name} → ${action.toUpperCase()}`, '⏰ ตามตารางเวลา');
+        // Auto-off after duration
+        if (action === 'on' && s.duration > 0) {
+          setTimeout(async () => {
+            await sonoffRequest(dev, 'off');
+            dev.state = 'OFF';
+            dev.lastToggle = new Date().toLocaleString('th-TH');
+            saveDB();
+            renderDevices();
+            updateSummary();
+            addLog('off', `${dev.name}: ปิดอัตโนมัติหลัง ${s.duration} นาที`);
+          }, s.duration * 60000);
+        }
+      }
+    });
+  });
+}
+
+// ─── PING LOOP ───
+let pingLoop = null;
+function startPingLoop() {
+  if (pingLoop) clearInterval(pingLoop);
+  const interval = parseInt(db.settings.ping_interval) || 30000;
+  pingLoop = setInterval(async () => {
+    let changed = false;
+    for (const dev of db.devices) {
+      const prev = dev.state;
+      const r = await pingDevice(dev);
+      if (!r.ok && prev !== 'OFFLINE') {
+        dev.state = 'OFFLINE';
+        changed = true;
+        addLog('err', `${dev.name}: ออฟไลน์`);
+        sendTelegramAlert(`⚠️ SmartControl\n${dev.name}: *OFFLINE*`);
+        if (db.settings.notif_offline) pushNotify(`${dev.name} ออฟไลน์`, '⚠️ ตรวจสอบการเชื่อมต่อ');
+      } else if (r.ok && prev === 'OFFLINE') {
+        dev.state = 'OFF';
+        changed = true;
+        addLog('info', `${dev.name}: กลับมาออนไลน์`);
+      }
+    }
+    if (changed) { saveDB(); renderDevices(); updateSummary(); }
+    // Update net indicator
+    document.getElementById('net-indicator').style.background = navigator.onLine ? 'var(--accent)' : 'var(--accent-red)';
+  }, interval);
+}
+
+// ─── TELEGRAM ───
+function saveTelegram() {
+  db.telegram.token = document.getElementById('tg-token').value.trim();
+  db.telegram.chatid = document.getElementById('tg-chatid').value.trim();
+  saveDB();
+  updateTgDisplay();
+  closePanel('tg-panel');
+  showToast('✅ บันทึก Telegram แล้ว');
+}
+
+function updateTgDisplay() {
+  const el = document.getElementById('tg-bot-display');
+  if (db.telegram.token) {
+    const short = db.telegram.token.split(':')[0] + ':****';
+    el.textContent = `Bot ${short}`;
+    document.getElementById('tg-token').value = db.telegram.token;
+    document.getElementById('tg-chatid').value = db.telegram.chatid;
+  } else {
+    el.textContent = 'ยังไม่ตั้งค่า';
+  }
+}
+
+async function sendTelegramAlert(text) {
+  if (!db.telegram.token || !db.telegram.chatid) return;
+  if (!db.settings.notif_on_off) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${db.telegram.token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: db.telegram.chatid, text, parse_mode: 'Markdown' })
+    });
+  } catch(e) {}
+}
+
+async function testTelegram() {
+  const token = document.getElementById('tg-token').value.trim();
+  const chatid = document.getElementById('tg-chatid').value.trim();
+  if (!token || !chatid) return showToast('กรอก Token และ Chat ID', 'error');
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatid, text: '🌿 SmartControl: ทดสอบการแจ้งเตือนสำเร็จ! ✅', parse_mode: 'Markdown' })
+    });
+    const j = await r.json();
+    if (j.ok) showToast('✅ ส่ง Telegram สำเร็จ');
+    else showToast('❌ ' + (j.description || 'Error'), 'error');
+  } catch(e) {
+    showToast('❌ ส่งไม่ได้: ' + e.message, 'error');
+  }
+}
+
+// ─── PUSH NOTIFICATION ───
+async function requestPush() {
+  if (!('Notification' in window)) return showToast('เบราว์เซอร์ไม่รองรับ', 'warn');
+  const p = await Notification.requestPermission();
+  showToast(p === 'granted' ? '✅ อนุญาต Push Notification แล้ว' : '❌ ไม่ได้รับอนุญาต', p === 'granted' ? null : 'error');
+}
+
+function pushNotify(title, body) {
+  if (Notification.permission === 'granted') {
+    try { new Notification('🌿 ' + title, { body, icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><text y="28" font-size="28">🌿</text></svg>' }); }
+    catch(e) {}
+  }
+}
+
+// ─── NFC ───
+let nfcReader = null;
+async function startNFC() {
+  if (!('NDEFReader' in window)) {
+    document.getElementById('nfc-status').textContent = '⚠️ NFC ไม่รองรับบนเบราว์เซอร์นี้ (ต้องใช้ Chrome Android)';
+    showToast('NFC ไม่รองรับ', 'warn'); return;
+  }
+  try {
+    nfcReader = new NDEFReader();
+    await nfcReader.scan();
+    document.getElementById('nfc-status').textContent = '🟢 กำลังสแกน NFC... แตะแท็กเพื่อสั่งงาน';
+    addLog('nfc', 'เปิด NFC Scanner');
+    nfcReader.onreading = ({ serialNumber, message }) => {
+      const tagId = serialNumber.toUpperCase();
+      document.getElementById('nfc-status').textContent = `📡 อ่านแท็ก: ${tagId}`;
+      addLog('nfc', `อ่านแท็ก: ${tagId}`);
+      handleNFCTag(tagId);
+    };
+    nfcReader.onerror = e => {
+      document.getElementById('nfc-status').textContent = '❌ NFC Error: ' + e.message;
+    };
+  } catch(e) {
+    document.getElementById('nfc-status').textContent = '❌ ' + e.message;
+    showToast('NFC: ' + e.message, 'error');
+  }
+}
+
+async function scanNFCForBind() {
+  if (!('NDEFReader' in window)) { showToast('NFC ไม่รองรับ', 'warn'); return; }
+  try {
+    const reader = new NDEFReader();
+    await reader.scan();
+    showToast('แตะแท็ก NFC...');
+    reader.onreading = ({ serialNumber }) => {
+      document.getElementById('nfc-tag-id').value = serialNumber.toUpperCase();
+      showToast('📡 อ่านแท็กแล้ว: ' + serialNumber.toUpperCase());
+    };
+  } catch(e) { showToast('NFC Error', 'error'); }
+}
+
+function handleNFCTag(tagId) {
+  const tag = db.nfcTags.find(t => t.tagId === tagId);
+  if (!tag) {
+    showToast(`📡 แท็ก ${tagId} ยังไม่ผูกอุปกรณ์`, 'warn');
+    addLog('nfc', `แท็กไม่พบ: ${tagId}`);
+    return;
+  }
+  const dev = db.devices.find(d => d.id === tag.devId);
+  if (!dev) return;
+  let action = tag.action;
+  if (action === 'toggle') action = dev.state === 'ON' ? 'off' : 'on';
+  addLog('nfc', `${tag.name}: สั่ง ${dev.name} → ${action.toUpperCase()}`);
+  sonoffRequest(dev, action).then(r => {
+    if (r.ok) {
+      dev.state = action.toUpperCase();
+      saveDB();
+      renderDevices();
+      updateSummary();
+      showToast(`📡 NFC: ${dev.name} → ${action.toUpperCase()}`);
+      sendTelegramAlert(`📡 NFC Tap\n${dev.name}: *${action.toUpperCase()}*`);
+    }
+  });
+}
+
+function saveNFCTag() {
+  const tagId = document.getElementById('nfc-tag-id').value.trim().toUpperCase();
+  const name = document.getElementById('nfc-tag-name').value.trim();
+  const devId = document.getElementById('nfc-tag-dev').value;
+  const action = document.getElementById('nfc-tag-action').value;
+  if (!tagId || !name || !devId) return showToast('กรอกข้อมูลให้ครบ', 'error');
+  db.nfcTags.push({ id: 'nfc_'+Date.now(), tagId, name, devId, action });
+  saveDB();
+  renderNFCTags();
+  closePanel('add-nfc-panel');
+  addLog('nfc', `ผูกแท็ก: ${name} (${tagId})`);
+  showToast('✅ ผูก NFC Tag แล้ว');
+}
+
+function renderNFCTags() {
+  const list = document.getElementById('nfc-tag-list');
+  const nfcDevSel = document.getElementById('nfc-tag-dev');
+  nfcDevSel.innerHTML = db.devices.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+  if (db.nfcTags.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-dim);">ยังไม่มีแท็ก NFC ที่ผูกไว้</div>`;
+    return;
+  }
+  list.innerHTML = db.nfcTags.map(t => {
+    const dev = db.devices.find(d => d.id === t.devId);
+    return `<div class="nfc-tag-item">
+      <div style="font-size:24px">📡</div>
+      <div style="flex:1">
+        <div class="nfc-tag-name">${t.name}</div>
+        <div class="nfc-tag-id">${t.tagId}</div>
+        <div class="nfc-tag-action">${dev?.name||'?'} → ${t.action.toUpperCase()}</div>
+      </div>
+      <button class="btn btn-danger" style="padding:6px 10px;font-size:11px;" onclick="removeNFCTag('${t.id}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function removeNFCTag(id) {
+  db.nfcTags = db.nfcTags.filter(t => t.id !== id);
+  saveDB();
+  renderNFCTags();
+}
+
+// ─── LOG ───
+function addLog(type, msg) {
+  const now = new Date();
+  const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  db.logs.unshift({ type, msg, time, date: now.toLocaleDateString('th-TH') });
+  if (db.logs.length > 200) db.logs.splice(200);
+  saveDB();
+  renderLog();
+}
+
+function renderLog() {
+  const list = document.getElementById('log-list');
+  if (db.logs.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-dim);">ยังไม่มี Log</div>`;
+    return;
+  }
+  const badge = { on:'badge-on',off:'badge-off',err:'badge-err',warn:'badge-warn',nfc:'badge-nfc',sched:'badge-sched',info:'badge-off' };
+  const label = { on:'ON',off:'OFF',err:'ERR',warn:'⚠️',nfc:'NFC',sched:'SCH',info:'ℹ️' };
+  list.innerHTML = db.logs.map(l => `
+    <div class="log-item">
+      <div class="log-time">${l.time}</div>
+      <div class="log-type"><span class="badge ${badge[l.type]||'badge-off'}">${label[l.type]||l.type}</span></div>
+      <div class="log-msg">${l.msg}</div>
+    </div>`).join('');
+}
+
+function clearLog() {
+  db.logs = [];
+  saveDB();
+  renderLog();
+}
+
+// ─── ENV SIMULATION (ในโปรดักชัน: เชื่อมต่อ Sensor จริง) ───
+function updateEnv() {
+  // สามารถเปลี่ยนเป็นดึงค่าจาก HTTP endpoint ของ sensor node ได้
+  document.getElementById('ev-temp').textContent = (28 + Math.random()*4).toFixed(1) + '°C';
+  document.getElementById('ev-hum').textContent = (65 + Math.random()*15).toFixed(0) + '%';
+  document.getElementById('ev-soil').textContent = (40 + Math.random()*30).toFixed(0) + '%';
+  document.getElementById('ev-lux').textContent = (800 + Math.random()*400).toFixed(0) + ' lux';
+}
+
+// ─── SETTINGS ───
+function saveSetting(key, val) {
+  db.settings[key] = val;
+  saveDB();
+  if (key === 'ping_interval') startPingLoop();
+}
+
+function clearAll() {
+  db = { devices:[], schedules:[], nfcTags:[], logs:[], settings:{notif_on_off:true,notif_offline:true,ping_interval:30000}, telegram:{token:'',chatid:''} };
+  saveDB();
+  renderDevices();
+  renderSchedules();
+  renderNFCTags();
+  renderLog();
+  updateSummary();
+  updateTgDisplay();
+  showToast('ล้างข้อมูลทั้งหมดแล้ว', 'warn');
+}
+
+// ─── UI HELPERS ───
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'schedule') { populateSchedSelect(); renderSchedules(); }
+  if (name === 'nfc') renderNFCTags();
+  if (name === 'settings') checkSW();
+}
+
+function openPanel(id) {
+  document.getElementById(id).classList.add('open');
+  if (id === 'add-sched-panel') populateSchedSelect();
+  if (id === 'add-nfc-panel') { document.getElementById('nfc-tag-dev').innerHTML = db.devices.map(d => `<option value="${d.id}">${d.name}</option>`).join(''); }
+  if (id === 'log-panel') renderLog();
+}
+
+function closePanel(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// Close panels on overlay click
+document.querySelectorAll('.panel-overlay').forEach(el => {
+  el.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+});
+
+function showToast(msg, type = null) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'toast' + (type ? ' ' + type : '');
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ─── SERVICE WORKER / PWA ───
+function checkSW() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      document.getElementById('sw-status').textContent = regs.length > 0 ? '🟢 ทำงาน' : '🔴 ไม่พบ';
+    });
+  } else {
+    document.getElementById('sw-status').textContent = '⚠️ ไม่รองรับ';
+  }
+}
+
+// Inline SW via Blob for offline cache
+function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  const swCode = `
+const CACHE = 'sc-v1';
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.add('/')));
+  self.skipWaiting();
+});
+self.addEventListener('fetch', e => {
+  if (e.request.destination === 'document' || e.request.destination === 'script') {
+    e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('/'))));
+  }
+});
+self.addEventListener('push', e => {
+  const d = e.data ? e.data.json() : { title:'SmartControl', body:'แจ้งเตือน' };
+  e.waitUntil(self.registration.showNotification(d.title, { body: d.body, icon: '/icon.png' }));
+});
+  `;
+  const blob = new Blob([swCode], { type: 'application/javascript' });
+  const url = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(url).catch(() => {});
+}
+
+// Manifest via blob
+function setupManifest() {
+  const manifest = {
+    name: 'SmartControl', short_name: 'SmartCtrl',
+    start_url: '/', display: 'standalone',
+    background_color: '#060d1a', theme_color: '#00c8a0',
+    icons: [{ src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%23060d1a'/><text y='140' x='24' font-size='128'>🌿</text></svg>", sizes: '192x192', type: 'image/svg+xml' }]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+  document.getElementById('manifest-link').href = URL.createObjectURL(blob);
+}
+
+// ─── INIT ───
+function init() {
+  loadDB();
+  setupManifest();
+  registerSW();
+  renderDevices();
+  updateSummary();
+  renderSchedules();
+  renderNFCTags();
+  renderLog();
+  updateTgDisplay();
+  updateEnv();
+  setInterval(updateEnv, 15000);
+  setInterval(runScheduler, 60000);
+  startPingLoop();
+  window.addEventListener('online', () => { document.getElementById('net-indicator').style.background = 'var(--accent)'; showToast('🟢 ออนไลน์แล้ว'); });
+  window.addEventListener('offline', () => { document.getElementById('net-indicator').style.background = 'var(--accent-red)'; showToast('⚠️ ออฟไลน์ — ใช้โหมด Local', 'warn'); });
+  // Load settings
+  if (db.settings) {
+    document.getElementById('notif-toggle').checked = db.settings.notif_on_off !== false;
+    document.getElementById('notif-offline').checked = db.settings.notif_offline !== false;
+    const sel = document.getElementById('ping-interval-sel');
+    sel.value = String(db.settings.ping_interval || 30000);
+  }
+  // Demo devices if empty
+  if (db.devices.length === 0) {
+    db.devices = [
+      { id:'dev_demo1', name:'ปั๊มน้ำหลัก', ip:'192.168.1.100', port:8081, type:'water', zone:'โซน A', channel:0, apikey:'', state:'OFF', lastToggle:null },
+      { id:'dev_demo2', name:'ไฟ LED โรงเรือน', ip:'192.168.1.101', port:8081, type:'light', zone:'โรงเรือน 1', channel:0, apikey:'', state:'ON', lastToggle:'วันนี้ 06:00' },
+      { id:'dev_demo3', name:'พัดลมระบาย', ip:'192.168.1.102', port:8081, type:'fan', zone:'โรงเรือน 1', channel:0, apikey:'', state:'OFF', lastToggle:null },
+      { id:'dev_demo4', name:'หัวพ่นหมอก', ip:'192.168.1.103', port:8081, type:'mist', zone:'โซน B', channel:0, apikey:'', state:'OFFLINE', lastToggle:null },
+    ];
+    saveDB();
+    renderDevices();
+    updateSummary();
+    addLog('info', '🌱 SmartControl เริ่มต้น — โหลดอุปกรณ์ตัวอย่าง');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
