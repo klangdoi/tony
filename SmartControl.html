@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SmartControl">
-<title>SmartControl v1.5.1 — Farm Intelligence</title>
+<title>SmartControl v1.7.1 — Farm Intelligence</title>
 <link rel="manifest" href="#" id="manifest-link">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -247,7 +247,80 @@ html, body {
 .env-chip:hover { border-color: rgba(255,255,255,0.3); transform: scale(1.02); }
 .env-chip:active { transform: scale(0.97); }
 
-/* ─── SMART RULES ─── */
+/* ─── SPARKLINE ─── */
+.env-chip { position: relative; flex-direction: column; align-items: flex-start !important; padding: 10px 12px 6px !important; gap: 0 !important; }
+.env-chip-top { display: flex; align-items: center; gap: 6px; width: 100%; margin-bottom: 4px; }
+.env-chip canvas.sparkline { display: block; width: 100%; height: 28px; border-radius: 4px; }
+.env-chip .ev { font-size: 15px !important; }
+.env-chip-trend { font-size: 9px; font-family: var(--font-mono); margin-left: auto; opacity: 0.7; }
+
+/* ─── ANOMALY ALERT BANNER ─── */
+.anomaly-banner {
+  margin: 0 18px 0; border-radius: 12px; overflow: hidden;
+  display: none;
+}
+.anomaly-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  background: rgba(255,58,92,0.12); border: 1px solid rgba(255,58,92,0.3);
+  border-radius: 12px; margin-bottom: 6px;
+  animation: anomaly-flash 2s infinite;
+}
+.anomaly-item.warn {
+  background: rgba(255,124,42,0.12); border-color: rgba(255,124,42,0.3);
+  animation: none;
+}
+@keyframes anomaly-flash { 0%,100%{opacity:1} 50%{opacity:0.7} }
+.anomaly-icon { font-size: 18px; flex-shrink: 0; }
+.anomaly-text { flex: 1; font-size: 12px; line-height: 1.5; }
+.anomaly-val  { font-family: var(--font-mono); font-size: 13px; font-weight: 700; }
+
+/* ─── FARM INTELLIGENCE PAGE ─── */
+.fi-card {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+  margin: 0 18px 12px; overflow: hidden; box-shadow: var(--shadow-card);
+}
+.fi-card-header {
+  padding: 12px 16px; background: rgba(0,200,160,0.06);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.fi-card-icon { font-size: 20px; }
+.fi-card-title { font-size: 13px; font-weight: 600; color: var(--accent); }
+.fi-card-body  { padding: 14px 16px; }
+
+.et0-gauge {
+  display: flex; align-items: center; gap: 14px; margin-bottom: 10px;
+}
+.et0-circle {
+  width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
+  border: 3px solid var(--accent); display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: rgba(0,200,160,0.07); position: relative;
+}
+.et0-val  { font-family: var(--font-mono); font-size: 17px; font-weight: 700; color: var(--accent); line-height: 1; }
+.et0-unit { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+.et0-desc { flex: 1; }
+.et0-rec  { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+.et0-sub  { font-size: 11px; color: var(--text-dim); line-height: 1.6; }
+
+.harvest-log-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.harvest-log-row:last-child { border-bottom: none; }
+.hl-date  { font-size: 11px; color: var(--text-dim); min-width: 52px; }
+.hl-crop  { font-size: 13px; font-weight: 600; flex: 1; }
+.hl-yield { font-family: var(--font-mono); font-size: 13px; color: var(--accent); }
+.hl-note  { font-size: 11px; color: var(--text-dim); }
+
+.insight-row {
+  display: flex; align-items: flex-start; gap: 10px; padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.insight-row:last-child { border-bottom: none; }
+.insight-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.insight-text { font-size: 12px; color: var(--text-secondary); line-height: 1.6; flex: 1; }
+.insight-text strong { color: var(--text-primary); }
 .rule-card {
   background: var(--bg-card); border: 1px solid var(--border);
   border-radius: 16px; margin-bottom: 10px; overflow: hidden;
@@ -772,19 +845,42 @@ select.field-input option { background: #0c1a30; }
           <div class="sum-label">เปิดอยู่</div>
         </div>
         <div class="sum-item">
-          <div class="sum-val" id="sum-sched">0</div>
-          <div class="sum-label">ตั้งเวลา</div>
+          <div class="sum-val" id="sum-rules" style="color:var(--accent-orange)">0</div>
+          <div class="sum-label">Rules ทำงาน</div>
         </div>
       </div>
 
+      <!-- Anomaly Alert Banner -->
+      <div id="anomaly-banner" style="padding:0 18px 0;margin-top:8px;"></div>
+
       <div class="env-strip" id="env-strip">
-        <div class="env-chip temp" onclick="openGraphPage('temp')">🌡️ <span class="ev" id="ev-temp">--°C</span> <span>อุณหภูมิ</span></div>
-        <div class="env-chip hum"  onclick="openGraphPage('hum')">💧 <span class="ev" id="ev-hum">--%</span> <span>ความชื้น</span></div>
-        <div class="env-chip soil" onclick="openGraphPage('soil')">🌱 <span class="ev" id="ev-soil">--%</span> <span>ความชื้นดิน</span></div>
-        <div class="env-chip light" onclick="openGraphPage('lux')">☀️ <span class="ev" id="ev-lux">-- lux</span> <span>แสง</span></div>
+        <div class="env-chip temp" onclick="openGraphPage('temp')">
+          <div class="env-chip-top">🌡️ <span class="ev" id="ev-temp">--°C</span>
+            <span class="env-chip-trend" id="trend-temp"></span>
+          </div>
+          <canvas class="sparkline" id="spark-temp" height="28"></canvas>
+        </div>
+        <div class="env-chip hum" onclick="openGraphPage('hum')">
+          <div class="env-chip-top">💧 <span class="ev" id="ev-hum">--%</span>
+            <span class="env-chip-trend" id="trend-hum"></span>
+          </div>
+          <canvas class="sparkline" id="spark-hum" height="28"></canvas>
+        </div>
+        <div class="env-chip soil" onclick="openGraphPage('soil')">
+          <div class="env-chip-top">🌱 <span class="ev" id="ev-soil">--%</span>
+            <span class="env-chip-trend" id="trend-soil"></span>
+          </div>
+          <canvas class="sparkline" id="spark-soil" height="28"></canvas>
+        </div>
+        <div class="env-chip light" onclick="openGraphPage('lux')">
+          <div class="env-chip-top">☀️ <span class="ev" id="ev-lux">-- lux</span>
+            <span class="env-chip-trend" id="trend-lux"></span>
+          </div>
+          <canvas class="sparkline" id="spark-lux" height="28"></canvas>
+        </div>
       </div>
 
-      <!-- Sensor source mini indicator only — ย้ายปุ่มเลือกแหล่งไปหน้าตั้งค่าแล้ว -->
+      <!-- Sensor source mini indicator -->
       <div class="sensor-status-row" style="cursor:pointer;" onclick="showPageMore('settings')" title="เปลี่ยนแหล่งข้อมูล → ตั้งค่า">
         <div class="sensor-src-dot satellite" id="sensor-src-dot"></div>
         <span id="sensor-src-label" style="flex:1;">ดาวเทียม Open-Meteo — กำลังระบุตำแหน่ง...</span>
@@ -1184,6 +1280,82 @@ select.field-input option { background: #0c1a30; }
       </div>
     </div>
 
+    <!-- PAGE: FARM INTELLIGENCE -->
+    <div class="page" id="page-intelligence">
+      <div class="section-title">🧠 Farm Intelligence</div>
+
+      <!-- ET₀ Water Plan -->
+      <div class="fi-card">
+        <div class="fi-card-header">
+          <div class="fi-card-icon">💧</div>
+          <div>
+            <div class="fi-card-title">ET₀ — ความต้องการน้ำของพืช</div>
+            <div style="font-size:10px;color:var(--text-dim);">Evapotranspiration คำนวณจากอุณหภูมิ+ความชื้น+แสง</div>
+          </div>
+        </div>
+        <div class="fi-card-body">
+          <div class="et0-gauge">
+            <div class="et0-circle">
+              <div class="et0-val" id="et0-val">--</div>
+              <div class="et0-unit">mm/วัน</div>
+            </div>
+            <div class="et0-desc">
+              <div class="et0-rec" id="et0-rec">กำลังคำนวณ...</div>
+              <div class="et0-sub" id="et0-sub">ใช้ค่าเซ็นเซอร์ปัจจุบัน</div>
+            </div>
+          </div>
+          <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:10px;font-size:11px;color:var(--text-dim);line-height:1.8;">
+            <div>📐 ใช้สูตร Hargreaves-Samani (ประมาณ FAO-56 PM)</div>
+            <div>🌡️ อุณหภูมิ: <span id="et0-temp" style="color:var(--text-primary)">--</span> | 💧 ความชื้น: <span id="et0-hum" style="color:var(--text-primary)">--</span></div>
+            <div>☀️ แสง: <span id="et0-lux" style="color:var(--text-primary)">--</span> | 🌱 ความชื้นดิน: <span id="et0-soil" style="color:var(--text-primary)">--</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Anomaly History -->
+      <div class="fi-card">
+        <div class="fi-card-header">
+          <div class="fi-card-icon">🔔</div>
+          <div>
+            <div class="fi-card-title">ประวัติการแจ้งเตือนผิดปกติ</div>
+            <div style="font-size:10px;color:var(--text-dim);">ค่าที่เกินเกณฑ์ที่ตั้งไว้</div>
+          </div>
+          <button class="btn btn-outline" style="margin-left:auto;padding:5px 10px;font-size:11px;" onclick="openPanel('anomaly-settings-panel')">⚙️ เกณฑ์</button>
+        </div>
+        <div class="fi-card-body" id="anomaly-history-list">
+          <div style="text-align:center;padding:20px;color:var(--text-dim);font-size:12px;">ยังไม่มีการแจ้งเตือน</div>
+        </div>
+      </div>
+
+      <!-- Harvest Log -->
+      <div class="fi-card">
+        <div class="fi-card-header">
+          <div class="fi-card-icon">🌾</div>
+          <div><div class="fi-card-title">Log ผลผลิต</div>
+          <div style="font-size:10px;color:var(--text-dim);">บันทึกเพื่อเปรียบเทียบกับสภาพอากาศ</div></div>
+          <button class="btn btn-primary" style="margin-left:auto;padding:6px 12px;font-size:12px;" onclick="openPanel('harvest-panel')">+ บันทึก</button>
+        </div>
+        <div class="fi-card-body" id="harvest-log-list">
+          <div style="text-align:center;padding:20px;color:var(--text-dim);font-size:12px;">ยังไม่มีข้อมูลผลผลิต</div>
+        </div>
+      </div>
+
+      <!-- AI Insights -->
+      <div class="fi-card">
+        <div class="fi-card-header">
+          <div class="fi-card-icon">🧠</div>
+          <div><div class="fi-card-title">Farm Insights</div>
+          <div style="font-size:10px;color:var(--text-dim);">วิเคราะห์จากข้อมูลสะสม</div></div>
+          <button class="btn btn-outline" style="margin-left:auto;padding:5px 10px;font-size:11px;" onclick="generateInsights()">🔄 วิเคราะห์</button>
+        </div>
+        <div class="fi-card-body" id="insights-list">
+          <div style="text-align:center;padding:20px;color:var(--text-dim);font-size:12px;">กด 🔄 วิเคราะห์ เพื่อดู insights</div>
+        </div>
+      </div>
+
+      <div style="height:10px;"></div>
+    </div>
+
   </div><!-- end main-content -->
 
   <!-- BOTTOM NAV -->
@@ -1204,7 +1376,7 @@ select.field-input option { background: #0c1a30; }
       <span class="nav-icon">⋯</span>เพิ่มเติม
     </button>
   </nav>
-  <div class="version-badge">v1.5.1</div>
+  <div class="version-badge">v1.7.1</div>
 </div>
 
 <!-- MORE PANEL -->
@@ -1239,6 +1411,10 @@ select.field-input option { background: #0c1a30; }
         <button onclick="closePanel('more-panel');showPageMore('nfc')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:16px 10px;text-align:center;cursor:pointer;color:var(--text-primary);">
           <div style="font-size:26px;margin-bottom:5px;">📡</div><div style="font-size:12px;font-weight:600;">NFC</div>
           <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">แตะแท็กสั่งงาน</div>
+        </button>
+        <button onclick="closePanel('more-panel');showPageMore('intelligence')" style="background:var(--bg-card);border:1px solid rgba(139,226,74,0.3);border-radius:14px;padding:16px 10px;text-align:center;cursor:pointer;color:var(--text-primary);grid-column:1/-1;">
+          <div style="font-size:26px;margin-bottom:5px;">🧠</div><div style="font-size:12px;font-weight:600;">Farm Intelligence</div>
+          <div style="font-size:10px;color:#8be24a;margin-top:3px;">ET₀ • แจ้งเตือน • Log ผลผลิต • Insights</div>
         </button>
       </div>
     </div>
@@ -1298,47 +1474,123 @@ select.field-input option { background: #0c1a30; }
 
 <!-- ═══ PANELS ═══ -->
 
+<!-- ANOMALY SETTINGS PANEL -->
+<div class="panel-overlay" id="anomaly-settings-panel">
+  <div class="panel-sheet">
+    <div class="panel-handle"></div>
+    <div class="panel-title">🔔 ตั้งเกณฑ์แจ้งเตือนผิดปกติ</div>
+    <div style="padding:0 20px 10px;font-size:12px;color:var(--text-dim);">แจ้งเตือนทันทีเมื่อค่าเกินหรือต่ำกว่าเกณฑ์</div>
+    <div class="field-group">
+      <div class="field-label">🌡️ อุณหภูมิสูงสุด (°C)</div>
+      <input class="field-input" id="thr-temp-hi" type="number" value="38" step="0.5">
+    </div>
+    <div class="field-group">
+      <div class="field-label">🌡️ อุณหภูมิต่ำสุด (°C)</div>
+      <input class="field-input" id="thr-temp-lo" type="number" value="15" step="0.5">
+    </div>
+    <div class="field-group">
+      <div class="field-label">💧 ความชื้นต่ำสุด (%)</div>
+      <input class="field-input" id="thr-hum-lo" type="number" value="40">
+    </div>
+    <div class="field-group">
+      <div class="field-label">🌱 ความชื้นดินต่ำสุด (%)</div>
+      <input class="field-input" id="thr-soil-lo" type="number" value="25">
+    </div>
+    <div class="field-group">
+      <div class="field-label">☀️ แสงต่ำสุดกลางวัน (klux) — 0 = ปิด</div>
+      <input class="field-input" id="thr-lux-lo" type="number" value="0" step="0.5">
+    </div>
+    <div class="field-group">
+      <div class="field-label">⚡ Spike Detection — ค่าพุ่งเร็ว (°C หรือ % ต่อ 2 นาที)</div>
+      <input class="field-input" id="thr-spike" type="number" value="2.0" step="0.5">
+      <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">เช่น 2.0 = แจ้งเตือนถ้าอุณหภูมิขึ้น/ลงเกิน 2°C ใน 2 นาที</div>
+    </div>
+    <div class="field-row" style="padding:0 20px 20px;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-outline" style="flex:1" onclick="closePanel('anomaly-settings-panel')">ยกเลิก</button>
+      <button class="btn btn-outline" style="flex:1;font-size:12px;" onclick="resetAnomalyDefaults()">↺ ค่าเริ่มต้น</button>
+      <button class="btn btn-primary" style="flex:2" onclick="saveAnomalyThresholds()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- HARVEST LOG PANEL -->
+<div class="panel-overlay" id="harvest-panel">
+  <div class="panel-sheet">
+    <div class="panel-handle"></div>
+    <div class="panel-title">🌾 บันทึกผลผลิต</div>
+    <div class="field-group">
+      <div class="field-label">วันที่เก็บเกี่ยว</div>
+      <input class="field-input" id="harvest-date" type="date">
+    </div>
+    <div class="field-group">
+      <div class="field-label">พืช / สินค้า</div>
+      <input class="field-input" id="harvest-crop" placeholder="เช่น ผักกาด, มะเขือเทศ, สมุนไพร">
+    </div>
+    <div class="field-group">
+      <div class="field-label">ปริมาณ</div>
+      <div style="display:flex;gap:8px;">
+        <input class="field-input" id="harvest-yield" type="number" step="0.1" placeholder="0.0" style="flex:2;">
+        <select class="field-input" id="harvest-unit" style="flex:1;">
+          <option value="กก.">กก.</option>
+          <option value="กรัม">กรัม</option>
+          <option value="ถุง">ถุง</option>
+          <option value="มัด">มัด</option>
+          <option value="ผล">ผล</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">โซน / แปลง</div>
+      <input class="field-input" id="harvest-zone" placeholder="เช่น โซน A, โรงเรือน 1">
+    </div>
+    <div class="field-group">
+      <div class="field-label">หมายเหตุ</div>
+      <input class="field-input" id="harvest-note" placeholder="เช่น คุณภาพดี, มีโรค, ฝนตกมาก">
+    </div>
+    <div class="field-row" style="padding:0 20px 20px;gap:10px;">
+      <button class="btn btn-outline" style="flex:1" onclick="closePanel('harvest-panel')">ยกเลิก</button>
+      <button class="btn btn-primary" style="flex:2" onclick="addHarvestLog()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADD SMART RULE PANEL -->
 <div class="panel-overlay" id="add-rule-panel">
-  <div class="panel-sheet" style="max-height:92vh;">
+  <div class="panel-sheet" style="max-height:94vh;overflow-y:auto;">
     <div class="panel-handle"></div>
     <div class="panel-title">🤖 เพิ่ม Smart Rule</div>
 
     <div class="field-group">
       <div class="field-label">ชื่อ Rule</div>
-      <input class="field-input" id="rule-name" placeholder="เช่น เปิดพัดลมเมื่อร้อน">
+      <input class="field-input" id="rule-name" placeholder="เช่น เปิดพัดลมเมื่อร้อนและสว่าง">
     </div>
 
+    <!-- ═══ CONDITIONS ═══ -->
     <div class="field-group">
-      <div class="field-label">เงื่อนไข (Condition)</div>
-      <div style="display:flex;gap:8px;margin-bottom:8px;">
-        <select class="field-input" id="rule-sensor" style="flex:1;" onchange="updateRuleUnit()">
-          <option value="temp">🌡️ อุณหภูมิ (°C)</option>
-          <option value="hum">💧 ความชื้นอากาศ (%)</option>
-          <option value="soil">🌱 ความชื้นดิน (%)</option>
-          <option value="lux">☀️ แสง (klux)</option>
-        </select>
-        <select class="field-input" id="rule-operator" style="width:90px;">
-          <option value="gt">&gt; มากกว่า</option>
-          <option value="lt">&lt; น้อยกว่า</option>
-          <option value="gte">≥ มากกว่าเท่ากับ</option>
-          <option value="lte">≤ น้อยกว่าเท่ากับ</option>
-        </select>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="field-label" style="margin:0;">เงื่อนไข (Conditions)</div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span style="font-size:11px;color:var(--text-dim);">รวมเงื่อนไขแบบ</span>
+          <select class="field-input" id="rule-logic" style="padding:4px 8px;font-size:12px;width:70px;">
+            <option value="AND">AND</option>
+            <option value="OR">OR</option>
+          </select>
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <input class="field-input" id="rule-threshold" type="number" step="0.1" placeholder="ค่า" style="flex:1;">
-        <span id="rule-unit" style="font-family:var(--font-mono);font-size:13px;color:var(--accent);min-width:32px;">°C</span>
+      <div id="rule-conditions-wrap"></div>
+      <button class="btn btn-outline" style="width:100%;margin-top:8px;font-size:12px;padding:8px;" onclick="addConditionRow()">+ เพิ่มเงื่อนไข</button>
+      <div style="font-size:10px;color:var(--text-dim);margin-top:6px;line-height:1.6;">
+        AND = ทุกเงื่อนไขต้องเป็นจริงพร้อมกัน &nbsp;|&nbsp; OR = เงื่อนไขใดเงื่อนไขหนึ่งเป็นจริง
       </div>
     </div>
 
+    <!-- ═══ TIME GUARD ═══ -->
     <div class="field-group">
-      <div class="field-label">เพิ่มเงื่อนไขเวลา (ไม่บังคับ)</div>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <label style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;">
-          <input type="checkbox" id="rule-use-time" style="accent-color:var(--accent);" onchange="document.getElementById('rule-time-wrap').style.display=this.checked?'flex':'none'">
-          ทำงานเฉพาะช่วงเวลา
-        </label>
-      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+        <input type="checkbox" id="rule-use-time" style="accent-color:var(--accent);width:16px;height:16px;"
+          onchange="document.getElementById('rule-time-wrap').style.display=this.checked?'flex':'none'">
+        ⏰ ทำงานเฉพาะช่วงเวลา
+      </label>
       <div id="rule-time-wrap" style="display:none;gap:8px;margin-top:8px;align-items:center;">
         <input class="field-input" id="rule-time-from" type="time" value="06:00" style="flex:1;">
         <span style="color:var(--text-dim);font-size:12px;">ถึง</span>
@@ -1346,6 +1598,33 @@ select.field-input option { background: #0c1a30; }
       </div>
     </div>
 
+    <!-- ═══ DEVICE GUARD (Rule ซ้อน Rule) ═══ -->
+    <div class="field-group">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+        <input type="checkbox" id="rule-use-guard" style="accent-color:var(--accent-orange);width:16px;height:16px;"
+          onchange="document.getElementById('rule-guard-wrap').style.display=this.checked?'block':'none'">
+        🛡️ Guard — ห้ามทำงานถ้า...
+      </label>
+      <div id="rule-guard-wrap" style="display:none;margin-top:10px;background:rgba(255,124,42,0.06);border:1px solid rgba(255,124,42,0.2);border-radius:10px;padding:12px;">
+        <div style="font-size:11px;color:var(--accent-orange);margin-bottom:8px;font-weight:600;">เงื่อนไขที่ทำให้ Rule นี้ไม่ทำงาน</div>
+        <div class="field-label">ห้ามทำงานถ้าอุปกรณ์นี้ กำลัง...</div>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <select class="field-input" id="guard-dev" style="flex:2;">
+            <option value="">-- ไม่ใช้ --</option>
+          </select>
+          <select class="field-input" id="guard-state" style="flex:1;">
+            <option value="ON">ON อยู่</option>
+            <option value="OFF">OFF อยู่</option>
+          </select>
+        </div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:6px;line-height:1.6;">
+          ตัวอย่าง: ถ้าปั๊มน้ำ ON อยู่ → ห้ามเปิดซ้ำ<br>
+          ตัวอย่าง: ถ้าฮีตเตอร์ ON อยู่ → ห้ามเปิดพัดลมเย็น
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ ACTION ═══ -->
     <div class="field-group">
       <div class="field-label">การกระทำ (Action)</div>
       <div style="display:flex;gap:8px;">
@@ -1365,7 +1644,6 @@ select.field-input option { background: #0c1a30; }
     <div class="field-group">
       <div class="field-label">Cooldown — รอกี่นาทีก่อนทำงานซ้ำ</div>
       <input class="field-input" id="rule-cooldown" type="number" value="30" min="1" max="1440">
-      <div style="font-size:10px;color:var(--text-dim);margin-top:5px;">ป้องกันเปิด-ปิดซ้ำบ่อย เช่น cooldown 30 นาที</div>
     </div>
 
     <div class="field-row" style="padding:0 20px 24px;gap:10px;">
@@ -2736,6 +3014,7 @@ function init() {
   loadCameras();
   loadMap();
   initRules();
+  initDashboardIntelligence();
   renderDevices();
   updateSummary();
   renderSchedules();
@@ -3143,7 +3422,7 @@ function initGraph() {
 }
 
 // ═══════════════════════════════════════════════
-//  📷 CAMERA  v1.5.1
+//  📷 CAMERA  v1.7.1
 // ═══════════════════════════════════════════════
 let cameras=[];
 const CAM_KEY='sc_cameras_v1';
@@ -3200,7 +3479,7 @@ function removeCamera(id){cameras=cameras.filter(c=>c.id!==id);saveCameras();ren
 function refreshAllCams(){cameras.forEach((cam,idx)=>{if(cam.type==='snapshot'){const img=document.getElementById('cam-feed-'+idx);if(img)img.src=cam.url+'?t='+Date.now();}});showToast('🔄 รีเฟรชกล้อง');}
 
 // ═══════════════════════════════════════════════
-//  🗺️ FARM MAP  v1.5.1
+//  🗺️ FARM MAP  v1.7.1
 // ═══════════════════════════════════════════════
 const MAP_KEY='sc_map_v1';
 let mapObjects=[],mapTool='select',mapDragging=null,mapDrawStart=null,selectedObj=null,mapCanvas,mapCtx;
@@ -3280,7 +3559,7 @@ function clearMapConfirm(){if(confirm('ล้างแผนที่?')){mapObj
 function exportMapImg(){const a=document.createElement('a');a.download='farmmap.png';a.href=mapCanvas.toDataURL();a.click();showToast('💾 บันทึกรูปแล้ว');}
 
 // ═══════════════════════════════════════════════
-//  🌧️ WEATHER  v1.5.1
+//  🌧️ WEATHER  v1.7.1
 // ═══════════════════════════════════════════════
 const WX_ICONS={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'⛈️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',99:'⛈️'};
 const WX_DESC={0:'ท้องฟ้าแจ่มใส',1:'มีเมฆบางส่วน',2:'มีเมฆปานกลาง',3:'ท้องฟ้าครึ้ม',45:'หมอก',51:'ฝนปรอย',61:'ฝนเบา',63:'ฝนปานกลาง',65:'ฝนหนัก',80:'ฝนฟ้าคะนอง',81:'ฝนฟ้าคะนอง',82:'ฝนหนักมาก',95:'พายุฝน',99:'พายุรุนแรง'};
@@ -3361,7 +3640,7 @@ function renderWeather(j, placeName, lat, lon){
 }
 
 // ═══════════════════════════════════════════════
-//  📊 EXPORT  v1.5.1
+//  📊 EXPORT  v1.7.1
 // ═══════════════════════════════════════════════
 function getGSScript(){return`function doPost(e){
   var ss=SpreadsheetApp.getActiveSpreadsheet();
@@ -3413,279 +3692,307 @@ function updateExportStats(){
 }
 
 // ═══════════════════════════════════════════════
-//  🤖 SMART RULE ENGINE  v1.5.1
-//  เงื่อนไข: sensor value → trigger device
+//  🤖 SMART RULE ENGINE  v2.0 — AND/OR + Guard
 // ═══════════════════════════════════════════════
-
-// db.rules = [{
-//   id, name, sensor, operator, threshold,
+// Rule v2: { id, name, logic:'AND'|'OR',
+//   conditions:[{sensor,operator,threshold}],
 //   useTime, timeFrom, timeTo,
+//   guard:{devId,state}|null,
 //   devId, action, duration, cooldown,
-//   enabled, _lastTriggered, _autoOffTimer
-// }]
+//   enabled, _lastTriggered }
 
 const SENSOR_LABELS = {
-  temp: { label:'อุณหภูมิ', unit:'°C',   icon:'🌡️', cls:'cond-temp' },
-  hum:  { label:'ความชื้น', unit:'%',    icon:'💧', cls:'cond-hum'  },
-  soil: { label:'ความชื้นดิน', unit:'%', icon:'🌱', cls:'cond-soil' },
-  lux:  { label:'แสง',      unit:'klux', icon:'☀️', cls:'cond-lux'  },
+  temp: { label:'อุณหภูมิ',    unit:'°C',   icon:'🌡️', cls:'cond-temp' },
+  hum:  { label:'ความชื้น',    unit:'%',    icon:'💧', cls:'cond-hum'  },
+  soil: { label:'ความชื้นดิน', unit:'%',    icon:'🌱', cls:'cond-soil' },
+  lux:  { label:'แสง',         unit:'klux', icon:'☀️', cls:'cond-lux'  },
 };
 const OP_LABELS = { gt:'>',lt:'<',gte:'≥',lte:'≤' };
 
-// ─── ค่าเซ็นเซอร์ปัจจุบัน (อัปเดตโดย renderEnvValues) ───
-let currentSensorValues = { temp: null, hum: null, soil: null, lux: null };
+let currentSensorValues = { temp:null, hum:null, soil:null, lux:null };
 
-// Patch renderEnvValues อีกครั้งเพื่อเก็บค่าไว้ใน currentSensorValues
 const _origRenderEnvRules = renderEnvValues;
 renderEnvValues = function(temp, hum, soil, lux) {
   _origRenderEnvRules(temp, hum, soil, lux);
-  // lux ที่รับมาเป็น raw lux — แปลงเป็น klux เพื่อ match unit ใน rule
   currentSensorValues = {
-    temp: temp !== null ? +temp : null,
-    hum:  hum  !== null ? +hum  : null,
-    soil: soil !== null ? +soil : null,
-    lux:  lux  !== null ? lux / 1000 : null,   // → klux
+    temp: temp != null ? +temp : null,
+    hum:  hum  != null ? +hum  : null,
+    soil: soil != null ? +soil : null,
+    lux:  lux  != null ? lux/1000 : null,
   };
   checkSmartRules();
 };
 
-// ─── ตรวจสอบ rules ทุกครั้งที่ค่าเซ็นเซอร์อัปเดต ───
+// ─── Condition row UI ───
+let condRowCount = 0;
+function addConditionRow(prefill) {
+  condRowCount++;
+  const id = condRowCount;
+  const wrap = document.getElementById('rule-conditions-wrap');
+  if (!wrap) return;
+  const div = document.createElement('div');
+  div.id = 'cond-row-'+id;
+  div.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:8px;';
+  div.innerHTML =
+    '<select class="field-input" id="cond-sensor-'+id+'" style="flex:2;font-size:12px;padding:7px 8px;">'
+    +'<option value="temp">🌡️ อุณหภูมิ</option><option value="hum">💧 ความชื้น</option>'
+    +'<option value="soil">🌱 ความชื้นดิน</option><option value="lux">☀️ แสง</option></select>'
+    +'<select class="field-input" id="cond-op-'+id+'" style="width:54px;font-size:12px;padding:7px 6px;">'
+    +'<option value="gt">&gt;</option><option value="lt">&lt;</option>'
+    +'<option value="gte">≥</option><option value="lte">≤</option></select>'
+    +'<input class="field-input" id="cond-val-'+id+'" type="number" step="0.1" '
+    +'style="flex:1.5;font-size:12px;padding:7px 8px;" placeholder="ค่า">'
+    +'<button onclick="document.getElementById(\'cond-row-'+id+'\').remove()" '
+    +'style="background:none;border:none;color:var(--accent-red);font-size:18px;cursor:pointer;padding:4px 6px;flex-shrink:0;">✕</button>';
+  wrap.appendChild(div);
+  if (prefill) {
+    document.getElementById('cond-sensor-'+id).value = prefill.sensor;
+    document.getElementById('cond-op-'+id).value     = prefill.operator;
+    document.getElementById('cond-val-'+id).value    = prefill.threshold;
+  }
+}
+
+function readConditionRows() {
+  const rows = document.querySelectorAll('[id^="cond-row-"]');
+  const out = [];
+  rows.forEach(row => {
+    const n = row.id.replace('cond-row-','');
+    const sensor    = document.getElementById('cond-sensor-'+n)?.value;
+    const operator  = document.getElementById('cond-op-'+n)?.value;
+    const threshold = parseFloat(document.getElementById('cond-val-'+n)?.value);
+    if (sensor && operator && !isNaN(threshold)) out.push({sensor,operator,threshold});
+  });
+  return out;
+}
+
+// ─── CHECK RULES ───
 function checkSmartRules() {
-  if (!db.rules || db.rules.length === 0) return;
-  const now = new Date();
-  const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  if (!db.rules?.length) return;
+  const now  = new Date();
+  const hhmm = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
 
   db.rules.forEach(rule => {
     if (!rule.enabled) return;
     const dev = db.devices.find(d => d.id === rule.devId);
     if (!dev) return;
-
-    // ─ ตรวจช่วงเวลา ─
-    if (rule.useTime) {
-      if (!timeInRange(hhmm, rule.timeFrom, rule.timeTo)) return;
-    }
-
-    // ─ ตรวจ cooldown ─
+    // Time guard
+    if (rule.useTime && !timeInRange(hhmm, rule.timeFrom, rule.timeTo)) return;
+    // Cooldown
     const now_ms = Date.now();
-    const cooldownMs = (rule.cooldown || 30) * 60000;
-    if (rule._lastTriggered && (now_ms - rule._lastTriggered) < cooldownMs) return;
-
-    // ─ ดึงค่าเซ็นเซอร์ ─
-    const val = currentSensorValues[rule.sensor];
-    if (val === null || val === undefined) return;
-
-    // ─ เปรียบเทียบเงื่อนไข ─
-    const thr = parseFloat(rule.threshold);
-    const triggered = evalCondition(val, rule.operator, thr);
-
+    if (rule._lastTriggered && (now_ms-rule._lastTriggered) < (rule.cooldown||30)*60000) return;
+    // Device guard
+    if (rule.guard?.devId) {
+      const gd = db.devices.find(d => d.id === rule.guard.devId);
+      if (gd && gd.state === rule.guard.state) return;
+    }
+    // Evaluate AND / OR
+    const conditions = rule.conditions || [{sensor:rule.sensor,operator:rule.operator,threshold:rule.threshold}];
+    const logic = rule.logic || 'AND';
+    const results = conditions.map(c => {
+      const val = currentSensorValues[c.sensor];
+      return val != null && evalCondition(val, c.operator, parseFloat(c.threshold));
+    });
+    const triggered = logic==='AND' ? results.every(Boolean) : results.some(Boolean);
     if (triggered) {
       rule._lastTriggered = now_ms;
       saveDB();
-      executeRuleAction(rule, dev, val, thr);
+      executeRuleAction(rule, dev);
     }
-    // อัปเดต UI
-    renderRules();
   });
+  renderRules();
 }
 
 function evalCondition(val, op, thr) {
-  switch(op) {
-    case 'gt':  return val > thr;
-    case 'lt':  return val < thr;
-    case 'gte': return val >= thr;
-    case 'lte': return val <= thr;
-    default:    return false;
-  }
+  switch(op){ case 'gt':return val>thr; case 'lt':return val<thr; case 'gte':return val>=thr; case 'lte':return val<=thr; }
+  return false;
 }
-
 function timeInRange(hhmm, from, to) {
-  if (from <= to) return hhmm >= from && hhmm <= to;
-  return hhmm >= from || hhmm <= to; // กรณีข้ามเที่ยงคืน
+  return from<=to ? hhmm>=from&&hhmm<=to : hhmm>=from||hhmm<=to;
 }
 
-function executeRuleAction(rule, dev, val, thr) {
-  const sc = SENSOR_LABELS[rule.sensor];
-  const msg = `🤖 Rule: "${rule.name}"\n${sc.icon} ${sc.label} ${val.toFixed(1)}${sc.unit} ${OP_LABELS[rule.operator]} ${thr}${sc.unit}\n→ ${dev.name}: ${rule.action.toUpperCase()}`;
-  addLog('sched', `🤖 ${rule.name}: ${sc.label}=${val.toFixed(1)}${sc.unit} → ${dev.name} ${rule.action.toUpperCase()}`);
-
+function executeRuleAction(rule, dev) {
+  const conditions = rule.conditions || [{sensor:rule.sensor,operator:rule.operator,threshold:rule.threshold}];
+  const logic = rule.logic||'AND';
+  const condSummary = conditions.map(c=>{
+    const sc=SENSOR_LABELS[c.sensor]; const val=currentSensorValues[c.sensor];
+    return sc.icon+(val!=null?val.toFixed(1):'?')+sc.unit+OP_LABELS[c.operator]+c.threshold;
+  }).join(' '+logic+' ');
+  const msg = '🤖 Rule: "'+rule.name+'"\n'+condSummary+'\n→ '+dev.name+': '+rule.action.toUpperCase();
+  addLog('sched','🤖 '+rule.name+': '+condSummary+' → '+dev.name+' '+rule.action.toUpperCase());
   sonoffRequest(dev, rule.action).then(r => {
     if (!r.ok) return;
-    dev.state = rule.action.toUpperCase();
-    dev.lastToggle = new Date().toLocaleString('th-TH');
-    saveDB();
-    renderDevices();
-    updateSummary();
+    dev.state=rule.action.toUpperCase(); dev.lastToggle=new Date().toLocaleString('th-TH');
+    saveDB(); renderDevices(); updateSummary();
     sendTelegramAlert(msg);
-    pushNotify(`🤖 ${rule.name}`, `${dev.name} → ${rule.action.toUpperCase()}`);
-    showToast(`🤖 ${rule.name}: ${dev.name} ${rule.action.toUpperCase()}`, null);
-
-    // ─ Auto-off หลัง duration ─
-    if (rule.action === 'on' && rule.duration > 0) {
-      // clear timer เก่าถ้ามี
+    pushNotify('🤖 '+rule.name, dev.name+' → '+rule.action.toUpperCase());
+    showToast('🤖 '+rule.name+': '+dev.name+' '+rule.action.toUpperCase());
+    if (rule.action==='on' && rule.duration>0) {
       if (rule._autoOffTimer) clearTimeout(rule._autoOffTimer);
-      rule._autoOffTimer = setTimeout(async () => {
-        await sonoffRequest(dev, 'off');
-        dev.state = 'OFF';
-        dev.lastToggle = new Date().toLocaleString('th-TH');
-        saveDB();
-        renderDevices();
-        updateSummary();
-        addLog('off', `🤖 ${rule.name}: ${dev.name} ปิดอัตโนมัติหลัง ${rule.duration} นาที`);
-        sendTelegramAlert(`🤖 Rule auto-off\n${dev.name}: *OFF* (หลัง ${rule.duration} นาที)`);
-      }, rule.duration * 60000);
+      rule._autoOffTimer = setTimeout(async()=>{
+        await sonoffRequest(dev,'off');
+        dev.state='OFF'; dev.lastToggle=new Date().toLocaleString('th-TH');
+        saveDB(); renderDevices(); updateSummary();
+        addLog('off','🤖 '+rule.name+': '+dev.name+' ปิดอัตโนมัติหลัง '+rule.duration+' นาที');
+        sendTelegramAlert('🤖 Rule auto-off\n'+dev.name+': *OFF* ('+rule.duration+' นาที)');
+      }, rule.duration*60000);
     }
   });
 }
 
-// ─── SAVE RULE ───
+// ─── SAVE RULE v2 ───
 function saveSmartRule() {
   const name      = document.getElementById('rule-name').value.trim();
-  const sensor    = document.getElementById('rule-sensor').value;
-  const operator  = document.getElementById('rule-operator').value;
-  const threshold = parseFloat(document.getElementById('rule-threshold').value);
+  const logic     = document.getElementById('rule-logic').value;
   const devId     = document.getElementById('rule-dev').value;
   const action    = document.getElementById('rule-action').value;
-  const duration  = parseInt(document.getElementById('rule-duration').value) || 0;
-  const cooldown  = parseInt(document.getElementById('rule-cooldown').value) || 30;
+  const duration  = parseInt(document.getElementById('rule-duration').value)||0;
+  const cooldown  = parseInt(document.getElementById('rule-cooldown').value)||30;
   const useTime   = document.getElementById('rule-use-time').checked;
   const timeFrom  = document.getElementById('rule-time-from').value;
   const timeTo    = document.getElementById('rule-time-to').value;
-
-  if (!name) return showToast('กรอกชื่อ Rule', 'error');
-  if (isNaN(threshold)) return showToast('กรอกค่าเงื่อนไข', 'error');
-  if (!devId) return showToast('เลือกอุปกรณ์', 'error');
-
-  if (!db.rules) db.rules = [];
-  const sc = SENSOR_LABELS[sensor];
-  db.rules.push({
-    id: 'rule_' + Date.now(), name, sensor, operator, threshold,
-    useTime, timeFrom, timeTo,
-    devId, action, duration, cooldown,
-    enabled: true, _lastTriggered: null,
-  });
-  saveDB();
-  renderRules();
-  updateMoreRulesCount();
+  const conditions= readConditionRows();
+  if (!name)             return showToast('กรอกชื่อ Rule','error');
+  if (!conditions.length)return showToast('เพิ่มเงื่อนไขอย่างน้อย 1 ข้อ','error');
+  if (!devId)            return showToast('เลือกอุปกรณ์','error');
+  const useGuard  = document.getElementById('rule-use-guard').checked;
+  const guardDevId= document.getElementById('guard-dev').value;
+  const guardState= document.getElementById('guard-state').value;
+  const guard = (useGuard && guardDevId) ? {devId:guardDevId,state:guardState} : null;
+  if (!db.rules) db.rules=[];
+  db.rules.push({id:'rule_'+Date.now(),name,logic,conditions,useTime,timeFrom,timeTo,guard,devId,action,duration,cooldown,enabled:true,_lastTriggered:null});
+  saveDB(); renderRules(); updateMoreRulesCount();
   closePanel('add-rule-panel');
-  addLog('info', `เพิ่ม Rule: "${name}" — ${sc.label} ${OP_LABELS[operator]} ${threshold}${sc.unit} → ${action.toUpperCase()}`);
-  showToast(`✅ เพิ่ม Rule: ${name}`);
-  // reset form
-  ['rule-name','rule-threshold'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('rule-use-time').checked = false;
-  document.getElementById('rule-time-wrap').style.display = 'none';
+  const condStr=conditions.map(c=>SENSOR_LABELS[c.sensor].label+OP_LABELS[c.operator]+c.threshold).join(' '+logic+' ');
+  addLog('info','เพิ่ม Rule: "'+name+'" ['+condStr+'] → '+action.toUpperCase());
+  showToast('✅ เพิ่ม Rule: '+name);
+  resetRuleForm();
 }
 
-// ─── RENDER RULES LIST ───
+function resetRuleForm() {
+  document.getElementById('rule-name').value='';
+  document.getElementById('rule-logic').value='AND';
+  document.getElementById('rule-conditions-wrap').innerHTML='';
+  condRowCount=0;
+  document.getElementById('rule-use-time').checked=false;
+  document.getElementById('rule-time-wrap').style.display='none';
+  document.getElementById('rule-use-guard').checked=false;
+  document.getElementById('rule-guard-wrap').style.display='none';
+  document.getElementById('rule-duration').value='10';
+  document.getElementById('rule-cooldown').value='30';
+}
+
+// ─── RENDER RULES ───
 function renderRules() {
   const list = document.getElementById('rules-list');
   if (!list) return;
-  if (!db.rules || db.rules.length === 0) {
-    list.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text-dim);">
-      <div style="font-size:40px;margin-bottom:10px;">🤖</div>
-      <div>ยังไม่มี Smart Rule</div>
-      <div style="font-size:11px;margin-top:6px;line-height:1.6;">กด "+ เพิ่ม Smart Rule" ด้านล่าง<br>เพื่อสร้างเงื่อนไขอัตโนมัติ</div>
-    </div>`;
+  if (!db.rules?.length) {
+    list.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--text-dim);"><div style="font-size:40px;margin-bottom:10px;">🤖</div><div>ยังไม่มี Smart Rule</div><div style="font-size:11px;margin-top:6px;">กด "+ เพิ่ม Smart Rule" เพื่อสร้างเงื่อนไขอัตโนมัติ</div></div>';
     return;
   }
   list.innerHTML = db.rules.map(rule => {
-    const dev = db.devices.find(d => d.id === rule.devId);
-    const sc  = SENSOR_LABELS[rule.sensor] || {};
-    const devName = dev?.name || 'อุปกรณ์ถูกลบ';
+    const dev = db.devices.find(d=>d.id===rule.devId);
+    const devName = dev?.name||'อุปกรณ์ถูกลบ';
     const now_ms  = Date.now();
-    const cooldownMs = (rule.cooldown || 30) * 60000;
-    const inCooldown = rule._lastTriggered && (now_ms - rule._lastTriggered) < cooldownMs;
-    const cooldownLeft = inCooldown ? Math.ceil((cooldownMs - (now_ms - rule._lastTriggered)) / 60000) : 0;
-    const val = currentSensorValues[rule.sensor];
-    const isTriggered = val !== null && evalCondition(val, rule.operator, parseFloat(rule.threshold));
-
-    let statusText = '⏳ รอตรวจสอบ...';
-    let statusCls  = 'waiting';
-    if (!rule.enabled) { statusText = '⏸️ ปิดใช้งาน'; statusCls = 'waiting'; }
-    else if (inCooldown) { statusText = `❄️ cooldown เหลือ ${cooldownLeft} นาที`; statusCls = 'watching'; }
-    else if (val !== null) {
-      statusText = isTriggered
-        ? `🔥 เงื่อนไขตรง! ${sc.icon||''}${val?.toFixed(1)}${sc.unit} — กำลังสั่งงาน`
-        : `👁️ เฝ้าดู: ${sc.icon||''}${val?.toFixed(1)}${sc.unit} (ยังไม่ถึงเกณฑ์)`;
-      statusCls = isTriggered ? 'triggered' : 'watching';
+    const inCooldown = rule._lastTriggered && (now_ms-rule._lastTriggered)<(rule.cooldown||30)*60000;
+    const cooldownLeft = inCooldown ? Math.ceil(((rule.cooldown||30)*60000-(now_ms-rule._lastTriggered))/60000) : 0;
+    const conditions = rule.conditions||[{sensor:rule.sensor,operator:rule.operator,threshold:rule.threshold}];
+    const logic = rule.logic||'AND';
+    const condResults = conditions.map(c=>{
+      const val=currentSensorValues[c.sensor];
+      return {c,val,ok:val!=null&&evalCondition(val,c.operator,parseFloat(c.threshold))};
+    });
+    const allHaveVals = condResults.every(r=>r.val!=null);
+    const triggered   = logic==='AND'?condResults.every(r=>r.ok):condResults.some(r=>r.ok);
+    let guardBlocked=false;
+    if (rule.guard?.devId){const gd=db.devices.find(d=>d.id===rule.guard.devId);if(gd&&gd.state===rule.guard.state)guardBlocked=true;}
+    let statusText='⏳ รอตรวจสอบ...',statusCls='waiting';
+    if(!rule.enabled)     {statusText='⏸️ ปิดใช้งาน';}
+    else if(guardBlocked) {statusText='🛡️ Guard: ถูกบล็อก';statusCls='watching';}
+    else if(inCooldown)   {statusText='❄️ Cooldown เหลือ '+cooldownLeft+' นาที';statusCls='watching';}
+    else if(allHaveVals)  {
+      statusText=triggered?'🔥 เงื่อนไขตรง → กำลังสั่งงาน'
+        :'👁️ '+condResults.map(r=>SENSOR_LABELS[r.c.sensor].icon+(r.val!=null?r.val.toFixed(1):'?')).join(logic==='AND'?' & ':' | ');
+      statusCls=triggered?'triggered':'watching';
     }
-
-    const timeStr = rule.useTime ? ` | ⏰ ${rule.timeFrom}–${rule.timeTo}` : '';
-    const durStr  = rule.duration > 0 ? ` ${rule.duration} นาที` : ' จนกว่าเงื่อนไขเปลี่ยน';
-    const lastStr = rule._lastTriggered
-      ? `ทำงานล่าสุด: ${new Date(rule._lastTriggered).toLocaleTimeString('th-TH')}`
-      : 'ยังไม่เคยทำงาน';
-
-    return `<div class="rule-card ${rule.enabled ? (isTriggered ? 'triggered' : 'active-rule') : ''}">
-      <div class="rule-header">
-        <div class="rule-icon">${sc.icon||'⚙️'}</div>
-        <div class="rule-info">
-          <div class="rule-name">${rule.name}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;">
-            <span class="cond-badge ${sc.cls||''}">${sc.icon||''} ${sc.label} ${OP_LABELS[rule.operator]} ${rule.threshold}${sc.unit}</span>
-            <span class="cond-badge" style="background:rgba(0,200,160,0.1);color:var(--accent);border:1px solid rgba(0,200,160,0.2);">→ ${devName} ${rule.action.toUpperCase()}${durStr}</span>
-            ${rule.useTime ? `<span class="cond-badge cond-time">⏰ ${rule.timeFrom}–${rule.timeTo}</span>` : ''}
-          </div>
-        </div>
-        <div class="rule-toggle-wrap">
-          <div class="toggle ${rule.enabled?'on':''}" onclick="toggleRule('${rule.id}')"><div class="toggle-knob"></div></div>
-        </div>
-      </div>
-      <div class="rule-footer">
-        <div>
-          <div class="rule-status ${statusCls}">${statusText}</div>
-          <div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${lastStr} • cooldown ${rule.cooldown}นาที</div>
-        </div>
-        <button class="btn btn-danger" style="padding:5px 10px;font-size:11px;" onclick="deleteRule('${rule.id}')">🗑️</button>
-      </div>
-    </div>`;
+    const logicSep=conditions.length>1?'<span style="font-family:var(--font-mono);font-size:10px;color:'+(logic==='AND'?'var(--accent)':'var(--accent-orange)')+'"> '+logic+' </span>':'';
+    const condBadges=condResults.map((r,i)=>{
+      const sc=SENSOR_LABELS[r.c.sensor];
+      const hilite=r.ok?'border-color:var(--accent);':'';
+      return (i>0?logicSep:'')+'<span class="cond-badge '+sc.cls+'" style="'+hilite+'">'+sc.icon+' '+sc.label+' '+OP_LABELS[r.c.operator]+' '+r.c.threshold+sc.unit+'</span>';
+    }).join('');
+    const durStr=rule.duration>0?' '+rule.duration+'นาที':'';
+    const guardHtml=rule.guard?.devId?'<span class="cond-badge" style="background:rgba(255,124,42,0.1);color:var(--accent-orange);border:1px solid rgba(255,124,42,0.25);">🛡️ '+(db.devices.find(d=>d.id===rule.guard.devId)?.name||'?')+' '+rule.guard.state+'</span>':'';
+    const timeHtml=rule.useTime?'<span class="cond-badge cond-time">⏰ '+rule.timeFrom+'–'+rule.timeTo+'</span>':'';
+    const lastStr=rule._lastTriggered?'ล่าสุด: '+new Date(rule._lastTriggered).toLocaleTimeString('th-TH'):'ยังไม่เคยทำงาน';
+    return '<div class="rule-card '+(rule.enabled?(triggered?'triggered':'active-rule'):'')+'">'+
+      '<div class="rule-header"><div class="rule-icon">🤖</div><div class="rule-info">'+
+      '<div class="rule-name">'+rule.name+'</div>'+
+      '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;">'+condBadges+
+      '<span class="cond-badge" style="background:rgba(0,200,160,0.1);color:var(--accent);border:1px solid rgba(0,200,160,0.2);">→ '+devName+' '+rule.action.toUpperCase()+durStr+'</span>'+
+      timeHtml+guardHtml+'</div></div>'+
+      '<div><div class="toggle '+(rule.enabled?'on':'')+'" onclick="toggleRule(\''+rule.id+'\')"><div class="toggle-knob"></div></div></div></div>'+
+      '<div class="rule-footer"><div><div class="rule-status '+statusCls+'">'+statusText+'</div>'+
+      '<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">'+lastStr+' • cooldown '+rule.cooldown+'นาที</div></div>'+
+      '<button class="btn btn-danger" style="padding:5px 10px;font-size:11px;" onclick="deleteRule(\''+rule.id+'\')">🗑️</button></div></div>';
   }).join('');
 }
 
-function toggleRule(id) {
-  const rule = db.rules?.find(r => r.id === id);
-  if (!rule) return;
-  rule.enabled = !rule.enabled;
-  saveDB();
-  renderRules();
-  updateMoreRulesCount();
-  showToast(`${rule.enabled ? '✅ เปิด' : '⏸️ ปิด'} Rule: ${rule.name}`);
+function toggleRule(id){
+  const r=db.rules?.find(r=>r.id===id); if(!r)return;
+  r.enabled=!r.enabled; saveDB(); renderRules(); updateMoreRulesCount();
+  showToast((r.enabled?'✅ เปิด':'⏸️ ปิด')+' Rule: '+r.name);
 }
-
-function deleteRule(id) {
-  const rule = db.rules?.find(r => r.id === id);
-  if (!rule || !confirm(`ลบ Rule "${rule.name}"?`)) return;
-  if (rule._autoOffTimer) clearTimeout(rule._autoOffTimer);
-  db.rules = db.rules.filter(r => r.id !== id);
-  saveDB();
-  renderRules();
-  updateMoreRulesCount();
-  showToast('ลบ Rule แล้ว', 'warn');
+function deleteRule(id){
+  const r=db.rules?.find(r=>r.id===id);
+  if(!r||!confirm('ลบ Rule "'+r.name+'"?'))return;
+  if(r._autoOffTimer)clearTimeout(r._autoOffTimer);
+  db.rules=db.rules.filter(x=>x.id!==id); saveDB(); renderRules(); updateMoreRulesCount();
+  showToast('ลบ Rule แล้ว','warn');
 }
 
 // ─── UI HELPERS ───
-function populateRuleDevSelect() {
-  const sel = document.getElementById('rule-dev');
-  if (!sel) return;
-  sel.innerHTML = db.devices.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+function populateRuleDevSelect(){
+  ['rule-dev','guard-dev'].forEach(sid=>{
+    const sel=document.getElementById(sid); if(!sel)return;
+    sel.innerHTML=(sid==='guard-dev'?'<option value="">-- ไม่ใช้ --</option>':'')
+      +db.devices.map(d=>'<option value="'+d.id+'">'+d.name+'</option>').join('');
+  });
+}
+function updateRuleUnit(){}
+
+function updateMoreRulesCount(){
+  const el=document.getElementById('more-rules-count'); if(!el)return;
+  const total=db.rules?.length||0, active=db.rules?.filter(r=>r.enabled).length||0;
+  el.textContent=total===0?'เงื่อนไขอัตโนมัติ':active+'/'+total+' rule ทำงานอยู่';
+  el.style.color=active>0?'var(--accent-orange)':'var(--text-dim)';
 }
 
-function updateRuleUnit() {
-  const sensor = document.getElementById('rule-sensor').value;
-  document.getElementById('rule-unit').textContent = SENSOR_LABELS[sensor]?.unit || '';
-}
-
-// patch openPanel สำหรับ rule panel
-const _origOpenPanel = openPanel;
-openPanel = function(id) {
+const _origOpenPanel=openPanel;
+openPanel=function(id){
   _origOpenPanel(id);
-  if (id === 'add-rule-panel') populateRuleDevSelect();
+  if(id==='add-rule-panel'){
+    populateRuleDevSelect();
+    const wrap=document.getElementById('rule-conditions-wrap');
+    if(wrap&&!wrap.children.length)addConditionRow();
+  }
+  if(id==='anomaly-settings-panel') loadAnomalyFields();
+  if(id==='harvest-panel') {
+    const dateEl = document.getElementById('harvest-date');
+    if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+  }
 };
 
-// ─── init rules ───
-function initRules() {
-  if (!db.rules) db.rules = [];
+function initRules(){
+  if(!db.rules)db.rules=[];
+  // migrate v1 rules
+  db.rules.forEach(r=>{
+    if(!r.conditions&&r.sensor){
+      r.conditions=[{sensor:r.sensor,operator:r.operator,threshold:r.threshold}];
+      r.logic='AND';
+    }
+  });
   updateMoreRulesCount();
-  setInterval(checkSmartRules, 60000);
+  setInterval(checkSmartRules,60000);
 }
 
 
@@ -3699,10 +4006,478 @@ function showPageMore(name){
   if(name==='settings')checkSW();
   if(name==='map')setTimeout(()=>{loadMap();initFarmMap();},60);
   if(name==='export'){updateExportStats();const gv=db.settings.gs_url;if(gv){const el=document.getElementById('gs-url');if(el)el.value=gv;}}
+  if(name==='intelligence'){renderHarvestLog();renderAnomalyHistory();updateET0();}
 }
 
-// อัปเดตจำนวน rules ใน more-panel badge
-function updateMoreRulesCount() {
+// ═══════════════════════════════════════════════
+//  📊 SPARKLINE ENGINE  v1.7.1
+// ═══════════════════════════════════════════════
+const SPARK_CFG = {
+  temp: { color:'#ff7c2a', min:15, max:50  },
+  hum:  { color:'#2af0ff', min:0,  max:100 },
+  soil: { color:'#8be24a', min:0,  max:100 },
+  lux:  { color:'#f0d62a', min:0,  max:120 },
+};
+
+function drawSparkline(metric) {
+  const canvas = document.getElementById('spark-'+metric);
+  if (!canvas) return;
+  const W = canvas.parentElement.clientWidth || 120;
+  const H = 28;
+  canvas.width  = W * devicePixelRatio;
+  canvas.height = H * devicePixelRatio;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+
+  // ดึงข้อมูล 1 ชั่วโมงล่าสุด
+  const cutoff = Date.now() - 3600000;
+  const key = metric === 'lux' ? 'lux' : metric; // lux stored as klux
+  const pts = historyLog.filter(r => r.ts >= cutoff && r[key] != null).slice(-60);
+  if (pts.length < 2) { ctx.clearRect(0,0,W,H); return; }
+
+  const cfg = SPARK_CFG[metric];
+  const vals = pts.map(r => r[key]);
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  const range = hi - lo || 1;
+
+  const toX = (i) => (i / (pts.length-1)) * W;
+  const toY = (v) => H - ((v - lo) / range) * (H - 4) - 2;
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, cfg.color + '40');
+  grad.addColorStop(1, cfg.color + '00');
+
+  ctx.beginPath();
+  ctx.moveTo(toX(0), toY(vals[0]));
+  for (let i = 1; i < pts.length; i++) {
+    const cx = (toX(i-1) + toX(i)) / 2;
+    ctx.bezierCurveTo(cx, toY(vals[i-1]), cx, toY(vals[i]), toX(i), toY(vals[i]));
+  }
+  ctx.lineTo(toX(pts.length-1), H);
+  ctx.lineTo(0, H);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  ctx.moveTo(toX(0), toY(vals[0]));
+  for (let i = 1; i < pts.length; i++) {
+    const cx = (toX(i-1) + toX(i)) / 2;
+    ctx.bezierCurveTo(cx, toY(vals[i-1]), cx, toY(vals[i]), toX(i), toY(vals[i]));
+  }
+  ctx.strokeStyle = cfg.color;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Last dot
+  const lv = vals[vals.length-1];
+  ctx.beginPath();
+  ctx.arc(toX(pts.length-1), toY(lv), 2.5, 0, Math.PI*2);
+  ctx.fillStyle = cfg.color;
+  ctx.fill();
+}
+
+function updateTrendBadge(metric, vals) {
+  const el = document.getElementById('trend-' + metric);
+  if (!el || vals.length < 4) { if(el) el.textContent=''; return; }
+  const recent = vals.slice(-4).reduce((a,b)=>a+b,0)/4;
+  const older  = vals.slice(-12,-4).reduce((a,b)=>a+b, 0) / Math.max(vals.slice(-12,-4).length, 1);
+  const diff = recent - older;
+  const cfg = SPARK_CFG[metric];
+  const threshold = (cfg.max - cfg.min) * 0.03;
+  if (Math.abs(diff) < threshold) { el.textContent = '─'; el.style.color = 'var(--text-dim)'; return; }
+  if (diff > 0) { el.textContent = `▲${Math.abs(diff).toFixed(1)}`; el.style.color = metric === 'lux' ? '#f5e060' : (metric === 'temp' ? '#ff7c2a' : '#2af0ff'); }
+  else          { el.textContent = `▼${Math.abs(diff).toFixed(1)}`; el.style.color = '#8be24a'; }
+}
+
+function drawAllSparklines() {
+  ['temp','hum','soil','lux'].forEach(m => {
+    drawSparkline(m);
+    const key = m;
+    const cutoff = Date.now() - 3600000;
+    const vals = historyLog.filter(r=>r.ts>=cutoff&&r[key]!=null).map(r=>r[key]);
+    updateTrendBadge(m, vals);
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  🔔 ANOMALY DETECTION ENGINE  v1.7.1
+// ═══════════════════════════════════════════════
+const ANOMALY_KEY = 'sc_anomaly_v1';
+let anomalyLog = [];
+let anomalyThresholds = { tempHi:38, tempLo:15, humLo:40, soilLo:25, luxLo:0, spikeRate:2.0 };
+
+function loadAnomalyData() {
+  try { anomalyLog = JSON.parse(localStorage.getItem(ANOMALY_KEY)||'[]'); } catch(e) { anomalyLog=[]; }
+  if (db.settings.anomalyThresholds) anomalyThresholds = {...anomalyThresholds, ...db.settings.anomalyThresholds};
+}
+
+function saveAnomalyThresholds() {
+  anomalyThresholds = {
+    tempHi:  parseFloat(document.getElementById('thr-temp-hi').value)||38,
+    tempLo:  parseFloat(document.getElementById('thr-temp-lo').value)||15,
+    humLo:   parseFloat(document.getElementById('thr-hum-lo').value)||40,
+    soilLo:  parseFloat(document.getElementById('thr-soil-lo').value)||25,
+    luxLo:   parseFloat(document.getElementById('thr-lux-lo').value)||0,
+    spikeRate: parseFloat(document.getElementById('thr-spike')?.value)||2.0,
+  };
+  db.settings.anomalyThresholds = anomalyThresholds;
+  saveDB();
+  closePanel('anomaly-settings-panel');
+  showToast('✅ บันทึกเกณฑ์แจ้งเตือนแล้ว');
+}
+
+function resetAnomalyDefaults() {
+  anomalyThresholds = { tempHi:38, tempLo:15, humLo:40, soilLo:25, luxLo:0, spikeRate:2.0 };
+  loadAnomalyFields();
+  showToast('↺ คืนค่าเริ่มต้นแล้ว — กด บันทึก เพื่อยืนยัน', 'warn');
+}
+
+function checkAnomalies(temp, hum, soil, lux) {
+  const t = anomalyThresholds;
+  const now = Date.now();
+  const alerts = [];
+
+  // ─ Threshold checks ─
+  if (temp != null && temp > t.tempHi)  alerts.push({ type:'err',  metric:'temp', msg:`อุณหภูมิสูงเกิน ${t.tempHi}°C`, val:`${temp.toFixed(1)}°C` });
+  if (temp != null && temp < t.tempLo)  alerts.push({ type:'warn', metric:'temp', msg:`อุณหภูมิต่ำกว่า ${t.tempLo}°C`, val:`${temp.toFixed(1)}°C` });
+  if (hum  != null && hum  < t.humLo)  alerts.push({ type:'warn', metric:'hum',  msg:`ความชื้นต่ำกว่า ${t.humLo}%`, val:`${hum.toFixed(0)}%` });
+  if (soil != null && soil < t.soilLo) alerts.push({ type:'warn', metric:'soil', msg:`ความชื้นดินต่ำกว่า ${t.soilLo}%`, val:`${soil.toFixed(0)}%` });
+  if (t.luxLo > 0 && lux != null) {
+    const luxKlux = lux / 1000;
+    if (luxKlux < t.luxLo && isDay()) alerts.push({ type:'warn', metric:'lux', msg:`แสงน้อยกว่า ${t.luxLo} klux ช่วงกลางวัน`, val:`${luxKlux.toFixed(1)} klux` });
+  }
+
+  // ─ Spike detection (ค่าพุ่งเร็วเกิน) ─
+  if (historyLog.length >= 4) {
+    const recent = historyLog.slice(-4);
+    const prev4  = historyLog.slice(-8, -4);
+    if (prev4.length >= 4) {
+      [['temp','°C'],['hum','%'],['soil','%']].forEach(([m, unit]) => {
+        const avgNew = recent.reduce((s,r)=>s+(r[m]??0),0)/recent.length;
+        const avgOld = prev4.reduce((s,r)=>s+(r[m]??0),0)/prev4.length;
+        const delta  = Math.abs(avgNew - avgOld);
+        const spike  = (t.spikeRate || 2) * Math.abs(avgOld) * 0.1 + 1.5;
+        if (delta > spike && avgOld > 0) {
+          const dir = avgNew > avgOld ? '▲ พุ่งขึ้น' : '▼ ดิ่งลง';
+          alerts.push({ type:'warn', metric:m, msg:`${SENSOR_LABELS[m]?.label||m} ${dir} ผิดปกติ (+${delta.toFixed(1)}${unit}/2นาที)`, val:avgNew.toFixed(1)+unit });
+        }
+      });
+    }
+  }
+
+  if (!alerts.length) {
+    renderAnomalyBanner([]);
+    return;
+  }
+
+  // Dedup — ไม่บันทึกซ้ำใน 10 นาที
+  alerts.forEach(a => {
+    const key = a.metric + '_' + a.type;
+    const last = anomalyLog.findLast?.(x=>x.key===key) || [...anomalyLog].reverse().find(x=>x.key===key);
+    if (last && (now - last.ts) < 600000) return;
+    anomalyLog.unshift({ ...a, key, ts: now, time: new Date().toLocaleTimeString('th-TH') });
+    if (anomalyLog.length > 100) anomalyLog.splice(100);
+    try { localStorage.setItem(ANOMALY_KEY, JSON.stringify(anomalyLog)); } catch(e){}
+    // แจ้งเตือน
+    sendTelegramAlert(`🔔 SmartControl แจ้งเตือน\n⚠️ ${a.msg}: *${a.val}*`);
+    pushNotify('⚠️ ' + a.msg, a.val);
+    addLog('warn', `แจ้งเตือน: ${a.msg} (${a.val})`);
+  });
+
+  renderAnomalyBanner(alerts);
+  renderAnomalyHistory();
+}
+
+function isDay() {
+  const h = new Date().getHours();
+  return h >= 6 && h <= 18;
+}
+
+function renderAnomalyBanner(alerts) {
+  const banner = document.getElementById('anomaly-banner');
+  if (!banner) return;
+  if (!alerts.length) { banner.innerHTML = ''; return; }
+  banner.innerHTML = alerts.map(a => `
+    <div class="anomaly-item ${a.type}">
+      <div class="anomaly-icon">${a.type==='err'?'🚨':'⚠️'}</div>
+      <div class="anomaly-text">${a.msg}</div>
+      <div class="anomaly-val">${a.val}</div>
+    </div>`).join('');
+}
+
+function renderAnomalyHistory() {
+  const list = document.getElementById('anomaly-history-list');
+  if (!list) return;
+  if (!anomalyLog.length) {
+    list.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-dim);font-size:12px;">✅ ยังไม่มีการแจ้งเตือน</div>';
+    return;
+  }
+  list.innerHTML =
+    // ─ header bar ─
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0 10px;">
+      <span style="font-size:11px;color:var(--text-dim);">${anomalyLog.length} รายการ</span>
+      <button onclick="clearAnomalyLog()" class="btn btn-danger" style="padding:4px 10px;font-size:11px;">🗑️ ล้างทั้งหมด</button>
+    </div>`
+    + anomalyLog.slice(0,30).map((a, i) => `
+    <div id="anomaly-item-${i}" style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+      <div style="font-size:16px;flex-shrink:0;">${a.type==='err'?'🚨':'⚠️'}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;color:var(--text-primary);">${a.msg}</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${a.time} • ค่า: <span style="color:var(--accent-orange);font-family:var(--font-mono);">${a.val}</span></div>
+      </div>
+      <button onclick="deleteAnomalyItem(${i})" style="background:none;border:none;color:var(--text-dim);font-size:14px;cursor:pointer;padding:4px 6px;flex-shrink:0;line-height:1;" title="ลบ">✕</button>
+    </div>`).join('');
+}
+
+function deleteAnomalyItem(idx) {
+  anomalyLog.splice(idx, 1);
+  try { localStorage.setItem(ANOMALY_KEY, JSON.stringify(anomalyLog)); } catch(e){}
+  renderAnomalyHistory();
+}
+
+function clearAnomalyLog() {
+  if (!confirm('ล้างประวัติแจ้งเตือนทั้งหมด?')) return;
+  anomalyLog = [];
+  try { localStorage.setItem(ANOMALY_KEY, JSON.stringify([])); } catch(e){}
+  renderAnomalyHistory();
+  renderAnomalyBanner([]);
+  showToast('ล้างประวัติแจ้งเตือนแล้ว', 'warn');
+}
+
+// ─── Patch renderEnvValues to trigger anomaly check ───
+const _origRenderEnvAnomaly = renderEnvValues;
+renderEnvValues = function(temp, hum, soil, lux) {
+  _origRenderEnvAnomaly(temp, hum, soil, lux);
+  checkAnomalies(temp, hum, soil, lux);
+  setTimeout(drawAllSparklines, 100);
+};
+
+// ─── Load thresholds into panel fields (เรียกทุกครั้งที่เปิด panel) ───
+function loadAnomalyFields() {
+  const t = anomalyThresholds;
+  const map = {
+    'thr-temp-hi': t.tempHi,
+    'thr-temp-lo': t.tempLo,
+    'thr-hum-lo':  t.humLo,
+    'thr-soil-lo': t.soilLo,
+    'thr-lux-lo':  t.luxLo,
+    'thr-spike':   t.spikeRate || 2.0,
+  };
+  Object.entries(map).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  🌱 FARM INTELLIGENCE ENGINE  v1.7.1
+// ═══════════════════════════════════════════════
+const HARVEST_KEY = 'sc_harvest_v1';
+let harvestLog = [];
+
+function loadHarvestData() {
+  try { harvestLog = JSON.parse(localStorage.getItem(HARVEST_KEY)||'[]'); } catch(e) { harvestLog=[]; }
+}
+
+// ─── ET₀ Hargreaves-Samani simplified ───
+// ใช้ค่าเซ็นเซอร์ปัจจุบัน ประมาณ evapotranspiration รายวัน
+function calcET0(temp, hum, luxKlux) {
+  if (temp == null || hum == null || luxKlux == null) return null;
+  // Hargreaves-Samani: ET₀ = 0.0023 × (T+17.8) × TD^0.5 × Ra
+  // ประมาณ TD (temp range) จาก history
+  const temps = historyLog.slice(-48).map(r=>r.temp).filter(v=>v!=null);
+  const td = temps.length > 2 ? Math.max(...temps) - Math.min(...temps) : 8;
+  // Ra (extraterrestrial radiation) ประมาณจาก lux → MJ/m²/day
+  const ra = luxKlux * 0.0864; // klux → MJ/m²/day (rough approximation)
+  const et0 = 0.0023 * (temp + 17.8) * Math.sqrt(Math.max(td, 1)) * ra;
+  return Math.max(0, Math.round(et0 * 10) / 10);
+}
+
+function updateET0() {
+  const { temp, hum, lux } = currentSensorValues;
+  const luxKlux = lux; // already in klux
+  const et0 = calcET0(temp, hum, luxKlux);
+
+  const valEl = document.getElementById('et0-val');
+  const recEl = document.getElementById('et0-rec');
+  const subEl = document.getElementById('et0-sub');
+
+  if (!valEl) return;
+  if (et0 == null) { valEl.textContent = '--'; recEl.textContent = 'รอข้อมูลเซ็นเซอร์...'; return; }
+
+  valEl.textContent = et0.toFixed(1);
+  document.getElementById('et0-temp').textContent = temp != null ? temp.toFixed(1)+'°C' : '--';
+  document.getElementById('et0-hum').textContent  = hum  != null ? hum.toFixed(0)+'%'  : '--';
+  document.getElementById('et0-lux').textContent  = luxKlux != null ? luxKlux.toFixed(1)+' klux' : '--';
+  document.getElementById('et0-soil').textContent = currentSensorValues.soil != null ? currentSensorValues.soil.toFixed(0)+'%' : '--';
+
+  let rec, col;
+  if (et0 < 2)       { rec = '💧 ความต้องการน้ำต่ำ — รดน้ำน้อย'; col = '#8be24a'; }
+  else if (et0 < 4)  { rec = '💧 ความต้องการน้ำปานกลาง — รดน้ำปกติ'; col = '#2af0ff'; }
+  else if (et0 < 6)  { rec = '💧💧 ความต้องการน้ำสูง — เพิ่มรดน้ำ'; col = '#f0d62a'; }
+  else               { rec = '💧💧💧 ความต้องการน้ำสูงมาก — รดน้ำบ่อย'; col = '#ff7c2a'; }
+
+  recEl.textContent = rec;
+  recEl.style.color = col;
+  subEl.textContent = `คำนวณ ${new Date().toLocaleTimeString('th-TH')} จาก sensor ปัจจุบัน`;
+}
+
+// ─── Harvest Log ───
+function addHarvestLog() {
+  const date  = document.getElementById('harvest-date').value;
+  const crop  = document.getElementById('harvest-crop').value.trim();
+  const yld   = parseFloat(document.getElementById('harvest-yield').value)||0;
+  const unit  = document.getElementById('harvest-unit').value;
+  const zone  = document.getElementById('harvest-zone').value.trim();
+  const note  = document.getElementById('harvest-note').value.trim();
+  if (!date || !crop) return showToast('กรอกวันที่และชื่อพืช','error');
+
+  // ดึงข้อมูลสภาพอากาศวันนั้นจาก history (ค่าเฉลี่ย)
+  const dayStart = new Date(date).setHours(0,0,0,0);
+  const dayEnd   = dayStart + 86400000;
+  const dayData  = historyLog.filter(r=>r.ts>=dayStart&&r.ts<=dayEnd);
+  const avg = key => dayData.length ? (dayData.reduce((s,r)=>s+(r[key]??0),0)/dayData.length).toFixed(1) : '--';
+
+  harvestLog.unshift({
+    id: 'h_'+Date.now(), date, crop, yield: yld, unit, zone, note,
+    weather: { temp: avg('temp'), hum: avg('hum'), soil: avg('soil') },
+    ts: Date.now()
+  });
+  try { localStorage.setItem(HARVEST_KEY, JSON.stringify(harvestLog)); } catch(e) {}
+  renderHarvestLog();
+  closePanel('harvest-panel');
+  addLog('info', `บันทึกผลผลิต: ${crop} ${yld}${unit} (${date})`);
+  showToast(`✅ บันทึก: ${crop} ${yld}${unit}`);
+  ['harvest-date','harvest-crop','harvest-yield','harvest-zone','harvest-note'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value='';
+  });
+}
+
+function renderHarvestLog() {
+  const list = document.getElementById('harvest-log-list');
+  if (!list) return;
+  if (!harvestLog.length) {
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-dim);font-size:12px;">ยังไม่มีข้อมูลผลผลิต<br><span style="font-size:11px;">กด + บันทึก เพื่อเพิ่มรายการ</span></div>';
+    return;
+  }
+  list.innerHTML =
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0 10px;">
+      <span style="font-size:11px;color:var(--text-dim);">${harvestLog.length} รายการ</span>
+      <button onclick="clearHarvestLog()" class="btn btn-danger" style="padding:4px 10px;font-size:11px;">🗑️ ล้างทั้งหมด</button>
+    </div>`
+    + harvestLog.map((h, i) => `
+    <div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;">🌾 ${h.crop}</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:3px;line-height:1.6;">
+            📅 ${h.date}${h.zone?' • 📍'+h.zone:''}
+            ${h.note?'<br>📝 '+h.note:''}
+          </div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">
+            🌡️${h.weather.temp}°C &nbsp;💧${h.weather.hum}% &nbsp;🌱${h.weather.soil}%
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-family:var(--font-mono);font-size:16px;color:var(--accent);font-weight:700;">${h.yield}<span style="font-size:12px;">${h.unit}</span></div>
+          <div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end;">
+            <button onclick="editHarvest(${i})" style="background:rgba(42,240,255,0.1);border:1px solid rgba(42,240,255,0.2);color:var(--accent-blue);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;">✏️</button>
+            <button onclick="deleteHarvest(${i})" style="background:rgba(255,58,92,0.1);border:1px solid rgba(255,58,92,0.2);color:var(--accent-red);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;">🗑️</button>
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function deleteHarvest(idx) {
+  const h = harvestLog[idx];
+  if (!h || !confirm(`ลบ "${h.crop}" (${h.date})?`)) return;
+  harvestLog.splice(idx, 1);
+  try { localStorage.setItem(HARVEST_KEY, JSON.stringify(harvestLog)); } catch(e){}
+  renderHarvestLog();
+  showToast('ลบรายการผลผลิตแล้ว', 'warn');
+}
+
+function clearHarvestLog() {
+  if (!confirm('ล้าง Log ผลผลิตทั้งหมด?')) return;
+  harvestLog = [];
+  try { localStorage.setItem(HARVEST_KEY, JSON.stringify([])); } catch(e){}
+  renderHarvestLog();
+  showToast('ล้าง Log ผลผลิตแล้ว', 'warn');
+}
+
+function editHarvest(idx) {
+  const h = harvestLog[idx];
+  if (!h) return;
+  // Pre-fill panel แล้วลบของเก่าออกเมื่อ save
+  document.getElementById('harvest-date').value  = h.date;
+  document.getElementById('harvest-crop').value  = h.crop;
+  document.getElementById('harvest-yield').value = h.yield;
+  document.getElementById('harvest-unit').value  = h.unit;
+  document.getElementById('harvest-zone').value  = h.zone || '';
+  document.getElementById('harvest-note').value  = h.note || '';
+  // ลบของเก่าก่อน แล้ว save จะ push ใหม่
+  harvestLog.splice(idx, 1);
+  try { localStorage.setItem(HARVEST_KEY, JSON.stringify(harvestLog)); } catch(e){}
+  openPanel('harvest-panel');
+  showToast('แก้ไขรายการ — กด บันทึก เมื่อเสร็จ');
+}
+
+// ─── Farm Insights (วิเคราะห์จากข้อมูลสะสม) ───
+function generateInsights() {
+  const list = document.getElementById('insights-list');
+  if (!list) return;
+  const insights = [];
+  const last24h = historyLog.filter(r => r.ts >= Date.now()-86400000);
+  if (last24h.length < 4) {
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-dim);font-size:12px;">ข้อมูลยังน้อยเกินไป (ต้องการอย่างน้อย 1 ชม.)</div>';
+    return;
+  }
+  const avg = key => last24h.reduce((s,r)=>s+(r[key]??0),0)/last24h.filter(r=>r[key]!=null).length;
+  const avgTemp = avg('temp'), avgHum = avg('hum'), avgSoil = avg('soil'), avgLux = avg('lux');
+
+  if (avgTemp > 34) insights.push({ icon:'🌡️', type:'warn', text:`อุณหภูมิเฉลี่ย 24ชม. สูง (${avgTemp.toFixed(1)}°C) — พืชอาจเครียดจากความร้อน พิจารณาเพิ่มร่มเงาหรือระบายอากาศ` });
+  if (avgHum < 50)  insights.push({ icon:'💧', type:'warn', text:`ความชื้นอากาศเฉลี่ย 24ชม. ต่ำ (${avgHum.toFixed(0)}%) — ควรพ่นหมอกหรือเพิ่มความชื้นในโรงเรือน` });
+  if (avgSoil < 30) insights.push({ icon:'🌱', type:'warn', text:`ความชื้นดินเฉลี่ย 24ชม. ต่ำ (${avgSoil.toFixed(0)}%) — ควรเพิ่มรอบการรดน้ำ` });
+  if (avgSoil > 75) insights.push({ icon:'🌱', type:'info', text:`ความชื้นดินสูง (${avgSoil.toFixed(0)}%) — ระวังรากเน่า ลดการรดน้ำ` });
+  if (avgTemp >= 25 && avgTemp <= 32 && avgHum >= 60) insights.push({ icon:'✅', type:'good', text:`สภาพแวดล้อมดี! อุณหภูมิ ${avgTemp.toFixed(1)}°C ความชื้น ${avgHum.toFixed(0)}% อยู่ในช่วงเหมาะสม` });
+
+  // ET₀ trend
+  const et0 = calcET0(avgTemp, avgHum, avgLux);
+  if (et0 != null) insights.push({ icon:'💧', type: et0>4?'warn':'info', text:`ET₀ เฉลี่ย ${et0.toFixed(1)} mm/วัน — ${et0>5?'ต้องการน้ำมาก':et0>3?'ต้องการน้ำปานกลาง':'ต้องการน้ำน้อย'}` });
+
+  // Harvest correlation
+  if (harvestLog.length >= 2) {
+    const recent = harvestLog[0];
+    insights.push({ icon:'🌾', type:'info', text:`ผลผลิตล่าสุด: ${recent.crop} ${recent.yield}${recent.unit} (${recent.date}) — อุณหภูมิขณะนั้น ${recent.weather.temp}°C` });
+  }
+
+  if (!insights.length) insights.push({ icon:'✅', type:'good', text:'สภาพแวดล้อมทุกอย่างอยู่ในเกณฑ์ดี ไม่มีคำแนะนำพิเศษ' });
+
+  const colors = { warn:'var(--accent-orange)', info:'var(--accent-blue)', good:'var(--accent)' };
+  list.innerHTML = insights.map(ins => `
+    <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+      <div style="font-size:20px;flex-shrink:0;">${ins.icon}</div>
+      <div style="font-size:12px;color:${colors[ins.type]||'var(--text-secondary)'};line-height:1.6;">${ins.text}</div>
+    </div>`).join('');
+}
+
+// ─── init ───
+function initDashboardIntelligence() {
+  loadAnomalyData();
+  loadHarvestData();
+  loadAnomalyFields();
+  // draw sparklines หลังข้อมูล history โหลดแล้ว
+  setTimeout(drawAllSparklines, 500);
+  // อัปเดต ET₀ ทุก 5 นาที
+  setInterval(updateET0, 300000);
+}
+
   const el = document.getElementById('more-rules-count');
   if (!el) return;
   const total = db.rules?.length || 0;
