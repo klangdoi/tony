@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SmartControl">
-<title>SmartControl v1.4.1 — Farm Intelligence</title>
+<title>SmartControl v1.4.3 — Farm Intelligence</title>
 <link rel="manifest" href="#" id="manifest-link">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -1122,7 +1122,7 @@ select.field-input option { background: #0c1a30; }
       <span class="nav-icon">⋯</span>เพิ่มเติม
     </button>
   </nav>
-  <div class="version-badge">v1.4.1</div>
+  <div class="version-badge">v1.4.3</div>
 </div>
 
 <!-- MORE PANEL -->
@@ -1999,10 +1999,20 @@ let lastSatData = null;         // cache
 let sensorFailCount = { sonoff: 0, satellite: 0 };
 
 function setSensorSource(src) {
+  // ─ ตรวจสอบก่อนเปลี่ยน source ─
+  if (src === 'sonoff' && !db.settings.sensor_ip) {
+    showToast('⚠️ กรอก IP Sensor Node ก่อน (กล่องด้านล่าง)', 'warn');
+    // ไม่บล็อก — ให้เปลี่ยนได้แต่เตือน
+  }
+  if ((src === 'satellite' || src === 'auto') && !gpsCoords && !db.settings.gps_lat) {
+    showToast('📍 กด GPS เพื่อระบุตำแหน่งก่อน', 'warn');
+    // ลอง get GPS อัตโนมัติเลย
+    getGPSLocation();
+  }
   sensorSource = src;
   db.settings.sensor_source = src;
   saveDB();
-  // Update UI buttons
+  // Update UI buttons — ทั้งสองชุด (settings page)
   ['sonoff','satellite','auto','sim'].forEach(s => {
     document.getElementById('src-'+s)?.classList.toggle('active', s === src);
   });
@@ -2025,10 +2035,10 @@ function setSensorStatusUI(type, msg) {
 // ─── MAIN ENTRY ───
 async function updateEnv() {
   const src = sensorSource;
-  if (src === 'sonoff')    await fetchFromSonoff();
+  if (src === 'sonoff')         await fetchFromSonoff();
   else if (src === 'satellite') await fetchFromSatellite();
-  else if (src === 'auto') await fetchAuto();
-  else                     fetchSim();
+  else if (src === 'auto')      await fetchAuto();
+  else                          fetchSim();
 }
 
 // ─── SOURCE 1: SONOFF SENSOR NODE ───
@@ -2058,14 +2068,21 @@ async function fetchFromSonoff() {
 }
 
 // ─── SOURCE 2: OPEN-METEO SATELLITE (ฟรี 100%) ───
-// Docs: https://open-meteo.com/en/docs
 async function fetchFromSatellite(isFallback = false) {
+  // ถ้าไม่มี GPS เลย — ลอง get GPS อัตโนมัติก่อน ไม่ตก Demo ทันที
   if (!gpsCoords) {
-    setSensorStatusUI('satellite', '📍 กำลังขอตำแหน่ง GPS...');
-    await getGPSLocation();
-    if (!gpsCoords) {
-      setSensorStatusUI('err', '❌ ไม่ได้รับ GPS — ใช้ค่า Demo');
-      fetchSim(); return;
+    // ใช้ cache ก่อนถ้ามี
+    if (db.settings.gps_lat) {
+      gpsCoords = { lat: db.settings.gps_lat, lon: db.settings.gps_lon, placeName: db.settings.gps_place || '' };
+    } else {
+      setSensorStatusUI('satellite', '📍 กำลังขอตำแหน่ง GPS อัตโนมัติ...');
+      await getGPSLocation();
+      if (!gpsCoords) {
+        setSensorStatusUI('err', '❌ ไม่ได้รับ GPS — กด 📍 GPS ในหน้าตั้งค่า แล้วลองใหม่');
+        // แสดงค่า Demo แต่บอกชัดๆ ว่าเป็น Demo
+        fetchSim();
+        return;
+      }
     }
   }
   setSensorStatusUI('satellite', '🛰️ กำลังดึงข้อมูลสภาพอากาศ...');
@@ -2091,8 +2108,11 @@ async function fetchFromSatellite(isFallback = false) {
     renderEnvValues(temp, hum, soil, lux);
     sensorFailCount.satellite = 0;
     const src = isFallback ? '🛰️ สำรอง (Sonoff offline)' : '🛰️ Open-Meteo';
-    setSensorStatusUI('satellite', `${src} | ${lat.toFixed(4)},${lon.toFixed(4)} | ${timeNow()}`);
-    document.getElementById('gps-location').textContent = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+    const placeStr = gpsCoords.placeName ? ` • ${gpsCoords.placeName}` : ` • ${lat.toFixed(4)},${lon.toFixed(4)}`;
+    setSensorStatusUI('satellite', `${src}${placeStr} | ${timeNow()}`);
+    document.getElementById('gps-location').textContent = gpsCoords.placeName
+      ? `📍 ${gpsCoords.placeName}\n${lat.toFixed(5)}, ${lon.toFixed(5)}`
+      : `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
   } catch(e) {
     sensorFailCount.satellite++;
     setSensorStatusUI('err', `❌ Open-Meteo ไม่ตอบ — ใช้ค่า Demo`);
@@ -2104,6 +2124,7 @@ async function fetchFromSatellite(isFallback = false) {
 // ─── SOURCE 3: AUTO (Sonoff หลัก → Satellite สำรอง) ───
 async function fetchAuto() {
   const ip = db.settings.sensor_ip || '';
+  // ─ ลอง Sonoff ก่อน (ถ้ามี IP) ─
   if (ip) {
     setSensorStatusUI('sonoff', `🔄 อัตโนมัติ — ลอง Sonoff ${ip}...`);
     try {
@@ -2118,7 +2139,12 @@ async function fetchAuto() {
       addLog('warn', `Auto: Sonoff ล้มเหลว (${sensorFailCount.sonoff}x) → ใช้ดาวเทียมแทน`);
     }
   }
-  // Fallback to satellite
+  // ─ Fallback → ดาวเทียม ─
+  // ถ้ายังไม่มี GPS เลย ลอง get อัตโนมัติก่อน ไม่ตก Demo
+  if (!gpsCoords && !db.settings.gps_lat) {
+    setSensorStatusUI('satellite', '🔄 อัตโนมัติ — กำลังขอ GPS...');
+    await getGPSLocation();
+  }
   await fetchFromSatellite(true);
 }
 
@@ -2155,27 +2181,68 @@ async function getGPSLocation() {
   return new Promise(resolve => {
     if (!navigator.geolocation) { resolve(null); return; }
     navigator.geolocation.getCurrentPosition(
-      pos => {
+      async pos => {
         gpsCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
         db.settings.gps_lat = gpsCoords.lat;
         db.settings.gps_lon = gpsCoords.lon;
         saveDB();
-        document.getElementById('gps-location').textContent =
-          `${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lon.toFixed(5)}`;
+        // แสดงพิกัดก่อนระหว่างรอ reverse geocode
+        setGPSDisplay(`${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lon.toFixed(5)} — กำลังหาชื่อสถานที่...`);
+        // Reverse geocode ด้วย Nominatim (OpenStreetMap) — ฟรี ไม่ต้อง key
+        const place = await reverseGeocode(gpsCoords.lat, gpsCoords.lon);
+        gpsCoords.placeName = place;
+        db.settings.gps_place = place;
+        saveDB();
+        setGPSDisplay(`📍 ${place}\n${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lon.toFixed(5)}`);
         resolve(gpsCoords);
       },
       err => {
-        // Fallback: ใช้พิกัดที่บันทึกไว้
+        // Fallback: ใช้พิกัด cache
         if (db.settings.gps_lat) {
-          gpsCoords = { lat: db.settings.gps_lat, lon: db.settings.gps_lon };
-          document.getElementById('gps-location').textContent =
-            `${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lon.toFixed(5)} (แคช)`;
+          gpsCoords = { lat: db.settings.gps_lat, lon: db.settings.gps_lon, placeName: db.settings.gps_place || '' };
+          const placeStr = gpsCoords.placeName ? `📍 ${gpsCoords.placeName} (แคช)` : `${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lon.toFixed(5)} (แคช)`;
+          setGPSDisplay(placeStr);
         }
         resolve(gpsCoords);
       },
-      { timeout: 6000, maximumAge: 600000 }
+      { timeout: 8000, maximumAge: 600000 }
     );
   });
+}
+
+// ─── Nominatim Reverse Geocode ───
+// API: https://nominatim.openstreetmap.org/reverse
+// ให้ชื่อตำบล อำเภอ จังหวัด เป็นภาษาท้องถิ่น (ไทย)
+async function reverseGeocode(lat, lon) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=th&zoom=14`;
+    const r = await fetch(url, {
+      headers: { 'User-Agent': 'SmartControl-FarmApp/1.4' },
+      signal: AbortSignal.timeout(6000)
+    });
+    const j = await r.json();
+    // สร้างชื่อสถานที่แบบสั้น: หมู่บ้าน/ตำบล, อำเภอ, จังหวัด
+    const a = j.address || {};
+    const parts = [
+      a.village || a.hamlet || a.suburb || a.neighbourhood || a.town || a.city_district || '',
+      a.county   || a.city   || a.municipality || '',
+      a.state    || a.province || '',
+    ].filter(Boolean);
+    // ถ้าได้น้อยกว่า 2 ส่วน เพิ่ม display_name ย่อ
+    if (parts.length < 2 && j.display_name) {
+      const dn = j.display_name.split(',').map(s => s.trim()).slice(0, 3);
+      return dn.join(', ');
+    }
+    return parts.slice(0, 3).join(', ');
+  } catch(e) {
+    return `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+  }
+}
+
+// ─── อัปเดต UI แสดงพิกัด+ชื่อสถานที่ ───
+function setGPSDisplay(text) {
+  const el = document.getElementById('gps-location');
+  if (el) el.textContent = text;
 }
 
 // ─── TEST SONOFF SENSOR NODE ───
@@ -2331,13 +2398,20 @@ function init() {
     // Restore sensor IP field
     if (db.settings.sensor_ip)
       document.getElementById('sensor-ip').value = db.settings.sensor_ip;
-    // Restore GPS cache
+    // Restore GPS cache พร้อม placeName
     if (db.settings.gps_lat) {
-      gpsCoords = { lat: db.settings.gps_lat, lon: db.settings.gps_lon };
-      document.getElementById('gps-location').textContent =
-        `${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lon.toFixed(5)} (แคช)`;
+      gpsCoords = {
+        lat: db.settings.gps_lat,
+        lon: db.settings.gps_lon,
+        placeName: db.settings.gps_place || ''
+      };
+      const placeStr = gpsCoords.placeName
+        ? `📍 ${gpsCoords.placeName} (แคช)`
+        : `${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lon.toFixed(5)} (แคช)`;
+      setGPSDisplay(placeStr);
     }
-    // Restore sensor source & update buttons
+    // Restore sensor source — default เป็น 'satellite' ถ้าไม่เคยตั้งค่า
+    // ป้องกัน: ถ้า savedSrc=auto/satellite แต่ยังไม่มี GPS → fallback เป็น satellite (จะ auto-get GPS)
     const savedSrc = db.settings.sensor_source || 'satellite';
     sensorSource = savedSrc;
     ['sonoff','satellite','auto','sim'].forEach(s => {
@@ -2715,7 +2789,7 @@ function initGraph() {
 }
 
 // ═══════════════════════════════════════════════
-//  📷 CAMERA  v1.4.1
+//  📷 CAMERA  v1.4.3
 // ═══════════════════════════════════════════════
 let cameras=[];
 const CAM_KEY='sc_cameras_v1';
@@ -2772,7 +2846,7 @@ function removeCamera(id){cameras=cameras.filter(c=>c.id!==id);saveCameras();ren
 function refreshAllCams(){cameras.forEach((cam,idx)=>{if(cam.type==='snapshot'){const img=document.getElementById('cam-feed-'+idx);if(img)img.src=cam.url+'?t='+Date.now();}});showToast('🔄 รีเฟรชกล้อง');}
 
 // ═══════════════════════════════════════════════
-//  🗺️ FARM MAP  v1.4.1
+//  🗺️ FARM MAP  v1.4.3
 // ═══════════════════════════════════════════════
 const MAP_KEY='sc_map_v1';
 let mapObjects=[],mapTool='select',mapDragging=null,mapDrawStart=null,selectedObj=null,mapCanvas,mapCtx;
@@ -2852,24 +2926,51 @@ function clearMapConfirm(){if(confirm('ล้างแผนที่?')){mapObj
 function exportMapImg(){const a=document.createElement('a');a.download='farmmap.png';a.href=mapCanvas.toDataURL();a.click();showToast('💾 บันทึกรูปแล้ว');}
 
 // ═══════════════════════════════════════════════
-//  🌧️ WEATHER  v1.4.1
+//  🌧️ WEATHER  v1.4.3
 // ═══════════════════════════════════════════════
 const WX_ICONS={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'⛈️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',99:'⛈️'};
 const WX_DESC={0:'ท้องฟ้าแจ่มใส',1:'มีเมฆบางส่วน',2:'มีเมฆปานกลาง',3:'ท้องฟ้าครึ้ม',45:'หมอก',51:'ฝนปรอย',61:'ฝนเบา',63:'ฝนปานกลาง',65:'ฝนหนัก',80:'ฝนฟ้าคะนอง',81:'ฝนฟ้าคะนอง',82:'ฝนหนักมาก',95:'พายุฝน',99:'พายุรุนแรง'};
 async function loadWeather(){
-  if(!gpsCoords&&db.settings.gps_lat)gpsCoords={lat:db.settings.gps_lat,lon:db.settings.gps_lon};
+  if(!gpsCoords&&db.settings.gps_lat) gpsCoords={lat:db.settings.gps_lat,lon:db.settings.gps_lon,placeName:db.settings.gps_place||''};
   if(!gpsCoords){showToast('ต้องการ GPS ก่อน','warn');await getGPSLocation();if(!gpsCoords)return;}
-  document.getElementById('weather-hero-wrap').innerHTML=`<div style="text-align:center;padding:30px;color:var(--text-dim);">🛰️ กำลังโหลด...</div>`;
+  document.getElementById('weather-hero-wrap').innerHTML=`<div style="text-align:center;padding:30px;color:var(--text-dim);">🛰️ กำลังโหลดข้อมูลสภาพอากาศ...</div>`;
   try{
     const{lat,lon}=gpsCoords;
-    const j=await(await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,uv_index_max&timezone=Asia%2FBangkok&forecast_days=7`,{signal:AbortSignal.timeout(8000)})).json();
-    renderWeather(j);
-  }catch(e){document.getElementById('weather-hero-wrap').innerHTML=`<div style="text-align:center;padding:30px;color:var(--accent-red);">❌ ${e.message}<br><button class="btn btn-outline" style="margin-top:10px;" onclick="loadWeather()">ลองใหม่</button></div>`;}
+    // โหลด weather + reverse geocode พร้อมกัน
+    const [j, place] = await Promise.all([
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,uv_index_max&timezone=Asia%2FBangkok&forecast_days=7`,{signal:AbortSignal.timeout(8000)}).then(r=>r.json()),
+      gpsCoords.placeName
+        ? Promise.resolve(gpsCoords.placeName)
+        : reverseGeocode(lat, lon)
+    ]);
+    // บันทึกชื่อสถานที่
+    if (!gpsCoords.placeName) {
+      gpsCoords.placeName = place;
+      db.settings.gps_place = place;
+      saveDB();
+      setGPSDisplay(`📍 ${place}\n${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+    }
+    renderWeather(j, place, lat, lon);
+  }catch(e){
+    document.getElementById('weather-hero-wrap').innerHTML=`<div style="text-align:center;padding:30px;color:var(--accent-red);">❌ ${e.message}<br><button class="btn btn-outline" style="margin-top:10px;" onclick="loadWeather()">ลองใหม่</button></div>`;
+  }
 }
-function renderWeather(j){
+
+function renderWeather(j, placeName, lat, lon){
   const c=j.current,d=j.daily,dn=['อา','จ','อ','พ','พฤ','ศ','ส'];
+  const placeLabel = placeName || (lat ? `${lat.toFixed(4)}, ${lon.toFixed(4)}` : 'ไม่ระบุตำแหน่ง');
+  const coordLabel = (lat && lon) ? `${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E` : '';
   document.getElementById('weather-hero-wrap').innerHTML=`
     <div class="weather-hero">
+      <!-- Station name bar -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:8px 12px;background:rgba(42,240,255,0.07);border:1px solid rgba(42,240,255,0.15);border-radius:10px;">
+        <span style="font-size:16px;">📍</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;color:var(--accent-blue);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${placeLabel}</div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);margin-top:1px;">${coordLabel} • Open-Meteo</div>
+        </div>
+        <button onclick="gpsCoords.placeName='';db.settings.gps_place='';saveDB();loadWeather();" style="background:none;border:none;color:var(--text-dim);font-size:12px;cursor:pointer;padding:4px 6px;flex-shrink:0;" title="รีเฟรชตำแหน่ง">🔄</button>
+      </div>
       <div class="wx-today">
         <div class="wx-icon">${WX_ICONS[c.weather_code]||'🌡️'}</div>
         <div class="wx-main">
@@ -2906,7 +3007,7 @@ function renderWeather(j){
 }
 
 // ═══════════════════════════════════════════════
-//  📊 EXPORT  v1.4.1
+//  📊 EXPORT  v1.4.3
 // ═══════════════════════════════════════════════
 function getGSScript(){return`function doPost(e){
   var ss=SpreadsheetApp.getActiveSpreadsheet();
