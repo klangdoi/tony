@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SmartControl">
-<title>SmartControl v1.4.3 — Farm Intelligence</title>
+<title>SmartControl v1.4.4 — Farm Intelligence</title>
 <link rel="manifest" href="#" id="manifest-link">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -836,10 +836,46 @@ select.field-input option { background: #0c1a30; }
             • ค่าดิน + แสง ประมาณจากสภาพอากาศ<br>
             • อัปเดตทุก 15 นาที
           </div>
-          <div style="margin-top:10px;display:flex;align-items:center;gap:8px;">
-            <div style="font-size:11px;color:var(--text-dim);">ตำแหน่งปัจจุบัน:</div>
-            <div id="gps-location" style="font-family:var(--font-mono);font-size:11px;color:var(--accent-blue);">ยังไม่ระบุ</div>
-            <button class="btn btn-outline" style="padding:5px 10px;font-size:11px;margin-left:auto;" onclick="getGPSLocation()">📍 GPS</button>
+          <div style="margin-top:10px;">
+            <!-- แสดงพิกัดปัจจุบัน -->
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <div style="font-size:11px;color:var(--text-dim);">ตำแหน่งปัจจุบัน:</div>
+              <div id="gps-location" style="font-family:var(--font-mono);font-size:11px;color:var(--accent-blue);flex:1;">ยังไม่ระบุ</div>
+            </div>
+            <!-- ปุ่มวิธีเลือกพิกัด -->
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
+              <button class="btn btn-primary" style="flex:1;font-size:12px;padding:9px 8px;" onclick="getGPSLocation()">📍 ใช้ GPS</button>
+              <button class="btn btn-outline" style="flex:1;font-size:12px;padding:9px 8px;" onclick="toggleManualCoord()">✏️ กรอกเอง</button>
+              <button class="btn btn-outline" style="flex:1;font-size:12px;padding:9px 8px;" onclick="toggleSearchPlace()">🔍 ค้นหา</button>
+            </div>
+            <!-- กรอกพิกัดเอง -->
+            <div id="manual-coord-wrap" style="display:none;background:rgba(0,0,0,0.2);border-radius:10px;padding:12px;margin-bottom:8px;">
+              <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;letter-spacing:0.5px;">กรอกพิกัด Latitude / Longitude</div>
+              <div style="display:flex;gap:8px;margin-bottom:8px;">
+                <div style="flex:1;">
+                  <div style="font-size:10px;color:var(--text-dim);margin-bottom:4px;">Latitude (เหนือ-ใต้)</div>
+                  <input class="field-input" id="manual-lat" type="number" step="0.00001" placeholder="เช่น 18.8650" style="padding:8px 10px;font-size:13px;width:100%;">
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:10px;color:var(--text-dim);margin-bottom:4px;">Longitude (ออก-ตก)</div>
+                  <input class="field-input" id="manual-lon" type="number" step="0.00001" placeholder="เช่น 99.1360" style="padding:8px 10px;font-size:13px;width:100%;">
+                </div>
+              </div>
+              <div style="font-size:10px;color:var(--text-dim);margin-bottom:8px;line-height:1.6;">
+                💡 เปิด Google Maps → แตะค้างที่ฟาร์ม → จะเห็นพิกัดด้านล่าง<br>
+                ไทยอยู่ในช่วง Lat 5–21° / Lon 97–106°
+              </div>
+              <button class="btn btn-primary" style="width:100%;font-size:13px;" onclick="applyManualCoord()">✅ ใช้พิกัดนี้</button>
+            </div>
+            <!-- ค้นหาชื่อสถานที่ -->
+            <div id="search-place-wrap" style="display:none;background:rgba(0,0,0,0.2);border-radius:10px;padding:12px;margin-bottom:8px;">
+              <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">ค้นหาชื่อสถานที่ (ไทย/อังกฤษ)</div>
+              <div style="display:flex;gap:8px;margin-bottom:8px;">
+                <input class="field-input" id="place-search-input" placeholder="เช่น ดอยสะเก็ด, ป่าเมี่ยง, Chiang Mai" style="flex:1;padding:8px 10px;font-size:13px;" onkeydown="if(event.key==='Enter')searchPlace()">
+                <button class="btn btn-primary" style="padding:8px 14px;font-size:13px;" onclick="searchPlace()">ค้นหา</button>
+              </div>
+              <div id="place-search-results" style="max-height:160px;overflow-y:auto;"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -1122,7 +1158,7 @@ select.field-input option { background: #0c1a30; }
       <span class="nav-icon">⋯</span>เพิ่มเติม
     </button>
   </nav>
-  <div class="version-badge">v1.4.3</div>
+  <div class="version-badge">v1.4.4</div>
 </div>
 
 <!-- MORE PANEL -->
@@ -2221,14 +2257,12 @@ async function reverseGeocode(lat, lon) {
       signal: AbortSignal.timeout(6000)
     });
     const j = await r.json();
-    // สร้างชื่อสถานที่แบบสั้น: หมู่บ้าน/ตำบล, อำเภอ, จังหวัด
     const a = j.address || {};
     const parts = [
       a.village || a.hamlet || a.suburb || a.neighbourhood || a.town || a.city_district || '',
       a.county   || a.city   || a.municipality || '',
       a.state    || a.province || '',
     ].filter(Boolean);
-    // ถ้าได้น้อยกว่า 2 ส่วน เพิ่ม display_name ย่อ
     if (parts.length < 2 && j.display_name) {
       const dn = j.display_name.split(',').map(s => s.trim()).slice(0, 3);
       return dn.join(', ');
@@ -2243,6 +2277,136 @@ async function reverseGeocode(lat, lon) {
 function setGPSDisplay(text) {
   const el = document.getElementById('gps-location');
   if (el) el.textContent = text;
+}
+
+// ═══════════════════════════════════════════════
+//  📍 MANUAL COORDINATE & PLACE SEARCH
+// ═══════════════════════════════════════════════
+
+function toggleManualCoord() {
+  const w = document.getElementById('manual-coord-wrap');
+  const s = document.getElementById('search-place-wrap');
+  const isOpen = w.style.display !== 'none';
+  w.style.display = isOpen ? 'none' : 'block';
+  s.style.display = 'none';
+  // Pre-fill ถ้ามีพิกัดอยู่แล้ว
+  if (!isOpen && gpsCoords) {
+    document.getElementById('manual-lat').value = gpsCoords.lat.toFixed(5);
+    document.getElementById('manual-lon').value = gpsCoords.lon.toFixed(5);
+  }
+}
+
+function toggleSearchPlace() {
+  const w = document.getElementById('search-place-wrap');
+  const m = document.getElementById('manual-coord-wrap');
+  w.style.display = w.style.display === 'none' ? 'block' : 'none';
+  m.style.display = 'none';
+  if (w.style.display === 'block') {
+    setTimeout(() => document.getElementById('place-search-input')?.focus(), 100);
+  }
+}
+
+async function applyManualCoord() {
+  const lat = parseFloat(document.getElementById('manual-lat').value);
+  const lon = parseFloat(document.getElementById('manual-lon').value);
+  if (isNaN(lat) || isNaN(lon)) return showToast('กรอกพิกัดให้ถูกต้อง', 'error');
+  if (lat < -90 || lat > 90 || lon < -180 || lon > 180) return showToast('พิกัดอยู่นอกช่วงที่ถูกต้อง', 'error');
+  if (lat < 5 || lat > 21 || lon < 97 || lon > 106) {
+    if (!confirm(`พิกัด ${lat}, ${lon} ดูเหมือนอยู่นอกประเทศไทย ใช้งานต่อไหม?`)) return;
+  }
+  showToast('📍 กำลังยืนยันตำแหน่ง...', null);
+  // Reverse geocode เพื่อหาชื่อ
+  const place = await reverseGeocode(lat, lon);
+  gpsCoords = { lat, lon, placeName: place };
+  db.settings.gps_lat   = lat;
+  db.settings.gps_lon   = lon;
+  db.settings.gps_place = place;
+  saveDB();
+  setGPSDisplay(`📍 ${place}\n${lat.toFixed(5)}, ${lon.toFixed(5)}`);
+  document.getElementById('manual-coord-wrap').style.display = 'none';
+  showToast(`✅ ตั้งพิกัด: ${place}`);
+  addLog('info', `ตั้งพิกัดเอง: ${place} (${lat.toFixed(4)}, ${lon.toFixed(4)})`);
+  // อัปเดตค่าเซ็นเซอร์ทันที
+  updateEnv();
+}
+
+// ─── ค้นหาสถานที่ด้วยชื่อ (Nominatim Search) ───
+async function searchPlace() {
+  const q = document.getElementById('place-search-input').value.trim();
+  if (!q) return showToast('กรอกชื่อสถานที่ก่อน', 'error');
+  const results = document.getElementById('place-search-results');
+  results.innerHTML = `<div style="text-align:center;padding:12px;color:var(--text-dim);font-size:12px;">🔍 กำลังค้นหา "${q}"...</div>`;
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&accept-language=th&limit=6&countrycodes=th`;
+    const r = await fetch(url, {
+      headers: { 'User-Agent': 'SmartControl-FarmApp/1.4' },
+      signal: AbortSignal.timeout(6000)
+    });
+    const j = await r.json();
+    if (!j.length) {
+      // ลองค้นหาไม่จำกัดประเทศถ้าไม่เจอ
+      const r2 = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&accept-language=th&limit=5`, {
+        headers: { 'User-Agent': 'SmartControl-FarmApp/1.4' },
+        signal: AbortSignal.timeout(5000)
+      });
+      const j2 = await r2.json();
+      renderSearchResults(j2, results);
+    } else {
+      renderSearchResults(j, results);
+    }
+  } catch(e) {
+    results.innerHTML = `<div style="text-align:center;padding:12px;color:var(--accent-red);font-size:12px;">❌ ค้นหาไม่ได้: ${e.message}</div>`;
+  }
+}
+
+function renderSearchResults(list, container) {
+  if (!list.length) {
+    container.innerHTML = `<div style="text-align:center;padding:12px;color:var(--text-dim);font-size:12px;">ไม่พบสถานที่ ลองชื่ออื่น</div>`;
+    return;
+  }
+  container.innerHTML = list.map((item, i) => {
+    const lat  = parseFloat(item.lat).toFixed(5);
+    const lon  = parseFloat(item.lon).toFixed(5);
+    // ตัดชื่อให้กระชับ
+    const name = item.display_name.split(',').slice(0, 3).join(', ');
+    return `<div onclick="selectSearchResult(${item.lat},${item.lon},'${name.replace(/'/g,"\\'")}',${i})"
+      style="padding:10px 12px;border-radius:8px;cursor:pointer;border:1px solid var(--border);
+             background:var(--bg-card);margin-bottom:6px;transition:all 0.15s;"
+      onmouseover="this.style.borderColor='var(--accent)'"
+      onmouseout="this.style.borderColor='var(--border)'"
+      id="sr-${i}">
+      <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:3px;">📍 ${name}</div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim);">${lat}°N, ${lon}°E • ${item.type||''}</div>
+    </div>`;
+  }).join('');
+}
+
+async function selectSearchResult(lat, lon, name, idx) {
+  // highlight
+  document.querySelectorAll('[id^="sr-"]').forEach(el => el.style.background = 'var(--bg-card)');
+  const sel = document.getElementById('sr-' + idx);
+  if (sel) sel.style.background = 'rgba(0,200,160,0.12)';
+  showToast('📍 กำลังยืนยันตำแหน่ง...', null);
+  // Reverse geocode ให้ได้ชื่อละเอียดขึ้น
+  const place = await reverseGeocode(lat, lon) || name;
+  gpsCoords = { lat: parseFloat(lat), lon: parseFloat(lon), placeName: place };
+  db.settings.gps_lat   = gpsCoords.lat;
+  db.settings.gps_lon   = gpsCoords.lon;
+  db.settings.gps_place = place;
+  saveDB();
+  setGPSDisplay(`📍 ${place}\n${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lon.toFixed(5)}`);
+  // ใส่ค่าใน manual fields ด้วย
+  document.getElementById('manual-lat').value = gpsCoords.lat.toFixed(5);
+  document.getElementById('manual-lon').value = gpsCoords.lon.toFixed(5);
+  // ปิด panel
+  setTimeout(() => {
+    document.getElementById('search-place-wrap').style.display = 'none';
+    document.getElementById('place-search-results').innerHTML = '';
+    document.getElementById('place-search-input').value = '';
+  }, 600);
+  showToast(`✅ เลือก: ${place}`);
+  addLog('info', `เลือกสถานที่: ${place} (${gpsCoords.lat.toFixed(4)}, ${gpsCoords.lon.toFixed(4)})`);
+  updateEnv();
 }
 
 // ─── TEST SONOFF SENSOR NODE ───
@@ -2789,7 +2953,7 @@ function initGraph() {
 }
 
 // ═══════════════════════════════════════════════
-//  📷 CAMERA  v1.4.3
+//  📷 CAMERA  v1.4.4
 // ═══════════════════════════════════════════════
 let cameras=[];
 const CAM_KEY='sc_cameras_v1';
@@ -2846,7 +3010,7 @@ function removeCamera(id){cameras=cameras.filter(c=>c.id!==id);saveCameras();ren
 function refreshAllCams(){cameras.forEach((cam,idx)=>{if(cam.type==='snapshot'){const img=document.getElementById('cam-feed-'+idx);if(img)img.src=cam.url+'?t='+Date.now();}});showToast('🔄 รีเฟรชกล้อง');}
 
 // ═══════════════════════════════════════════════
-//  🗺️ FARM MAP  v1.4.3
+//  🗺️ FARM MAP  v1.4.4
 // ═══════════════════════════════════════════════
 const MAP_KEY='sc_map_v1';
 let mapObjects=[],mapTool='select',mapDragging=null,mapDrawStart=null,selectedObj=null,mapCanvas,mapCtx;
@@ -2926,7 +3090,7 @@ function clearMapConfirm(){if(confirm('ล้างแผนที่?')){mapObj
 function exportMapImg(){const a=document.createElement('a');a.download='farmmap.png';a.href=mapCanvas.toDataURL();a.click();showToast('💾 บันทึกรูปแล้ว');}
 
 // ═══════════════════════════════════════════════
-//  🌧️ WEATHER  v1.4.3
+//  🌧️ WEATHER  v1.4.4
 // ═══════════════════════════════════════════════
 const WX_ICONS={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'⛈️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',99:'⛈️'};
 const WX_DESC={0:'ท้องฟ้าแจ่มใส',1:'มีเมฆบางส่วน',2:'มีเมฆปานกลาง',3:'ท้องฟ้าครึ้ม',45:'หมอก',51:'ฝนปรอย',61:'ฝนเบา',63:'ฝนปานกลาง',65:'ฝนหนัก',80:'ฝนฟ้าคะนอง',81:'ฝนฟ้าคะนอง',82:'ฝนหนักมาก',95:'พายุฝน',99:'พายุรุนแรง'};
@@ -3007,7 +3171,7 @@ function renderWeather(j, placeName, lat, lon){
 }
 
 // ═══════════════════════════════════════════════
-//  📊 EXPORT  v1.4.3
+//  📊 EXPORT  v1.4.4
 // ═══════════════════════════════════════════════
 function getGSScript(){return`function doPost(e){
   var ss=SpreadsheetApp.getActiveSpreadsheet();
