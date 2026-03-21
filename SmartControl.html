@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SmartControl">
-<title>SmartControl v1.7.6 — Farm Intelligence</title>
+<title>SmartControl v1.7.7 — Farm Intelligence</title>
 <link rel="manifest" href="#" id="manifest-link">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -1408,7 +1408,7 @@ select.field-input option { background: #0c1a30; }
       <span class="nav-icon">⋯</span>เพิ่มเติม
     </button>
   </nav>
-  <div class="version-badge">v1.7.6</div>
+  <div class="version-badge">v1.7.7</div>
 </div>
 
 <!-- MORE PANEL -->
@@ -3393,21 +3393,74 @@ function drawChart() {
     ctx.fillText(val.toFixed(0), PAD.left - 5, y + 4);
   }
 
-  // X-axis time labels
+  // ─── X-axis — hourly grid lines + smart labels ───
   ctx.textAlign = 'center';
-  ctx.fillStyle = 'rgba(150,190,180,0.5)';
   ctx.font = `9px 'Space Mono', monospace`;
-  const xTicks = Math.min(6, data.length);
-  for (let i = 0; i < xTicks; i++) {
-    const idx = Math.floor((i / (xTicks - 1)) * (data.length - 1));
-    const d = data[idx];
-    const x = toX(d.ts);
-    const dt = new Date(d.ts);
-    const label = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
-    ctx.fillText(label, x, H - 8);
-    // Tick
-    ctx.strokeStyle = 'rgba(0,200,160,0.12)';
-    ctx.beginPath(); ctx.moveTo(x, PAD.top + plotH); ctx.lineTo(x, PAD.top + plotH + 4); ctx.stroke();
+
+  const rangeMs   = tsMax - tsMin;
+  const rangeHrs  = rangeMs / 3600000;
+
+  // กำหนด interval ของ tick ตามช่วงเวลา
+  // ≤2ชม.→ทุก15นาที, ≤6ชม.→ทุก30นาที, ≤24ชม.→ทุก1ชม., ≤72ชม.→ทุก6ชม., >72ชม.→ทุก12ชม.
+  const tickIntervalMs = rangeHrs <= 2   ? 15 * 60000
+                       : rangeHrs <= 6   ? 30 * 60000
+                       : rangeHrs <= 24  ? 60 * 60000
+                       : rangeHrs <= 72  ? 6  * 3600000
+                                         : 12 * 3600000;
+
+  // หา tick แรก (round ขึ้นไปถึง interval ถัดไป)
+  const firstTick = Math.ceil(tsMin / tickIntervalMs) * tickIntervalMs;
+
+  for (let ts = firstTick; ts <= tsMax; ts += tickIntervalMs) {
+    const x = toX(ts);
+    if (x < PAD.left + 20 || x > PAD.left + plotW - 10) continue;
+    const dt  = new Date(ts);
+    const hh  = String(dt.getHours()).padStart(2,'0');
+    const mm  = String(dt.getMinutes()).padStart(2,'0');
+    const isHour = dt.getMinutes() === 0;
+
+    // เส้น grid แนวตั้ง
+    ctx.strokeStyle = isHour ? 'rgba(0,200,160,0.10)' : 'rgba(0,200,160,0.05)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash(isHour ? [3,4] : [1,5]);
+    ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top + plotH); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // tick mark
+    ctx.strokeStyle = isHour ? 'rgba(0,200,160,0.4)' : 'rgba(0,200,160,0.15)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, PAD.top + plotH); ctx.lineTo(x, PAD.top + plotH + 5); ctx.stroke();
+
+    // label
+    ctx.fillStyle = isHour ? 'rgba(0,200,160,0.8)' : 'rgba(150,190,180,0.4)';
+    ctx.font = isHour ? `bold 9px 'Space Mono', monospace` : `9px 'Space Mono', monospace`;
+    const label = isHour ? `${hh}:00` : `${hh}:${mm}`;
+    ctx.fillText(label, x, H - 5);
+  }
+
+  // วันที่ label — แสดงเมื่อช่วงข้ามวัน
+  if (rangeHrs > 6) {
+    let lastDate = '';
+    for (let ts = firstTick; ts <= tsMax; ts += tickIntervalMs) {
+      const dt = new Date(ts);
+      if (dt.getHours() === 0 && dt.getMinutes() === 0) {
+        const x = toX(ts);
+        const dateStr = `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`;
+        if (dateStr !== lastDate && x > PAD.left + 30 && x < PAD.left + plotW - 30) {
+          ctx.fillStyle = 'rgba(42,240,255,0.6)';
+          ctx.font = `bold 9px 'Space Mono', monospace`;
+          ctx.textAlign = 'center';
+          ctx.fillText(dateStr, x, PAD.top + plotH - 3);
+          // เส้นแบ่งวัน
+          ctx.strokeStyle = 'rgba(42,240,255,0.2)';
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4,4]);
+          ctx.beginPath(); ctx.moveTo(x, PAD.top); ctx.lineTo(x, PAD.top+plotH); ctx.stroke();
+          ctx.setLineDash([]);
+          lastDate = dateStr;
+        }
+      }
+    }
   }
 
   // Draw each active metric line
@@ -3536,7 +3589,7 @@ function initGraph() {
 }
 
 // ═══════════════════════════════════════════════
-//  📷 CAMERA  v1.7.6
+//  📷 CAMERA  v1.7.7
 // ═══════════════════════════════════════════════
 let cameras=[];
 const CAM_KEY='sc_cameras_v1';
@@ -3593,7 +3646,7 @@ function removeCamera(id){cameras=cameras.filter(c=>c.id!==id);saveCameras();ren
 function refreshAllCams(){cameras.forEach((cam,idx)=>{if(cam.type==='snapshot'){const img=document.getElementById('cam-feed-'+idx);if(img)img.src=cam.url+'?t='+Date.now();}});showToast('🔄 รีเฟรชกล้อง');}
 
 // ═══════════════════════════════════════════════
-//  🗺️ FARM MAP  v1.7.6
+//  🗺️ FARM MAP  v1.7.7
 // ═══════════════════════════════════════════════
 const MAP_KEY='sc_map_v1';
 let mapObjects=[],mapTool='select',mapDragging=null,mapDrawStart=null,selectedObj=null,mapCanvas,mapCtx;
@@ -3673,7 +3726,7 @@ function clearMapConfirm(){if(confirm('ล้างแผนที่?')){mapObj
 function exportMapImg(){const a=document.createElement('a');a.download='farmmap.png';a.href=mapCanvas.toDataURL();a.click();showToast('💾 บันทึกรูปแล้ว');}
 
 // ═══════════════════════════════════════════════
-//  🌧️ WEATHER  v1.7.6
+//  🌧️ WEATHER  v1.7.7
 // ═══════════════════════════════════════════════
 const WX_ICONS={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'⛈️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',99:'⛈️'};
 const WX_DESC={0:'ท้องฟ้าแจ่มใส',1:'มีเมฆบางส่วน',2:'มีเมฆปานกลาง',3:'ท้องฟ้าครึ้ม',45:'หมอก',51:'ฝนปรอย',61:'ฝนเบา',63:'ฝนปานกลาง',65:'ฝนหนัก',80:'ฝนฟ้าคะนอง',81:'ฝนฟ้าคะนอง',82:'ฝนหนักมาก',95:'พายุฝน',99:'พายุรุนแรง'};
@@ -3754,7 +3807,7 @@ function renderWeather(j, placeName, lat, lon){
 }
 
 // ═══════════════════════════════════════════════
-//  📊 EXPORT  v1.7.6
+//  📊 EXPORT  v1.7.7
 // ═══════════════════════════════════════════════
 function getGSScript(){return`function doPost(e){
   var ss=SpreadsheetApp.getActiveSpreadsheet();
@@ -3802,7 +3855,7 @@ function exportLog(){
 // ─── Full Backup Export / Import ───
 function exportFullBackup() {
   const backup = {
-    _version: 'SmartControl-v1.7.6',
+    _version: 'SmartControl-v1.7.7',
     _exportDate: new Date().toISOString(),
     _exportDateThai: new Date().toLocaleString('th-TH'),
     db: db,
@@ -4351,7 +4404,7 @@ function showPageMore(name){
 }
 
 // ═══════════════════════════════════════════════
-//  📊 SPARKLINE ENGINE  v1.7.6
+//  📊 SPARKLINE ENGINE  v1.7.7
 // ═══════════════════════════════════════════════
 const SPARK_CFG = {
   temp: { color:'#ff7c2a', min:15, max:50  },
@@ -4446,7 +4499,7 @@ function drawAllSparklines() {
 }
 
 // ═══════════════════════════════════════════════
-//  🔔 ANOMALY DETECTION ENGINE  v1.7.6
+//  🔔 ANOMALY DETECTION ENGINE  v1.7.7
 // ═══════════════════════════════════════════════
 const ANOMALY_KEY = 'sc_anomaly_v1';
 let anomalyLog = [];
@@ -4610,7 +4663,7 @@ function loadAnomalyFields() {
 }
 
 // ═══════════════════════════════════════════════
-//  🌱 FARM INTELLIGENCE ENGINE  v1.7.6
+//  🌱 FARM INTELLIGENCE ENGINE  v1.7.7
 // ═══════════════════════════════════════════════
 const HARVEST_KEY = 'sc_harvest_v1';
 let harvestLog = [];
