@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SmartControl">
-<title>SmartControl v1.1.0 — Farm Intelligence</title>
+<title>SmartControl v1.3.0 — Farm Intelligence</title>
 <link rel="manifest" href="#" id="manifest-link">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -172,7 +172,107 @@ html, body {
   pointer-events: none;
 }
 
-/* ─── ZONE TABS ─── */
+/* ─── GRAPH PAGE ─── */
+.graph-page { padding-bottom: 90px; }
+
+.graph-metric-pills {
+  display: flex; gap: 6px; padding: 10px 18px 8px;
+  overflow-x: auto; scrollbar-width: none; flex-wrap: wrap;
+}
+.graph-metric-pills::-webkit-scrollbar { display: none; }
+.metric-pill {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px; border-radius: 20px; border: 1px solid var(--border);
+  background: transparent; color: var(--text-dim); cursor: pointer;
+  font-family: var(--font-thai); font-size: 12px; transition: all 0.2s;
+  white-space: nowrap; user-select: none;
+}
+.metric-pill .pill-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.metric-pill.active { background: rgba(255,255,255,0.07); color: var(--text-primary); border-color: rgba(255,255,255,0.2); }
+.metric-pill.active.temp   { border-color: #ff7c2a; background: rgba(255,124,42,0.12); color: #ff9f5a; }
+.metric-pill.active.hum    { border-color: #2af0ff; background: rgba(42,240,255,0.10); color: #6af5ff; }
+.metric-pill.active.soil   { border-color: #8be24a; background: rgba(139,226,74,0.10); color: #a8ee70; }
+.metric-pill.active.lux    { border-color: #f0d62a; background: rgba(240,214,42,0.10); color: #f5e060; }
+
+.range-tabs {
+  display: flex; gap: 4px; padding: 0 18px 10px;
+}
+.range-tab {
+  padding: 5px 14px; border-radius: 8px; border: 1px solid var(--border);
+  background: transparent; color: var(--text-dim);
+  font-family: var(--font-mono); font-size: 11px; cursor: pointer; transition: all 0.2s;
+}
+.range-tab.active { background: rgba(0,200,160,0.15); border-color: var(--accent); color: var(--accent); }
+
+.chart-wrap {
+  margin: 0 18px 10px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 18px; padding: 16px 12px 8px;
+  position: relative; backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.chart-wrap::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,200,160,0.3), transparent);
+}
+#sensor-chart { width: 100%; display: block; border-radius: 8px; }
+
+.chart-legend {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  padding: 8px 18px 4px;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--text-secondary);
+}
+.legend-line { width: 20px; height: 2px; border-radius: 1px; }
+
+.stat-cards {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  padding: 4px 18px 0;
+}
+.stat-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 12px 14px;
+  backdrop-filter: blur(8px);
+}
+.stat-card-label { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+.stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; }
+.stat-key { font-size: 11px; color: var(--text-secondary); }
+.stat-val { font-family: var(--font-mono); font-size: 12px; }
+
+/* Clickable env chips */
+.env-chip { cursor: pointer; transition: all 0.2s; }
+.env-chip:hover { border-color: rgba(255,255,255,0.3); transform: scale(1.02); }
+.env-chip:active { transform: scale(0.97); }
+
+/* ─── SENSOR SOURCE SELECTOR ─── */
+.sensor-source-bar {
+  display: flex; gap: 0; margin: 0 18px 4px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 12px; overflow: hidden;
+}
+.src-btn {
+  flex: 1; padding: 8px 6px; border: none; background: transparent;
+  color: var(--text-dim); font-family: var(--font-thai); font-size: 11px;
+  cursor: pointer; transition: all 0.2s; text-align: center; line-height: 1.4;
+  border-right: 1px solid var(--border);
+}
+.src-btn:last-child { border-right: none; }
+.src-btn.active { background: rgba(0,200,160,0.15); color: var(--accent); }
+.src-btn .src-icon { font-size: 14px; display: block; margin-bottom: 2px; }
+
+.sensor-status-row {
+  display: flex; align-items: center; gap: 8px;
+  margin: 4px 18px 0; font-size: 11px; color: var(--text-dim);
+  min-height: 20px;
+}
+.sensor-src-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.sensor-src-dot.sonoff { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.sensor-src-dot.satellite { background: var(--accent-blue); box-shadow: 0 0 6px var(--accent-blue); }
+.sensor-src-dot.sim { background: var(--accent-yellow); }
+.sensor-src-dot.err { background: var(--accent-red); }
 .zone-tabs {
   display: flex; gap: 8px; padding: 4px 18px 8px;
   overflow-x: auto; scrollbar-width: none;
@@ -515,10 +615,30 @@ select.field-input option { background: #0c1a30; }
       </div>
 
       <div class="env-strip" id="env-strip">
-        <div class="env-chip temp">🌡️ <span class="ev" id="ev-temp">--°C</span> <span>อุณหภูมิ</span></div>
-        <div class="env-chip hum">💧 <span class="ev" id="ev-hum">--%</span> <span>ความชื้น</span></div>
-        <div class="env-chip soil">🌱 <span class="ev" id="ev-soil">--%</span> <span>ความชื้นดิน</span></div>
-        <div class="env-chip light">☀️ <span class="ev" id="ev-lux">-- lux</span> <span>แสง</span></div>
+        <div class="env-chip temp" onclick="openGraphPage('temp')">🌡️ <span class="ev" id="ev-temp">--°C</span> <span>อุณหภูมิ</span></div>
+        <div class="env-chip hum"  onclick="openGraphPage('hum')">💧 <span class="ev" id="ev-hum">--%</span> <span>ความชื้น</span></div>
+        <div class="env-chip soil" onclick="openGraphPage('soil')">🌱 <span class="ev" id="ev-soil">--%</span> <span>ความชื้นดิน</span></div>
+        <div class="env-chip light" onclick="openGraphPage('lux')">☀️ <span class="ev" id="ev-lux">-- lux</span> <span>แสง</span></div>
+      </div>
+
+      <!-- Sensor Source Selector -->
+      <div class="sensor-source-bar">
+        <button class="src-btn" id="src-sonoff" onclick="setSensorSource('sonoff')">
+          <span class="src-icon">🔌</span>Sonoff<br>Sensor
+        </button>
+        <button class="src-btn active" id="src-satellite" onclick="setSensorSource('satellite')">
+          <span class="src-icon">🛰️</span>ดาวเทียม<br>Open-Meteo
+        </button>
+        <button class="src-btn" id="src-auto" onclick="setSensorSource('auto')">
+          <span class="src-icon">🔄</span>อัตโนมัติ<br>+สำรอง
+        </button>
+        <button class="src-btn" id="src-sim" onclick="setSensorSource('sim')">
+          <span class="src-icon">🎲</span>จำลอง<br>Demo
+        </button>
+      </div>
+      <div class="sensor-status-row">
+        <div class="sensor-src-dot satellite" id="sensor-src-dot"></div>
+        <span id="sensor-src-label">ดาวเทียม Open-Meteo (ฟรี) — กำลังระบุตำแหน่ง...</span>
       </div>
 
       <div class="section-title">โซนการเพาะปลูก</div>
@@ -558,6 +678,32 @@ select.field-input option { background: #0c1a30; }
 
     <!-- PAGE: SETTINGS -->
     <div class="page" id="page-settings">
+      <div class="section-title">แหล่งข้อมูลเซ็นเซอร์</div>
+      <div style="padding:0 18px 12px;">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--accent);">🔌 Sonoff Sensor Node</div>
+          <div class="field-label" style="margin-bottom:6px;">IP ของ Sensor Node (TH Elite / ESP32)</div>
+          <div style="display:flex;gap:8px;">
+            <input class="field-input" id="sensor-ip" placeholder="192.168.1.x" style="flex:1;padding:8px 12px;font-size:13px;" oninput="saveSetting('sensor_ip',this.value)">
+            <button class="btn btn-outline" style="padding:8px 12px;font-size:12px;" onclick="testSensorNode()">ทดสอบ</button>
+          </div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">endpoint: /sensor → JSON {temp,hum,soil,lux}</div>
+        </div>
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:14px;">
+          <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:var(--accent-blue);">🛰️ Open-Meteo (ดาวเทียม ฟรี)</div>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;">
+            • ไม่ต้องสมัคร / ไม่ต้อง API Key<br>
+            • ดึงอุณหภูมิ + ความชื้นจากพิกัด GPS<br>
+            • ค่าดิน + แสง ประมาณจากสภาพอากาศ<br>
+            • อัปเดตทุก 15 นาที
+          </div>
+          <div style="margin-top:10px;display:flex;align-items:center;gap:8px;">
+            <div style="font-size:11px;color:var(--text-dim);">ตำแหน่งปัจจุบัน:</div>
+            <div id="gps-location" style="font-family:var(--font-mono);font-size:11px;color:var(--accent-blue);">ยังไม่ระบุ</div>
+            <button class="btn btn-outline" style="padding:5px 10px;font-size:11px;margin-left:auto;" onclick="getGPSLocation()">📍 GPS</button>
+          </div>
+        </div>
+      </div>
       <div class="section-title">Telegram แจ้งเตือน</div>
       <div class="tg-status" id="tg-status-card">
         <div class="tg-icon">✈️</div>
@@ -601,15 +747,69 @@ select.field-input option { background: #0c1a30; }
       <br>
       <button class="btn btn-danger btn-full" onclick="if(confirm('ล้างข้อมูลทั้งหมด?'))clearAll()">🗑️ ล้างข้อมูลทั้งหมด</button>
     </div>
-  </div>
+
+    <!-- PAGE: GRAPH -->
+    <div class="page graph-page" id="page-graph">
+      <div class="section-title">กราฟข้อมูลสภาพแวดล้อม</div>
+
+      <!-- Metric toggles -->
+      <div class="graph-metric-pills">
+        <button class="metric-pill temp active" data-metric="temp" onclick="toggleMetric(this,'temp')">
+          <span class="pill-dot" style="background:#ff7c2a"></span>อุณหภูมิ
+        </button>
+        <button class="metric-pill hum active" data-metric="hum" onclick="toggleMetric(this,'hum')">
+          <span class="pill-dot" style="background:#2af0ff"></span>ความชื้น
+        </button>
+        <button class="metric-pill soil active" data-metric="soil" onclick="toggleMetric(this,'soil')">
+          <span class="pill-dot" style="background:#8be24a"></span>ความชื้นดิน
+        </button>
+        <button class="metric-pill lux active" data-metric="lux" onclick="toggleMetric(this,'lux')">
+          <span class="pill-dot" style="background:#f0d62a"></span>แสง
+        </button>
+        <button class="metric-pill" style="border-color:rgba(0,200,160,0.3);color:var(--accent);font-size:11px;" onclick="selectAllMetrics()">ทั้งหมด</button>
+      </div>
+
+      <!-- Range selector -->
+      <div class="range-tabs">
+        <button class="range-tab active" data-range="1" onclick="setRange(this,1)">1ชม.</button>
+        <button class="range-tab" data-range="6" onclick="setRange(this,6)">6ชม.</button>
+        <button class="range-tab" data-range="24" onclick="setRange(this,24)">24ชม.</button>
+        <button class="range-tab" data-range="72" onclick="setRange(this,72)">3วัน</button>
+        <button class="range-tab" data-range="168" onclick="setRange(this,168)">7วัน</button>
+      </div>
+
+      <!-- Chart canvas -->
+      <div class="chart-wrap">
+        <canvas id="sensor-chart" height="220"></canvas>
+        <div id="chart-empty" style="display:none;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--text-dim);font-size:13px;flex-direction:column;gap:8px;">
+          <div style="font-size:32px">📊</div>
+          <div>กำลังรวบรวมข้อมูล...</div>
+          <div style="font-size:11px;">ข้อมูลจะสะสมทุก 30 วินาที</div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="chart-legend" id="chart-legend"></div>
+
+      <!-- Stat cards -->
+      <div class="section-title" style="margin-top:6px;">สถิติช่วงที่เลือก</div>
+      <div class="stat-cards" id="stat-cards"></div>
+
+      <div style="height:10px;"></div>
+    </div>
+
+  </div><!-- end main-content -->
 
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav">
     <button class="nav-item active" onclick="showPage('dashboard',this)">
       <span class="nav-icon">🌿</span>แดชบอร์ด
     </button>
+    <button class="nav-item" onclick="showPage('graph',this)">
+      <span class="nav-icon">📈</span>กราฟ
+    </button>
     <button class="nav-item" onclick="showPage('schedule',this)">
-      <span class="nav-icon">⏰</span>ตารางเวลา
+      <span class="nav-icon">⏰</span>ตาราง
     </button>
     <button class="nav-item" onclick="showPage('nfc',this)">
       <span class="nav-icon">📡</span>NFC
@@ -618,7 +818,7 @@ select.field-input option { background: #0c1a30; }
       <span class="nav-icon">⚙️</span>ตั้งค่า
     </button>
   </nav>
-  <div class="version-badge">v1.1.0</div>
+  <div class="version-badge">v1.3.0</div>
 </div>
 
 <!-- ═══ PANELS ═══ -->
@@ -1424,13 +1624,209 @@ function clearLog() {
   renderLog();
 }
 
-// ─── ENV SIMULATION (ในโปรดักชัน: เชื่อมต่อ Sensor จริง) ───
-function updateEnv() {
-  // สามารถเปลี่ยนเป็นดึงค่าจาก HTTP endpoint ของ sensor node ได้
-  document.getElementById('ev-temp').textContent = (28 + Math.random()*4).toFixed(1) + '°C';
-  document.getElementById('ev-hum').textContent = (65 + Math.random()*15).toFixed(0) + '%';
-  document.getElementById('ev-soil').textContent = (40 + Math.random()*30).toFixed(0) + '%';
-  document.getElementById('ev-lux').textContent = (800 + Math.random()*400).toFixed(0) + ' lux';
+// ═══════════════════════════════════════════════
+//  SENSOR ENGINE — Multi-Source with Fallback
+//  Sources: sonoff | satellite | auto | sim
+// ═══════════════════════════════════════════════
+
+let sensorSource = 'satellite'; // default
+let gpsCoords = null;           // { lat, lon }
+let lastSatData = null;         // cache
+let sensorFailCount = { sonoff: 0, satellite: 0 };
+
+function setSensorSource(src) {
+  sensorSource = src;
+  db.settings.sensor_source = src;
+  saveDB();
+  // Update UI buttons
+  ['sonoff','satellite','auto','sim'].forEach(s => {
+    document.getElementById('src-'+s)?.classList.toggle('active', s === src);
+  });
+  updateEnv();
+}
+
+function setSensorStatusUI(type, msg) {
+  const dot = document.getElementById('sensor-src-dot');
+  const label = document.getElementById('sensor-src-label');
+  if (dot) { dot.className = 'sensor-src-dot ' + type; }
+  if (label) label.textContent = msg;
+}
+
+// ─── MAIN ENTRY ───
+async function updateEnv() {
+  const src = sensorSource;
+  if (src === 'sonoff')    await fetchFromSonoff();
+  else if (src === 'satellite') await fetchFromSatellite();
+  else if (src === 'auto') await fetchAuto();
+  else                     fetchSim();
+}
+
+// ─── SOURCE 1: SONOFF SENSOR NODE ───
+async function fetchFromSonoff() {
+  const ip = db.settings.sensor_ip || '';
+  if (!ip) {
+    setSensorStatusUI('err', '⚠️ ยังไม่ตั้งค่า IP Sensor Node — ไปที่ ⚙️ ตั้งค่า');
+    fetchSim(); return;
+  }
+  setSensorStatusUI('sonoff', `🔌 กำลังดึงจาก ${ip}...`);
+  try {
+    const r = await fetch(`http://${ip}/sensor`, { signal: AbortSignal.timeout(4000) });
+    const j = await r.json();
+    // Expected: { temp, hum, soil, lux } — any subset is fine
+    renderEnvValues(
+      j.temp ?? null, j.hum ?? null,
+      j.soil ?? null, j.lux ?? null
+    );
+    sensorFailCount.sonoff = 0;
+    setSensorStatusUI('sonoff', `🔌 Sonoff Sensor — ${ip} | อัปเดต ${timeNow()}`);
+  } catch(e) {
+    sensorFailCount.sonoff++;
+    setSensorStatusUI('err', `❌ Sonoff Sensor ไม่ตอบ (${ip}) — แสดงค่า Demo`);
+    addLog('warn', `Sensor Node ไม่ตอบสนอง: ${ip}`);
+    fetchSim();
+  }
+}
+
+// ─── SOURCE 2: OPEN-METEO SATELLITE (ฟรี 100%) ───
+// Docs: https://open-meteo.com/en/docs
+async function fetchFromSatellite(isFallback = false) {
+  if (!gpsCoords) {
+    setSensorStatusUI('satellite', '📍 กำลังขอตำแหน่ง GPS...');
+    await getGPSLocation();
+    if (!gpsCoords) {
+      setSensorStatusUI('err', '❌ ไม่ได้รับ GPS — ใช้ค่า Demo');
+      fetchSim(); return;
+    }
+  }
+  setSensorStatusUI('satellite', '🛰️ กำลังดึงข้อมูลสภาพอากาศ...');
+  try {
+    const { lat, lon } = gpsCoords;
+    // Open-Meteo: ฟรี ไม่ต้อง API key
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+      + `&current=temperature_2m,relative_humidity_2m,cloud_cover,precipitation,shortwave_radiation`
+      + `&hourly=soil_moisture_0_to_1cm&timezone=Asia%2FBangkok&forecast_days=1`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    const j = await r.json();
+    const c = j.current;
+    const temp = c.temperature_2m;
+    const hum  = c.relative_humidity_2m;
+    // Estimate soil moisture from soil_moisture data (0–1 fraction → %)
+    const soilRaw = j.hourly?.soil_moisture_0_to_1cm;
+    const soilIdx = new Date().getHours();
+    const soil = soilRaw ? Math.round(soilRaw[soilIdx] * 100) : null;
+    // Estimate lux from shortwave radiation (W/m²) — 1 W/m² ≈ 120 lux (daylight approximation)
+    const rad = c.shortwave_radiation ?? 0;
+    const lux = Math.round(rad * 115);
+    lastSatData = { temp, hum, soil, lux, cloud: c.cloud_cover };
+    renderEnvValues(temp, hum, soil, lux);
+    sensorFailCount.satellite = 0;
+    const src = isFallback ? '🛰️ สำรอง (Sonoff offline)' : '🛰️ Open-Meteo';
+    setSensorStatusUI('satellite', `${src} | ${lat.toFixed(4)},${lon.toFixed(4)} | ${timeNow()}`);
+    document.getElementById('gps-location').textContent = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+  } catch(e) {
+    sensorFailCount.satellite++;
+    setSensorStatusUI('err', `❌ Open-Meteo ไม่ตอบ — ใช้ค่า Demo`);
+    addLog('warn', 'Open-Meteo API error: ' + e.message);
+    fetchSim();
+  }
+}
+
+// ─── SOURCE 3: AUTO (Sonoff หลัก → Satellite สำรอง) ───
+async function fetchAuto() {
+  const ip = db.settings.sensor_ip || '';
+  if (ip) {
+    setSensorStatusUI('sonoff', `🔄 อัตโนมัติ — ลอง Sonoff ${ip}...`);
+    try {
+      const r = await fetch(`http://${ip}/sensor`, { signal: AbortSignal.timeout(3500) });
+      const j = await r.json();
+      renderEnvValues(j.temp ?? null, j.hum ?? null, j.soil ?? null, j.lux ?? null);
+      sensorFailCount.sonoff = 0;
+      setSensorStatusUI('sonoff', `🔄 อัตโนมัติ → Sonoff OK | ${timeNow()}`);
+      return;
+    } catch(e) {
+      sensorFailCount.sonoff++;
+      addLog('warn', `Auto: Sonoff ล้มเหลว (${sensorFailCount.sonoff}x) → ใช้ดาวเทียมแทน`);
+    }
+  }
+  // Fallback to satellite
+  await fetchFromSatellite(true);
+}
+
+// ─── SOURCE 4: SIMULATION ───
+function fetchSim() {
+  const h = new Date().getHours();
+  const dayFactor = Math.sin(Math.PI * (h - 6) / 12); // 0 กลางคืน, 1 เที่ยง
+  const temp = (26 + dayFactor * 8 + (Math.random() - 0.5) * 2).toFixed(1);
+  const hum  = (70 - dayFactor * 15 + (Math.random() - 0.5) * 5).toFixed(0);
+  const soil = (45 + (Math.random() - 0.5) * 20).toFixed(0);
+  const lux  = Math.max(0, (dayFactor * 65000 + (Math.random() - 0.5) * 5000)).toFixed(0);
+  renderEnvValues(parseFloat(temp), parseFloat(hum), parseFloat(soil), parseFloat(lux));
+  setSensorStatusUI('sim', `🎲 โหมดจำลอง (Demo) — ไม่ใช่ค่าจริง`);
+}
+
+// ─── RENDER ENV VALUES ───
+function renderEnvValues(temp, hum, soil, lux) {
+  const fmt = (v, suffix, dec=0) => v !== null && v !== undefined ? (+v).toFixed(dec) + suffix : '--';
+  document.getElementById('ev-temp').textContent = fmt(temp, '°C', 1);
+  document.getElementById('ev-hum').textContent  = fmt(hum, '%');
+  // Soil: Open-Meteo ให้เป็น % แล้ว แต่บางครั้งเป็น fraction
+  const soilVal = soil !== null && soil <= 1 ? soil * 100 : soil;
+  document.getElementById('ev-soil').textContent = fmt(soilVal, '%');
+  // Lux display — ถ้า > 1000 แสดงเป็น klux
+  if (lux !== null && lux >= 1000) {
+    document.getElementById('ev-lux').textContent = (lux/1000).toFixed(1) + ' klux';
+  } else {
+    document.getElementById('ev-lux').textContent = fmt(lux, ' lux');
+  }
+}
+
+// ─── GPS HELPER ───
+async function getGPSLocation() {
+  return new Promise(resolve => {
+    if (!navigator.geolocation) { resolve(null); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        gpsCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+        db.settings.gps_lat = gpsCoords.lat;
+        db.settings.gps_lon = gpsCoords.lon;
+        saveDB();
+        document.getElementById('gps-location').textContent =
+          `${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lon.toFixed(5)}`;
+        resolve(gpsCoords);
+      },
+      err => {
+        // Fallback: ใช้พิกัดที่บันทึกไว้
+        if (db.settings.gps_lat) {
+          gpsCoords = { lat: db.settings.gps_lat, lon: db.settings.gps_lon };
+          document.getElementById('gps-location').textContent =
+            `${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lon.toFixed(5)} (แคช)`;
+        }
+        resolve(gpsCoords);
+      },
+      { timeout: 6000, maximumAge: 600000 }
+    );
+  });
+}
+
+// ─── TEST SONOFF SENSOR NODE ───
+async function testSensorNode() {
+  const ip = document.getElementById('sensor-ip').value.trim();
+  if (!ip) return showToast('กรอก IP ก่อน', 'error');
+  showToast('กำลังทดสอบ...');
+  try {
+    const r = await fetch(`http://${ip}/sensor`, { signal: AbortSignal.timeout(4000) });
+    const j = await r.json();
+    showToast(`✅ OK — temp:${j.temp??'?'}°C hum:${j.hum??'?'}%`);
+    addLog('info', `Sensor test OK: ${ip} → ${JSON.stringify(j)}`);
+  } catch(e) {
+    showToast(`❌ ไม่ตอบสนอง: ${ip}`, 'error');
+    addLog('err', `Sensor test fail: ${ip}`);
+  }
+}
+
+function timeNow() {
+  const n = new Date();
+  return `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
 }
 
 // ─── SETTINGS ───
@@ -1461,6 +1857,7 @@ function showPage(name, btn) {
   if (name === 'schedule') { populateSchedSelect(); renderSchedules(); }
   if (name === 'nfc') renderNFCTags();
   if (name === 'settings') checkSW();
+  if (name === 'graph') { setTimeout(() => { drawChart(); renderStats(); }, 50); }
 }
 
 function openPanel(id) {
@@ -1543,25 +1940,64 @@ function init() {
   loadDB();
   setupManifest();
   registerSW();
+  initGraph(); // ← graph engine
   renderDevices();
   updateSummary();
   renderSchedules();
   renderNFCTags();
   renderLog();
   updateTgDisplay();
-  updateEnv();
-  setInterval(updateEnv, 15000);
-  setInterval(runScheduler, 60000);
-  startPingLoop();
-  window.addEventListener('online', () => { document.getElementById('net-indicator').style.background = 'var(--accent)'; showToast('🟢 ออนไลน์แล้ว'); });
-  window.addEventListener('offline', () => { document.getElementById('net-indicator').style.background = 'var(--accent-red)'; showToast('⚠️ ออฟไลน์ — ใช้โหมด Local', 'warn'); });
-  // Load settings
+
+  // ─ Restore sensor settings ─
   if (db.settings) {
     document.getElementById('notif-toggle').checked = db.settings.notif_on_off !== false;
     document.getElementById('notif-offline').checked = db.settings.notif_offline !== false;
     const sel = document.getElementById('ping-interval-sel');
     sel.value = String(db.settings.ping_interval || 30000);
+    // Restore sensor IP field
+    if (db.settings.sensor_ip)
+      document.getElementById('sensor-ip').value = db.settings.sensor_ip;
+    // Restore GPS cache
+    if (db.settings.gps_lat) {
+      gpsCoords = { lat: db.settings.gps_lat, lon: db.settings.gps_lon };
+      document.getElementById('gps-location').textContent =
+        `${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lon.toFixed(5)} (แคช)`;
+    }
+    // Restore sensor source & update buttons
+    const savedSrc = db.settings.sensor_source || 'satellite';
+    sensorSource = savedSrc;
+    ['sonoff','satellite','auto','sim'].forEach(s => {
+      document.getElementById('src-'+s)?.classList.toggle('active', s === savedSrc);
+    });
   }
+
+  // Start sensor updates (satellite = 15 min, others = 30 sec)
+  updateEnv();
+  setInterval(() => {
+    if (sensorSource === 'satellite') {
+      // Satellite data changes slowly — refresh every 15 min
+    } else {
+      updateEnv();
+    }
+  }, 30000);
+  setInterval(() => {
+    // Satellite refresh every 15 min regardless
+    if (sensorSource === 'satellite' || sensorSource === 'auto') updateEnv();
+  }, 15 * 60 * 1000);
+
+  setInterval(runScheduler, 60000);
+  startPingLoop();
+
+  window.addEventListener('online', () => {
+    document.getElementById('net-indicator').style.background = 'var(--accent)';
+    showToast('🟢 ออนไลน์แล้ว');
+    updateEnv(); // re-fetch sensor on reconnect
+  });
+  window.addEventListener('offline', () => {
+    document.getElementById('net-indicator').style.background = 'var(--accent-red)';
+    showToast('⚠️ ออฟไลน์ — ใช้โหมด Local', 'warn');
+  });
+
   // Demo devices if empty
   if (db.devices.length === 0) {
     db.devices = [
@@ -1578,6 +2014,334 @@ function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+
+// ═══════════════════════════════════════════════
+//  GRAPH ENGINE — Canvas-based, no library needed
+//  v1.3.0
+// ═══════════════════════════════════════════════
+
+// ─── HISTORY STORE ───
+// historyLog: array of { ts, temp, hum, soil, lux }
+// Stored in localStorage, max 7 days = 20160 records @30s interval
+const HIST_KEY = 'sc_hist_v1';
+let historyLog = [];
+let graphRangeHours = 1;
+let activeMetrics = { temp: true, hum: true, soil: true, lux: true };
+
+const METRIC_CFG = {
+  temp: { label: 'อุณหภูมิ',    unit: '°C',  color: '#ff7c2a', yMin: 10,  yMax: 50  },
+  hum:  { label: 'ความชื้น',    unit: '%',   color: '#2af0ff', yMin: 0,   yMax: 100 },
+  soil: { label: 'ความชื้นดิน', unit: '%',   color: '#8be24a', yMin: 0,   yMax: 100 },
+  lux:  { label: 'แสง',         unit: 'klux',color: '#f0d62a', yMin: 0,   yMax: 100 },
+};
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(HIST_KEY);
+    if (raw) historyLog = JSON.parse(raw);
+    // Trim to 7 days
+    const cutoff = Date.now() - 7 * 24 * 3600 * 1000;
+    historyLog = historyLog.filter(r => r.ts > cutoff);
+  } catch(e) { historyLog = []; }
+}
+
+function saveHistory() {
+  try {
+    // Keep max 20160 records
+    if (historyLog.length > 20160) historyLog = historyLog.slice(-20160);
+    localStorage.setItem(HIST_KEY, JSON.stringify(historyLog));
+  } catch(e) {
+    // If storage full, trim aggressively
+    historyLog = historyLog.slice(-2000);
+    try { localStorage.setItem(HIST_KEY, JSON.stringify(historyLog)); } catch(e2) {}
+  }
+}
+
+// Called every 30s from renderEnvValues
+function recordHistory(temp, hum, soil, lux) {
+  const luxK = lux !== null ? lux / 1000 : null; // store in klux
+  historyLog.push({
+    ts: Date.now(),
+    temp: temp !== null ? parseFloat((+temp).toFixed(1)) : null,
+    hum:  hum  !== null ? parseFloat((+hum).toFixed(0))  : null,
+    soil: soil !== null ? parseFloat((+soil).toFixed(0)) : null,
+    lux:  luxK !== null ? parseFloat(luxK.toFixed(2))    : null,
+  });
+  saveHistory();
+  if (document.getElementById('page-graph').classList.contains('active')) {
+    drawChart();
+    renderStats();
+  }
+}
+
+// ─── FILTER BY RANGE ───
+function getFilteredHistory() {
+  const cutoff = Date.now() - graphRangeHours * 3600 * 1000;
+  return historyLog.filter(r => r.ts >= cutoff);
+}
+
+// ─── OPEN GRAPH PAGE & HIGHLIGHT METRIC ───
+function openGraphPage(metric) {
+  // Navigate to graph page
+  const navBtns = document.querySelectorAll('.nav-item');
+  navBtns.forEach(b => b.classList.remove('active'));
+  // find graph nav btn
+  navBtns.forEach(b => { if (b.querySelector('.nav-icon')?.textContent === '📈') b.classList.add('active'); });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-graph').classList.add('active');
+  // Highlight the chosen metric only
+  activeMetrics = { temp: false, hum: false, soil: false, lux: false };
+  activeMetrics[metric] = true;
+  document.querySelectorAll('.metric-pill[data-metric]').forEach(p => {
+    p.classList.toggle('active', p.dataset.metric === metric);
+  });
+  drawChart();
+  renderStats();
+}
+
+// ─── METRIC TOGGLE ───
+function toggleMetric(btn, metric) {
+  activeMetrics[metric] = !activeMetrics[metric];
+  btn.classList.toggle('active', activeMetrics[metric]);
+  drawChart();
+  renderStats();
+}
+
+function selectAllMetrics() {
+  activeMetrics = { temp: true, hum: true, soil: true, lux: true };
+  document.querySelectorAll('.metric-pill[data-metric]').forEach(p => p.classList.add('active'));
+  drawChart();
+  renderStats();
+}
+
+// ─── RANGE SET ───
+function setRange(btn, hours) {
+  graphRangeHours = hours;
+  document.querySelectorAll('.range-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  drawChart();
+  renderStats();
+}
+
+// ─── MAIN CHART DRAW (pure Canvas 2D) ───
+function drawChart() {
+  const canvas = document.getElementById('sensor-chart');
+  if (!canvas) return;
+  const data = getFilteredHistory();
+  const metrics = Object.keys(activeMetrics).filter(k => activeMetrics[k]);
+
+  // Size canvas to container
+  const wrap = canvas.parentElement;
+  const W = wrap.clientWidth - 24;
+  const H = 220;
+  canvas.width = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  const PAD = { top: 16, right: 16, bottom: 36, left: 44 };
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top - PAD.bottom;
+
+  // Background
+  ctx.fillStyle = 'rgba(255,255,255,0)';
+  ctx.fillRect(0, 0, W, H);
+
+  if (data.length < 2 || metrics.length === 0) {
+    ctx.fillStyle = 'rgba(150,190,180,0.3)';
+    ctx.font = '13px Sarabun, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('กำลังรวบรวมข้อมูล... แตะค่าเซ็นเซอร์เพื่อบันทึก', W/2, H/2);
+    return;
+  }
+
+  const tsMin = data[0].ts;
+  const tsMax = data[data.length - 1].ts || tsMin + 1;
+
+  // For multi-metric: normalize all to 0–100% in same plot
+  // Each metric has own yMin/yMax config
+  function toX(ts) { return PAD.left + ((ts - tsMin) / (tsMax - tsMin)) * plotW; }
+  function toY(val, cfg) {
+    const norm = (val - cfg.yMin) / (cfg.yMax - cfg.yMin);
+    return PAD.top + plotH - norm * plotH;
+  }
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(0,200,160,0.07)';
+  ctx.lineWidth = 1;
+  const gridLines = 5;
+  for (let i = 0; i <= gridLines; i++) {
+    const y = PAD.top + (plotH / gridLines) * i;
+    ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(PAD.left + plotW, y); ctx.stroke();
+  }
+
+  // Y-axis labels (use first active metric's scale)
+  const firstMetric = metrics[0];
+  const firstCfg = METRIC_CFG[firstMetric];
+  ctx.fillStyle = 'rgba(150,190,180,0.5)';
+  ctx.font = `10px 'Space Mono', monospace`;
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= gridLines; i++) {
+    const val = firstCfg.yMin + ((firstCfg.yMax - firstCfg.yMin) / gridLines) * (gridLines - i);
+    const y = PAD.top + (plotH / gridLines) * i;
+    ctx.fillText(val.toFixed(0), PAD.left - 5, y + 4);
+  }
+
+  // X-axis time labels
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(150,190,180,0.5)';
+  ctx.font = `9px 'Space Mono', monospace`;
+  const xTicks = Math.min(6, data.length);
+  for (let i = 0; i < xTicks; i++) {
+    const idx = Math.floor((i / (xTicks - 1)) * (data.length - 1));
+    const d = data[idx];
+    const x = toX(d.ts);
+    const dt = new Date(d.ts);
+    const label = `${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    ctx.fillText(label, x, H - 8);
+    // Tick
+    ctx.strokeStyle = 'rgba(0,200,160,0.12)';
+    ctx.beginPath(); ctx.moveTo(x, PAD.top + plotH); ctx.lineTo(x, PAD.top + plotH + 4); ctx.stroke();
+  }
+
+  // Draw each active metric line
+  metrics.forEach(metric => {
+    const cfg = METRIC_CFG[metric];
+    const pts = data.filter(r => r[metric] !== null && r[metric] !== undefined);
+    if (pts.length < 2) return;
+
+    // Gradient fill under line
+    const grad = ctx.createLinearGradient(0, PAD.top, 0, PAD.top + plotH);
+    grad.addColorStop(0, cfg.color + '28');
+    grad.addColorStop(1, cfg.color + '00');
+
+    ctx.beginPath();
+    ctx.moveTo(toX(pts[0].ts), toY(pts[0][metric], cfg));
+    for (let i = 1; i < pts.length; i++) {
+      // Smooth curve
+      const x0 = toX(pts[i-1].ts), y0 = toY(pts[i-1][metric], cfg);
+      const x1 = toX(pts[i].ts),   y1 = toY(pts[i][metric], cfg);
+      const cpx = (x0 + x1) / 2;
+      ctx.bezierCurveTo(cpx, y0, cpx, y1, x1, y1);
+    }
+    // Close fill
+    ctx.lineTo(toX(pts[pts.length-1].ts), PAD.top + plotH);
+    ctx.lineTo(toX(pts[0].ts), PAD.top + plotH);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Line stroke
+    ctx.beginPath();
+    ctx.moveTo(toX(pts[0].ts), toY(pts[0][metric], cfg));
+    for (let i = 1; i < pts.length; i++) {
+      const x0 = toX(pts[i-1].ts), y0 = toY(pts[i-1][metric], cfg);
+      const x1 = toX(pts[i].ts),   y1 = toY(pts[i][metric], cfg);
+      const cpx = (x0 + x1) / 2;
+      ctx.bezierCurveTo(cpx, y0, cpx, y1, x1, y1);
+    }
+    ctx.strokeStyle = cfg.color;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // Last point dot + value
+    const last = pts[pts.length - 1];
+    const lx = toX(last.ts), ly = toY(last[metric], cfg);
+    ctx.beginPath();
+    ctx.arc(lx, ly, 4, 0, Math.PI * 2);
+    ctx.fillStyle = cfg.color;
+    ctx.fill();
+    ctx.strokeStyle = '#060d1a';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // Value label
+    ctx.fillStyle = cfg.color;
+    ctx.font = `bold 10px 'Space Mono', monospace`;
+    ctx.textAlign = 'right';
+    const valStr = last[metric]?.toFixed(metric === 'lux' ? 1 : 0) + cfg.unit;
+    ctx.fillText(valStr, Math.min(lx + 2, W - 4), ly - 7);
+  });
+
+  // Update legend
+  renderLegend(metrics);
+}
+
+function renderLegend(metrics) {
+  const leg = document.getElementById('chart-legend');
+  if (!leg) return;
+  leg.innerHTML = metrics.map(m => {
+    const cfg = METRIC_CFG[m];
+    return `<div class="legend-item">
+      <div class="legend-line" style="background:${cfg.color}"></div>
+      <span>${cfg.label} (${cfg.unit})</span>
+    </div>`;
+  }).join('');
+}
+
+// ─── STATS ───
+function renderStats() {
+  const sc = document.getElementById('stat-cards');
+  if (!sc) return;
+  const data = getFilteredHistory();
+  const metrics = Object.keys(activeMetrics).filter(k => activeMetrics[k]);
+  if (data.length === 0) { sc.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-dim);font-size:13px;">ยังไม่มีข้อมูลในช่วงเวลานี้</div>`; return; }
+  sc.innerHTML = metrics.map(m => {
+    const cfg = METRIC_CFG[m];
+    const vals = data.map(r => r[m]).filter(v => v !== null && v !== undefined);
+    if (vals.length === 0) return '';
+    const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
+    const min = Math.min(...vals);
+    const max = Math.max(...vals);
+    const last = vals[vals.length - 1];
+    const dec = m === 'lux' ? 1 : (m === 'temp' ? 1 : 0);
+    return `<div class="stat-card">
+      <div class="stat-card-label" style="color:${cfg.color}">${cfg.label}</div>
+      <div class="stat-row"><span class="stat-key">ปัจจุบัน</span><span class="stat-val" style="color:${cfg.color}">${last.toFixed(dec)}${cfg.unit}</span></div>
+      <div class="stat-row"><span class="stat-key">เฉลี่ย</span><span class="stat-val">${avg.toFixed(dec)}${cfg.unit}</span></div>
+      <div class="stat-row"><span class="stat-key">ต่ำสุด</span><span class="stat-val" style="color:rgba(150,190,180,0.7)">${min.toFixed(dec)}${cfg.unit}</span></div>
+      <div class="stat-row"><span class="stat-key">สูงสุด</span><span class="stat-val" style="color:rgba(150,190,180,0.7)">${max.toFixed(dec)}${cfg.unit}</span></div>
+      <div class="stat-row"><span class="stat-key">จำนวน</span><span class="stat-val" style="color:var(--text-dim)">${vals.length} ค่า</span></div>
+    </div>`;
+  }).join('');
+}
+
+// ─── PATCH renderEnvValues to also record history every 30s ───
+const _origRenderEnv = renderEnvValues;
+let _lastRecordTs = 0;
+renderEnvValues = function(temp, hum, soil, lux) {
+  _origRenderEnv(temp, hum, soil, lux);
+  const now = Date.now();
+  if (now - _lastRecordTs >= 28000) { // ~30s
+    _lastRecordTs = now;
+    recordHistory(temp, hum, soil, lux);
+  }
+};
+
+// ─── Init graph on page load ───
+function initGraph() {
+  loadHistory();
+  // Seed with some simulated history so graph isn't empty on first load
+  if (historyLog.length === 0) {
+    const h = new Date().getHours();
+    for (let i = 60; i >= 0; i--) {
+      const ts = Date.now() - i * 30000;
+      const hh = new Date(ts).getHours();
+      const df = Math.max(0, Math.sin(Math.PI * (hh - 6) / 12));
+      historyLog.push({
+        ts,
+        temp: parseFloat((26 + df * 8 + (Math.random()-0.5)*1.5).toFixed(1)),
+        hum:  parseFloat((70 - df * 15 + (Math.random()-0.5)*4).toFixed(0)),
+        soil: parseFloat((45 + (Math.random()-0.5)*15).toFixed(0)),
+        lux:  parseFloat(Math.max(0, (df * 65 + (Math.random()-0.5)*5)).toFixed(1)),
+      });
+    }
+    saveHistory();
+  }
+}
+
 </script>
 </body>
 </html>
