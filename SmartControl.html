@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SmartControl">
-<title>SmartControl v1.7.4 — Farm Intelligence</title>
+<title>SmartControl v1.7.5 — Farm Intelligence</title>
 <link rel="manifest" href="#" id="manifest-link">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -1062,7 +1062,11 @@ select.field-input option { background: #0c1a30; }
         <div class="settings-val" id="offline-status">🟢 พร้อม</div>
       </div>
       <br>
-      <button class="btn btn-danger btn-full" onclick="if(confirm('ล้างข้อมูลทั้งหมด?'))clearAll()">🗑️ ล้างข้อมูลทั้งหมด</button>
+      <div style="padding:0 18px;display:flex;gap:8px;margin-bottom:10px;">
+        <button class="btn btn-primary" style="flex:1;font-size:13px;" onclick="exportSettings()">📤 Export ข้อมูล</button>
+        <button class="btn btn-outline" style="flex:1;font-size:13px;" onclick="importSettings()">📥 Import ข้อมูล</button>
+      </div>
+      <button class="btn btn-danger btn-full" onclick="confirmClearAll()">🗑️ ล้างข้อมูลทั้งหมด</button>
     </div>
 
     <!-- PAGE: GRAPH -->
@@ -1277,6 +1281,34 @@ select.field-input option { background: #0c1a30; }
           </div>
         </div>
 
+        <!-- Full Backup JSON -->
+        <div class="export-card" style="border-color:rgba(0,200,160,0.3);">
+          <div class="export-card-header">
+            <div class="export-card-icon">💾</div>
+            <div>
+              <div class="export-card-title" style="color:var(--accent);">Backup & Restore</div>
+              <div class="export-card-sub">Export/Import ข้อมูลทั้งหมด — อุปกรณ์, Rules, ตั้งค่า, GPS</div>
+            </div>
+          </div>
+          <div class="export-card-body">
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
+              <button class="btn btn-primary" style="flex:1" onclick="exportFullBackup()">
+                📦 Export Backup
+              </button>
+              <button class="btn btn-outline" style="flex:1" onclick="document.getElementById('import-file').click()">
+                📂 Import Backup
+              </button>
+              <input type="file" id="import-file" accept=".json" style="display:none" onchange="importFullBackup(this)">
+            </div>
+            <div style="font-size:11px;color:var(--text-dim);line-height:1.7;">
+              📦 Export — บันทึกข้อมูลทั้งหมดเป็นไฟล์ .json<br>
+              รวม: อุปกรณ์ / Rules / ตั้งค่า / GPS / Telegram / Schedules<br>
+              📂 Import — โหลดจากไฟล์ backup เพื่อกู้คืนหรือย้ายเครื่อง
+            </div>
+            <div id="backup-status" style="font-size:11px;color:var(--accent);min-height:16px;margin-top:8px;"></div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -1376,7 +1408,7 @@ select.field-input option { background: #0c1a30; }
       <span class="nav-icon">⋯</span>เพิ่มเติม
     </button>
   </nav>
-  <div class="version-badge">v1.7.4</div>
+  <div class="version-badge">v1.7.5</div>
 </div>
 
 <!-- MORE PANEL -->
@@ -1861,23 +1893,116 @@ select.field-input option { background: #0c1a30; }
 
 const DB_KEY = 'sc_db_v2';
 let db = {
-  devices: [],
+  devices:   [],
   schedules: [],
-  nfcTags: [],
-  logs: [],
-  settings: { notif_on_off: true, notif_offline: true, ping_interval: 30000 },
+  rules:     [],
+  nfcTags:   [],
+  logs:      [],
+  settings: {
+    notif_on_off:       true,
+    notif_offline:      true,
+    ping_interval:      30000,
+    sensor_source:      'satellite',
+    sensor_ip:          '',
+    gps_lat:            null,
+    gps_lon:            null,
+    gps_place:          '',
+    gs_url:             '',
+    anomalyThresholds:  { tempHi:38, tempLo:15, humLo:40, soilLo:25, luxLo:0, spikeRate:2.0 },
+  },
   telegram: { token: '', chatid: '' }
 };
 
 function loadDB() {
   try {
     const raw = localStorage.getItem(DB_KEY);
-    if (raw) db = { ...db, ...JSON.parse(raw) };
-  } catch(e) {}
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    // Deep merge: top-level arrays/objects
+    db.devices   = saved.devices   ?? db.devices;
+    db.schedules = saved.schedules ?? db.schedules;
+    db.rules     = saved.rules     ?? db.rules;
+    db.nfcTags   = saved.nfcTags   ?? db.nfcTags;
+    db.logs      = saved.logs      ?? db.logs;
+    db.telegram  = saved.telegram  ?? db.telegram;
+    // Deep merge settings (ไม่ overwrite ทั้งก้อน)
+    if (saved.settings) {
+      db.settings = { ...db.settings, ...saved.settings };
+      // nested anomalyThresholds
+      if (saved.settings.anomalyThresholds) {
+        db.settings.anomalyThresholds = {
+          ...db.settings.anomalyThresholds,
+          ...saved.settings.anomalyThresholds
+        };
+      }
+    }
+  } catch(e) { console.warn('loadDB error:', e); }
 }
+
 function saveDB() {
-  try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch(e) {}
+  try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch(e) {
+    console.warn('saveDB full, trimming logs...');
+    db.logs = db.logs.slice(0, 50);
+    try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch(e2) {}
+  }
 }
+
+// ─── EXPORT / IMPORT ───
+function exportSettings() {
+  const exportData = {
+    _version: '1.7.4',
+    _exported: new Date().toISOString(),
+    devices:   db.devices,
+    schedules: db.schedules,
+    rules:     db.rules,
+    nfcTags:   db.nfcTags,
+    settings:  db.settings,
+    telegram:  { ...db.telegram, token: db.telegram.token ? '***hidden***' : '' },
+  };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `SmartControl_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('✅ Export สำเร็จ');
+  addLog('info', `Export ข้อมูล: ${db.devices.length} อุปกรณ์, ${db.rules?.length||0} rules`);
+}
+
+function importSettings() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!data._version) throw new Error('ไฟล์ไม่ถูกต้อง');
+      if (!confirm(`Import ข้อมูลจาก ${data._exported?.slice(0,10)||'?'}\n` +
+        `อุปกรณ์: ${data.devices?.length||0} | Rules: ${data.rules?.length||0} | ตาราง: ${data.schedules?.length||0}\n\n` +
+        `⚠️ จะทับข้อมูลปัจจุบัน — ดำเนินการต่อ?`)) return;
+
+      if (data.devices)   db.devices   = data.devices;
+      if (data.schedules) db.schedules = data.schedules;
+      if (data.rules)     db.rules     = data.rules;
+      if (data.nfcTags)   db.nfcTags   = data.nfcTags;
+      if (data.settings) {
+        db.settings = { ...db.settings, ...data.settings };
+        if (data.settings.anomalyThresholds)
+          db.settings.anomalyThresholds = { ...db.settings.anomalyThresholds, ...data.settings.anomalyThresholds };
+      }
+      // telegram token ถูก hide ไว้ ไม่ import
+      saveDB();
+      location.reload(); // reload เพื่อ apply ทุกอย่าง
+    } catch(err) {
+      showToast('❌ Import ไม่ได้: ' + err.message, 'error');
+    }
+  };
+  input.click();
+}
+
 
 // ─── DEVICE TYPE CONFIG ───
 const DEV_TYPES = {
@@ -3040,35 +3165,8 @@ function init() {
   renderLog();
   updateTgDisplay();
 
-  // ─ Restore sensor settings ─
-  if (db.settings) {
-    document.getElementById('notif-toggle').checked = db.settings.notif_on_off !== false;
-    document.getElementById('notif-offline').checked = db.settings.notif_offline !== false;
-    const sel = document.getElementById('ping-interval-sel');
-    sel.value = String(db.settings.ping_interval || 30000);
-    // Restore sensor IP field
-    if (db.settings.sensor_ip)
-      document.getElementById('sensor-ip').value = db.settings.sensor_ip;
-    // Restore GPS cache พร้อม placeName
-    if (db.settings.gps_lat) {
-      gpsCoords = {
-        lat: db.settings.gps_lat,
-        lon: db.settings.gps_lon,
-        placeName: db.settings.gps_place || ''
-      };
-      const placeStr = gpsCoords.placeName
-        ? `📍 ${gpsCoords.placeName} (แคช)`
-        : `${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lon.toFixed(5)} (แคช)`;
-      setGPSDisplay(placeStr);
-    }
-    // Restore sensor source — default เป็น 'satellite' ถ้าไม่เคยตั้งค่า
-    // ป้องกัน: ถ้า savedSrc=auto/satellite แต่ยังไม่มี GPS → fallback เป็น satellite (จะ auto-get GPS)
-    const savedSrc = db.settings.sensor_source || 'satellite';
-    sensorSource = savedSrc;
-    ['sonoff','satellite','auto','sim'].forEach(s => {
-      document.getElementById('src-'+s)?.classList.toggle('active', s === savedSrc);
-    });
-  }
+  // ─ Restore UI from saved settings ─
+  restoreUIFromSettings();
 
   // Start sensor updates (satellite = 15 min, others = 30 sec)
   updateEnv();
@@ -3431,7 +3529,7 @@ function initGraph() {
 }
 
 // ═══════════════════════════════════════════════
-//  📷 CAMERA  v1.7.4
+//  📷 CAMERA  v1.7.5
 // ═══════════════════════════════════════════════
 let cameras=[];
 const CAM_KEY='sc_cameras_v1';
@@ -3488,7 +3586,7 @@ function removeCamera(id){cameras=cameras.filter(c=>c.id!==id);saveCameras();ren
 function refreshAllCams(){cameras.forEach((cam,idx)=>{if(cam.type==='snapshot'){const img=document.getElementById('cam-feed-'+idx);if(img)img.src=cam.url+'?t='+Date.now();}});showToast('🔄 รีเฟรชกล้อง');}
 
 // ═══════════════════════════════════════════════
-//  🗺️ FARM MAP  v1.7.4
+//  🗺️ FARM MAP  v1.7.5
 // ═══════════════════════════════════════════════
 const MAP_KEY='sc_map_v1';
 let mapObjects=[],mapTool='select',mapDragging=null,mapDrawStart=null,selectedObj=null,mapCanvas,mapCtx;
@@ -3568,7 +3666,7 @@ function clearMapConfirm(){if(confirm('ล้างแผนที่?')){mapObj
 function exportMapImg(){const a=document.createElement('a');a.download='farmmap.png';a.href=mapCanvas.toDataURL();a.click();showToast('💾 บันทึกรูปแล้ว');}
 
 // ═══════════════════════════════════════════════
-//  🌧️ WEATHER  v1.7.4
+//  🌧️ WEATHER  v1.7.5
 // ═══════════════════════════════════════════════
 const WX_ICONS={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'⛈️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',99:'⛈️'};
 const WX_DESC={0:'ท้องฟ้าแจ่มใส',1:'มีเมฆบางส่วน',2:'มีเมฆปานกลาง',3:'ท้องฟ้าครึ้ม',45:'หมอก',51:'ฝนปรอย',61:'ฝนเบา',63:'ฝนปานกลาง',65:'ฝนหนัก',80:'ฝนฟ้าคะนอง',81:'ฝนฟ้าคะนอง',82:'ฝนหนักมาก',95:'พายุฝน',99:'พายุรุนแรง'};
@@ -3649,7 +3747,7 @@ function renderWeather(j, placeName, lat, lon){
 }
 
 // ═══════════════════════════════════════════════
-//  📊 EXPORT  v1.7.4
+//  📊 EXPORT  v1.7.5
 // ═══════════════════════════════════════════════
 function getGSScript(){return`function doPost(e){
   var ss=SpreadsheetApp.getActiveSpreadsheet();
@@ -3692,6 +3790,86 @@ function exportLog(){
   a.href=URL.createObjectURL(new Blob(['\ufeff'+'Time,Date,Type,Message\n'+db.logs.map(l=>`"${l.time}","${l.date}","${l.type}","${l.msg.replace(/"/g,'""')}"`).join('\n')],{type:'text/csv;charset=utf-8'}));
   a.download=`Log_${new Date().toISOString().slice(0,10)}.csv`;a.click();
   showToast(`✅ Export Log ${db.logs.length} รายการ`);
+}
+
+// ─── Full Backup Export / Import ───
+function exportFullBackup() {
+  const backup = {
+    _version: 'SmartControl-v1.7.5',
+    _exportDate: new Date().toISOString(),
+    _exportDateThai: new Date().toLocaleString('th-TH'),
+    db: db,
+    sensorHistory: historyLog.slice(-2000),
+    harvestLog: harvestLog,
+    anomalyLog: anomalyLog.slice(0, 50),
+    cameras: cameras,
+    mapObjects: mapObjects,
+  };
+  const json = JSON.stringify(backup, (key, val) => {
+    if (key === '_autoOffTimer' || key === '_lastRun') return undefined;
+    return val;
+  }, 2);
+  const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `SmartControl_Backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  const sz = (json.length / 1024).toFixed(1);
+  const el = document.getElementById('backup-status');
+  if (el) el.textContent = `✅ Export สำเร็จ (${sz} KB) — ${new Date().toLocaleTimeString('th-TH')}`;
+  addLog('info', `Export Backup (${sz} KB)`);
+  showToast(`📦 Export Backup ${sz} KB`);
+}
+
+function importFullBackup(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const backup = JSON.parse(e.target.result);
+      if (!backup._version?.startsWith('SmartControl')) {
+        showToast('❌ ไฟล์ไม่ถูกต้อง', 'error'); return;
+      }
+      if (!confirm(`📂 Import Backup\nจาก: ${backup._exportDateThai||backup._exportDate}\nข้อมูลปัจจุบันจะถูกแทนที่\nยืนยันไหม?`)) return;
+
+      if (backup.db) {
+        db = { ...db, ...backup.db };
+        if (backup.db.settings) {
+          db.settings = { ...db.settings, ...backup.db.settings };
+          if (backup.db.settings.anomalyThresholds)
+            db.settings.anomalyThresholds = { ...db.settings.anomalyThresholds, ...backup.db.settings.anomalyThresholds };
+        }
+      }
+      if (backup.sensorHistory?.length) historyLog  = backup.sensorHistory;
+      if (backup.harvestLog?.length)    harvestLog   = backup.harvestLog;
+      if (backup.anomalyLog?.length)    anomalyLog   = backup.anomalyLog;
+      if (backup.cameras?.length)       cameras      = backup.cameras;
+      if (backup.mapObjects?.length)    mapObjects   = backup.mapObjects;
+
+      saveDB();
+      saveHistory();
+      try { localStorage.setItem(HARVEST_KEY, JSON.stringify(harvestLog)); } catch(e){}
+      try { localStorage.setItem(ANOMALY_KEY, JSON.stringify(anomalyLog)); } catch(e){}
+      try { localStorage.setItem(CAM_KEY,     JSON.stringify(cameras));    } catch(e){}
+      try { localStorage.setItem(MAP_KEY,     JSON.stringify(mapObjects)); } catch(e){}
+
+      restoreUIFromSettings();
+      renderDevices(); updateSummary(); renderRules();
+      renderSchedules(); updateMoreRulesCount(); updateExportStats();
+
+      const msg = `✅ Import สำเร็จ — ${db.devices?.length||0} อุปกรณ์, ${db.rules?.length||0} Rules`;
+      const el = document.getElementById('backup-status');
+      if (el) el.textContent = msg;
+      addLog('info', `Import Backup จาก ${backup._exportDateThai||''}`);
+      showToast(`📂 ${msg}`);
+    } catch(err) {
+      showToast('❌ อ่านไฟล์ไม่ได้: ' + err.message, 'error');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file, 'utf-8');
 }
 function updateExportStats(){
   const s=id=>document.getElementById(id);if(!s('es-records'))return;
@@ -3932,7 +4110,10 @@ function renderRules() {
       '<div><div class="toggle '+(rule.enabled?'on':'')+'" onclick="toggleRule(\''+rule.id+'\')"><div class="toggle-knob"></div></div></div></div>'+
       '<div class="rule-footer"><div><div class="rule-status '+statusCls+'">'+statusText+'</div>'+
       '<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">'+lastStr+' • cooldown '+rule.cooldown+'นาที</div></div>'+
-      '<button class="btn btn-danger" style="padding:5px 10px;font-size:11px;" onclick="deleteRule(\''+rule.id+'\')">🗑️</button></div></div>';
+      '<div style="display:flex;gap:6px;">'+
+      '<button style="background:rgba(42,240,255,0.1);border:1px solid rgba(42,240,255,0.25);color:var(--accent-blue);border-radius:8px;padding:5px 10px;font-size:11px;cursor:pointer;" onclick="editRule(\''+rule.id+'\')">✏️</button>'+
+      '<button class="btn btn-danger" style="padding:5px 10px;font-size:11px;" onclick="deleteRule(\''+rule.id+'\')">🗑️</button>'+
+      '</div></div></div>';
   }).join('');
 }
 
@@ -3949,6 +4130,65 @@ function deleteRule(id){
   showToast('ลบ Rule แล้ว','warn');
 }
 
+function editRule(id) {
+  const r = db.rules?.find(r => r.id === id);
+  if (!r) return;
+  // เปิด panel และ pre-fill ค่าเดิม
+  populateRuleDevSelect();
+  openPanel('add-rule-panel');
+  // รอ panel render เสร็จ
+  setTimeout(() => {
+    // ชื่อ + logic
+    document.getElementById('rule-name').value  = r.name || '';
+    document.getElementById('rule-logic').value = r.logic || 'AND';
+    // Conditions — ล้างแล้วเพิ่มใหม่
+    document.getElementById('rule-conditions-wrap').innerHTML = '';
+    condRowCount = 0;
+    const conds = r.conditions || [{ sensor: r.sensor, operator: r.operator, threshold: r.threshold }];
+    conds.forEach(c => addConditionRow(c));
+    // Time
+    document.getElementById('rule-use-time').checked = !!r.useTime;
+    document.getElementById('rule-time-wrap').style.display = r.useTime ? 'flex' : 'none';
+    if (r.useTime) {
+      document.getElementById('rule-time-from').value = r.timeFrom || '06:00';
+      document.getElementById('rule-time-to').value   = r.timeTo   || '18:00';
+    }
+    // Guard
+    const hasGuard = !!(r.guard?.devId);
+    document.getElementById('rule-use-guard').checked = hasGuard;
+    document.getElementById('rule-guard-wrap').style.display = hasGuard ? 'block' : 'none';
+    if (hasGuard) {
+      document.getElementById('guard-dev').value   = r.guard.devId;
+      document.getElementById('guard-state').value = r.guard.state || 'ON';
+    }
+    // Action
+    document.getElementById('rule-dev').value      = r.devId  || '';
+    document.getElementById('rule-action').value   = r.action || 'on';
+    document.getElementById('rule-duration').value = r.duration ?? 10;
+    document.getElementById('rule-cooldown').value = r.cooldown ?? 30;
+    // เปลี่ยนปุ่ม save เป็น update
+    const saveBtn = document.querySelector('#add-rule-panel .btn-primary');
+    if (saveBtn) {
+      saveBtn.textContent = '💾 อัปเดต Rule';
+      saveBtn.onclick = () => updateSmartRule(id);
+    }
+  }, 150);
+}
+
+function updateSmartRule(id) {
+  // ลบ rule เดิม แล้ว save ใหม่
+  const idx = db.rules?.findIndex(r => r.id === id);
+  if (idx === -1) return;
+  const oldEnabled = db.rules[idx].enabled;
+  db.rules.splice(idx, 1);
+  // บันทึก position ไว้แล้วเรียก saveSmartRule ปกติ
+  // แต่ restore ปุ่มก่อน
+  const saveBtn = document.querySelector('#add-rule-panel .btn-primary');
+  if (saveBtn) { saveBtn.textContent = '💾 บันทึก Rule'; saveBtn.onclick = saveSmartRule; }
+  saveSmartRule();
+  showToast('✅ อัปเดต Rule แล้ว');
+}
+
 // ─── UI HELPERS ───
 function populateRuleDevSelect(){
   ['rule-dev','guard-dev'].forEach(sid=>{
@@ -3958,6 +4198,59 @@ function populateRuleDevSelect(){
   });
 }
 function updateRuleUnit(){}
+
+// ═══════════════════════════════════════════════
+//  💾 RESTORE UI FROM SETTINGS
+//  เรียกตอน init และหลัง import backup
+// ═══════════════════════════════════════════════
+function restoreUIFromSettings() {
+  if (!db.settings) return;
+  const s = db.settings;
+
+  // Notifications + Ping
+  const nt = document.getElementById('notif-toggle');
+  if (nt) nt.checked = s.notif_on_off !== false;
+  const no = document.getElementById('notif-offline');
+  if (no) no.checked = s.notif_offline !== false;
+  const pi = document.getElementById('ping-interval-sel');
+  if (pi) pi.value = String(s.ping_interval || 30000);
+
+  // Sensor IP
+  if (s.sensor_ip) {
+    const ip = document.getElementById('sensor-ip');
+    if (ip) ip.value = s.sensor_ip;
+  }
+
+  // GPS cache
+  if (s.gps_lat) {
+    gpsCoords = { lat: s.gps_lat, lon: s.gps_lon, placeName: s.gps_place || '' };
+    const placeStr = gpsCoords.placeName
+      ? `📍 ${gpsCoords.placeName} (แคช)`
+      : `${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lon.toFixed(5)} (แคช)`;
+    setGPSDisplay(placeStr);
+  }
+
+  // Sensor source — restore ปุ่มที่เลือกไว้ทั้งสองชุด (dashboard indicator + settings page)
+  const savedSrc = s.sensor_source || 'satellite';
+  sensorSource = savedSrc;
+  ['sonoff','satellite','auto','sim'].forEach(name => {
+    document.getElementById('src-'+name)?.classList.toggle('active', name === savedSrc);
+  });
+
+  // Telegram
+  if (s.telegram || db.telegram) updateTgDisplay();
+
+  // Anomaly thresholds
+  if (s.anomalyThresholds) {
+    anomalyThresholds = { ...anomalyThresholds, ...s.anomalyThresholds };
+  }
+
+  // Google Sheets URL
+  if (s.gs_url) {
+    const gs = document.getElementById('gs-url');
+    if (gs) gs.value = s.gs_url;
+  }
+}
 
 // ═══════════════════════════════════════════════
 //  🔗 UNIFIED PATCH — renderEnvValues
@@ -4040,7 +4333,7 @@ function showPageMore(name){
 }
 
 // ═══════════════════════════════════════════════
-//  📊 SPARKLINE ENGINE  v1.7.4
+//  📊 SPARKLINE ENGINE  v1.7.5
 // ═══════════════════════════════════════════════
 const SPARK_CFG = {
   temp: { color:'#ff7c2a', min:15, max:50  },
@@ -4135,7 +4428,7 @@ function drawAllSparklines() {
 }
 
 // ═══════════════════════════════════════════════
-//  🔔 ANOMALY DETECTION ENGINE  v1.7.4
+//  🔔 ANOMALY DETECTION ENGINE  v1.7.5
 // ═══════════════════════════════════════════════
 const ANOMALY_KEY = 'sc_anomaly_v1';
 let anomalyLog = [];
@@ -4299,7 +4592,7 @@ function loadAnomalyFields() {
 }
 
 // ═══════════════════════════════════════════════
-//  🌱 FARM INTELLIGENCE ENGINE  v1.7.4
+//  🌱 FARM INTELLIGENCE ENGINE  v1.7.5
 // ═══════════════════════════════════════════════
 const HARVEST_KEY = 'sc_harvest_v1';
 let harvestLog = [];
