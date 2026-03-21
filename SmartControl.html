@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SmartControl">
-<title>SmartControl v1.7.5 — Farm Intelligence</title>
+<title>SmartControl v1.7.6 — Farm Intelligence</title>
 <link rel="manifest" href="#" id="manifest-link">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -1408,7 +1408,7 @@ select.field-input option { background: #0c1a30; }
       <span class="nav-icon">⋯</span>เพิ่มเติม
     </button>
   </nav>
-  <div class="version-badge">v1.7.5</div>
+  <div class="version-badge">v1.7.6</div>
 </div>
 
 <!-- MORE PANEL -->
@@ -2584,30 +2584,32 @@ function clearLog() {
 //  Sources: sonoff | satellite | auto | sim
 // ═══════════════════════════════════════════════
 
-let sensorSource = 'satellite'; // default
-let gpsCoords = null;           // { lat, lon }
-let lastSatData = null;         // cache
+let sensorSource = 'satellite'; // default — จะถูก override โดย restoreUIFromSettings
+let gpsCoords = null;
+let lastSatData = null;
 let sensorFailCount = { sonoff: 0, satellite: 0 };
 
 function setSensorSource(src) {
-  // ─ ตรวจสอบก่อนเปลี่ยน source ─
   if (src === 'sonoff' && !db.settings.sensor_ip) {
     showToast('⚠️ กรอก IP Sensor Node ก่อน (กล่องด้านล่าง)', 'warn');
-    // ไม่บล็อก — ให้เปลี่ยนได้แต่เตือน
-  }
-  if ((src === 'satellite' || src === 'auto') && !gpsCoords && !db.settings.gps_lat) {
-    showToast('📍 กด GPS เพื่อระบุตำแหน่งก่อน', 'warn');
-    // ลอง get GPS อัตโนมัติเลย
-    getGPSLocation();
   }
   sensorSource = src;
   db.settings.sensor_source = src;
-  saveDB();
-  // Update UI buttons — ทั้งสองชุด (settings page)
+  saveDB(); // บันทึกทันที
+  // อัปเดตปุ่ม
   ['sonoff','satellite','auto','sim'].forEach(s => {
     document.getElementById('src-'+s)?.classList.toggle('active', s === src);
   });
-  updateEnv();
+  // ถ้าเลือก satellite/auto แต่ยังไม่มี GPS → auto-get
+  if ((src === 'satellite' || src === 'auto') && !gpsCoords) {
+    (async () => {
+      setSensorStatusUI('satellite', '📍 กำลังขอ GPS...');
+      await getGPSLocation();
+      await updateEnv();
+    })();
+  } else {
+    updateEnv();
+  }
 }
 
 function setSensorStatusUI(type, msg) {
@@ -3168,17 +3170,22 @@ function init() {
   // ─ Restore UI from saved settings ─
   restoreUIFromSettings();
 
-  // Start sensor updates (satellite = 15 min, others = 30 sec)
-  updateEnv();
-  setInterval(() => {
-    if (sensorSource === 'satellite') {
-      // Satellite data changes slowly — refresh every 15 min
-    } else {
-      updateEnv();
+  // ─ Start sensor — async เพื่อรอ GPS ถ้าจำเป็น ─
+  // default เป็น satellite เสมอ ถ้าไม่ได้บันทึก source ไว้
+  (async () => {
+    // ถ้ายังไม่มี GPS cache เลย → ลอง get GPS ก่อนที่จะ fetch ดาวเทียม
+    if ((sensorSource === 'satellite' || sensorSource === 'auto') && !gpsCoords) {
+      setSensorStatusUI('satellite', '📍 กำลังขอ GPS อัตโนมัติ...');
+      await getGPSLocation();
     }
+    await updateEnv();
+  })();
+
+  // interval อัปเดต sensor
+  setInterval(() => {
+    if (sensorSource !== 'satellite') updateEnv();
   }, 30000);
   setInterval(() => {
-    // Satellite refresh every 15 min regardless
     if (sensorSource === 'satellite' || sensorSource === 'auto') updateEnv();
   }, 15 * 60 * 1000);
 
@@ -3529,7 +3536,7 @@ function initGraph() {
 }
 
 // ═══════════════════════════════════════════════
-//  📷 CAMERA  v1.7.5
+//  📷 CAMERA  v1.7.6
 // ═══════════════════════════════════════════════
 let cameras=[];
 const CAM_KEY='sc_cameras_v1';
@@ -3586,7 +3593,7 @@ function removeCamera(id){cameras=cameras.filter(c=>c.id!==id);saveCameras();ren
 function refreshAllCams(){cameras.forEach((cam,idx)=>{if(cam.type==='snapshot'){const img=document.getElementById('cam-feed-'+idx);if(img)img.src=cam.url+'?t='+Date.now();}});showToast('🔄 รีเฟรชกล้อง');}
 
 // ═══════════════════════════════════════════════
-//  🗺️ FARM MAP  v1.7.5
+//  🗺️ FARM MAP  v1.7.6
 // ═══════════════════════════════════════════════
 const MAP_KEY='sc_map_v1';
 let mapObjects=[],mapTool='select',mapDragging=null,mapDrawStart=null,selectedObj=null,mapCanvas,mapCtx;
@@ -3666,7 +3673,7 @@ function clearMapConfirm(){if(confirm('ล้างแผนที่?')){mapObj
 function exportMapImg(){const a=document.createElement('a');a.download='farmmap.png';a.href=mapCanvas.toDataURL();a.click();showToast('💾 บันทึกรูปแล้ว');}
 
 // ═══════════════════════════════════════════════
-//  🌧️ WEATHER  v1.7.5
+//  🌧️ WEATHER  v1.7.6
 // ═══════════════════════════════════════════════
 const WX_ICONS={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'⛈️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',99:'⛈️'};
 const WX_DESC={0:'ท้องฟ้าแจ่มใส',1:'มีเมฆบางส่วน',2:'มีเมฆปานกลาง',3:'ท้องฟ้าครึ้ม',45:'หมอก',51:'ฝนปรอย',61:'ฝนเบา',63:'ฝนปานกลาง',65:'ฝนหนัก',80:'ฝนฟ้าคะนอง',81:'ฝนฟ้าคะนอง',82:'ฝนหนักมาก',95:'พายุฝน',99:'พายุรุนแรง'};
@@ -3747,7 +3754,7 @@ function renderWeather(j, placeName, lat, lon){
 }
 
 // ═══════════════════════════════════════════════
-//  📊 EXPORT  v1.7.5
+//  📊 EXPORT  v1.7.6
 // ═══════════════════════════════════════════════
 function getGSScript(){return`function doPost(e){
   var ss=SpreadsheetApp.getActiveSpreadsheet();
@@ -3795,7 +3802,7 @@ function exportLog(){
 // ─── Full Backup Export / Import ───
 function exportFullBackup() {
   const backup = {
-    _version: 'SmartControl-v1.7.5',
+    _version: 'SmartControl-v1.7.6',
     _exportDate: new Date().toISOString(),
     _exportDateThai: new Date().toLocaleString('th-TH'),
     db: db,
@@ -4201,7 +4208,6 @@ function updateRuleUnit(){}
 
 // ═══════════════════════════════════════════════
 //  💾 RESTORE UI FROM SETTINGS
-//  เรียกตอน init และหลัง import backup
 // ═══════════════════════════════════════════════
 function restoreUIFromSettings() {
   if (!db.settings) return;
@@ -4221,7 +4227,7 @@ function restoreUIFromSettings() {
     if (ip) ip.value = s.sensor_ip;
   }
 
-  // GPS cache
+  // GPS cache — โหลดก่อน sensorSource เพราะ satellite ต้องการ gpsCoords
   if (s.gps_lat) {
     gpsCoords = { lat: s.gps_lat, lon: s.gps_lon, placeName: s.gps_place || '' };
     const placeStr = gpsCoords.placeName
@@ -4230,15 +4236,27 @@ function restoreUIFromSettings() {
     setGPSDisplay(placeStr);
   }
 
-  // Sensor source — restore ปุ่มที่เลือกไว้ทั้งสองชุด (dashboard indicator + settings page)
+  // Sensor source
+  // — ถ้าไม่เคยบันทึก หรือ localStorage หาย → default เป็น satellite เสมอ
   const savedSrc = s.sensor_source || 'satellite';
   sensorSource = savedSrc;
   ['sonoff','satellite','auto','sim'].forEach(name => {
     document.getElementById('src-'+name)?.classList.toggle('active', name === savedSrc);
   });
+  // อัปเดต indicator ล่วงหน้า
+  const srcLabels = {
+    satellite: '🛰️ ดาวเทียม Open-Meteo',
+    sonoff:    '🔌 Sonoff Sensor',
+    auto:      '🔄 อัตโนมัติ+สำรอง',
+    sim:       '🎲 โหมดจำลอง (Demo)',
+  };
+  setSensorStatusUI(
+    savedSrc === 'sim' ? 'sim' : savedSrc === 'sonoff' ? 'sonoff' : 'satellite',
+    (srcLabels[savedSrc] || '🛰️ ดาวเทียม') + (gpsCoords?.placeName ? ` • ${gpsCoords.placeName}` : ' — กำลังระบุตำแหน่ง...')
+  );
 
   // Telegram
-  if (s.telegram || db.telegram) updateTgDisplay();
+  updateTgDisplay();
 
   // Anomaly thresholds
   if (s.anomalyThresholds) {
@@ -4333,7 +4351,7 @@ function showPageMore(name){
 }
 
 // ═══════════════════════════════════════════════
-//  📊 SPARKLINE ENGINE  v1.7.5
+//  📊 SPARKLINE ENGINE  v1.7.6
 // ═══════════════════════════════════════════════
 const SPARK_CFG = {
   temp: { color:'#ff7c2a', min:15, max:50  },
@@ -4428,7 +4446,7 @@ function drawAllSparklines() {
 }
 
 // ═══════════════════════════════════════════════
-//  🔔 ANOMALY DETECTION ENGINE  v1.7.5
+//  🔔 ANOMALY DETECTION ENGINE  v1.7.6
 // ═══════════════════════════════════════════════
 const ANOMALY_KEY = 'sc_anomaly_v1';
 let anomalyLog = [];
@@ -4592,7 +4610,7 @@ function loadAnomalyFields() {
 }
 
 // ═══════════════════════════════════════════════
-//  🌱 FARM INTELLIGENCE ENGINE  v1.7.5
+//  🌱 FARM INTELLIGENCE ENGINE  v1.7.6
 // ═══════════════════════════════════════════════
 const HARVEST_KEY = 'sc_harvest_v1';
 let harvestLog = [];
