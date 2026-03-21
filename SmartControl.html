@@ -247,7 +247,136 @@ html, body {
 .env-chip:hover { border-color: rgba(255,255,255,0.3); transform: scale(1.02); }
 .env-chip:active { transform: scale(0.97); }
 
-/* ─── SENSOR SOURCE SELECTOR ─── */
+/* ─── CAMERA PAGE ─── */
+.cam-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 18px 14px; }
+.cam-card {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+  overflow: hidden; position: relative; cursor: pointer;
+  transition: all 0.2s; box-shadow: var(--shadow-card);
+}
+.cam-card:active { transform: scale(0.97); }
+.cam-card.full { grid-column: 1/-1; }
+.cam-feed {
+  width: 100%; aspect-ratio: 16/9; object-fit: cover;
+  background: #010810; display: block;
+}
+.cam-feed-placeholder {
+  width: 100%; aspect-ratio: 16/9;
+  background: radial-gradient(circle, #0a1628 0%, #030810 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; color: var(--text-dim); font-size: 11px;
+}
+.cam-feed-placeholder .ci { font-size: 28px; }
+.cam-bar {
+  padding: 8px 10px; display: flex; align-items: center; justify-content: space-between;
+  background: rgba(6,13,26,0.9);
+}
+.cam-name { font-size: 12px; font-weight: 600; }
+.cam-live { font-family: var(--font-mono); font-size: 9px; color: var(--accent-red);
+  background: rgba(255,58,92,0.15); border: 1px solid rgba(255,58,92,0.3);
+  padding: 2px 7px; border-radius: 6px; animation: pulse-dot 1.5s infinite; }
+.cam-controls { display: flex; gap: 8px; padding: 0 18px 14px; }
+
+/* Camera fullscreen overlay */
+.cam-fullscreen {
+  position: fixed; inset: 0; z-index: 300;
+  background: #000; display: none; flex-direction: column;
+}
+.cam-fullscreen.open { display: flex; }
+.cam-fs-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; background: rgba(6,13,26,0.9);
+  position: absolute; top: 0; left: 0; right: 0; z-index: 10;
+}
+.cam-fs-feed { width: 100%; height: 100%; object-fit: contain; }
+
+/* ─── FARM MAP ─── */
+.farmmap-wrap {
+  margin: 0 18px 10px;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 18px;
+  overflow: hidden; position: relative; touch-action: none;
+  box-shadow: var(--shadow-card);
+}
+#farm-canvas { display: block; width: 100%; cursor: crosshair; }
+.map-toolbar {
+  display: flex; gap: 6px; padding: 8px 18px; flex-wrap: wrap;
+}
+.map-tool-btn {
+  padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
+  background: transparent; color: var(--text-secondary);
+  font-family: var(--font-thai); font-size: 12px; cursor: pointer; transition: all 0.2s;
+}
+.map-tool-btn.active { background: rgba(0,200,160,0.15); border-color: var(--accent); color: var(--accent); }
+.map-tool-btn.danger { color: var(--accent-red); border-color: rgba(255,58,92,0.3); }
+.map-legend-row { display: flex; gap: 10px; flex-wrap: wrap; padding: 0 18px 10px; }
+.map-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-dim); }
+.map-legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+/* ─── WEATHER FORECAST ─── */
+.weather-hero {
+  margin: 6px 18px 10px;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 18px;
+  padding: 18px 20px; position: relative; overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.weather-hero::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(42,240,255,0.4), transparent);
+}
+.wx-today { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+.wx-icon { font-size: 52px; line-height: 1; }
+.wx-main { flex: 1; }
+.wx-temp { font-family: var(--font-mono); font-size: 36px; font-weight: 700; color: var(--text-primary); line-height: 1; }
+.wx-desc { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.wx-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 10px; }
+.wx-chip { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
+.wx-chip .wc { font-family: var(--font-mono); color: var(--text-primary); }
+
+.forecast-scroll { display: flex; gap: 8px; padding: 4px 18px 10px; overflow-x: auto; scrollbar-width: none; }
+.forecast-scroll::-webkit-scrollbar { display: none; }
+.forecast-day {
+  flex-shrink: 0; width: 72px; background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 10px 8px; text-align: center;
+  backdrop-filter: blur(8px); transition: all 0.2s;
+}
+.forecast-day.today { border-color: var(--accent-blue); background: rgba(42,240,255,0.07); }
+.forecast-day:active { transform: scale(0.96); }
+.fd-day { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; }
+.fd-icon { font-size: 22px; margin-bottom: 4px; line-height: 1; }
+.fd-hi { font-family: var(--font-mono); font-size: 14px; color: var(--accent-orange); }
+.fd-lo { font-family: var(--font-mono); font-size: 12px; color: var(--accent-blue); }
+.fd-rain { font-size: 10px; color: #2af0ff; margin-top: 3px; }
+
+.water-plan {
+  margin: 0 18px 10px;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+}
+.water-plan-header { padding: 12px 16px; background: rgba(0,200,160,0.08); border-bottom: 1px solid var(--border);
+  font-family: var(--font-display); font-size: 13px; letter-spacing: 1px; color: var(--accent); }
+.water-day-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.wd-date { font-size: 12px; color: var(--text-secondary); min-width: 36px; }
+.wd-bar-wrap { flex: 1; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
+.wd-bar { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+.wd-rec { font-size: 11px; font-weight: 600; min-width: 50px; text-align: right; }
+
+/* ─── EXPORT PAGE ─── */
+.export-section { padding: 0 18px 10px; }
+.export-card {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+  margin-bottom: 10px; overflow: hidden;
+}
+.export-card-header {
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.export-card-icon { font-size: 22px; }
+.export-card-title { font-size: 14px; font-weight: 600; }
+.export-card-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+.export-card-body { padding: 14px 16px; }
+.export-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.export-stat { flex: 1; min-width: 80px; background: rgba(255,255,255,0.03); border-radius: 10px; padding: 10px; text-align: center; }
+.export-stat-val { font-family: var(--font-mono); font-size: 18px; color: var(--accent); }
+.export-stat-label { font-size: 10px; color: var(--text-dim); margin-top: 3px; }
 .sensor-source-bar {
   display: flex; gap: 0; margin: 0 18px 4px;
   background: var(--bg-card); border: 1px solid var(--border);
@@ -798,27 +927,252 @@ select.field-input option { background: #0c1a30; }
       <div style="height:10px;"></div>
     </div>
 
+    <!-- ══════════════════════════════════════ -->
+    <!-- PAGE: CAMERA                          -->
+    <!-- ══════════════════════════════════════ -->
+    <div class="page" id="page-camera">
+      <div class="section-title">กล้อง IP Camera</div>
+      <div class="cam-controls">
+        <button class="btn btn-primary" style="flex:1" onclick="openPanel('add-cam-panel')">+ เพิ่มกล้อง</button>
+        <button class="btn btn-outline" style="flex:1" onclick="refreshAllCams()">🔄 รีเฟรช</button>
+      </div>
+      <div class="cam-grid" id="cam-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--text-dim);">
+          <div style="font-size:48px;margin-bottom:12px;">📷</div>
+          <div>ยังไม่มีกล้อง</div>
+          <div style="font-size:11px;margin-top:6px;">รองรับ RTSP/MJPEG stream และ snapshot URL</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Camera fullscreen overlay -->
+    <div class="cam-fullscreen" id="cam-fullscreen">
+      <div class="cam-fs-header">
+        <span id="cam-fs-name" style="font-family:var(--font-display);font-size:16px;letter-spacing:1px;">LIVE</span>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <span class="cam-live">● LIVE</span>
+          <button class="icon-btn" onclick="closeCamFullscreen()">✕</button>
+        </div>
+      </div>
+      <img id="cam-fs-feed" class="cam-fs-feed" src="" alt="live feed" onerror="this.style.display='none'">
+      <div id="cam-fs-placeholder" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;color:var(--text-dim);">
+        <div style="font-size:60px;">📷</div>
+        <div>ไม่สามารถโหลด stream ได้</div>
+        <div style="font-size:11px;">ตรวจสอบ URL และการเชื่อมต่อ LAN</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- PAGE: FARM MAP                        -->
+    <!-- ══════════════════════════════════════ -->
+    <div class="page" id="page-map">
+      <div class="section-title">แผนผังฟาร์ม</div>
+      <div class="map-toolbar">
+        <button class="map-tool-btn active" id="tool-select" onclick="setMapTool('select')">↖ เลือก</button>
+        <button class="map-tool-btn" id="tool-zone" onclick="setMapTool('zone')">▭ วาดโซน</button>
+        <button class="map-tool-btn" id="tool-device" onclick="setMapTool('device')">📍 วางอุปกรณ์</button>
+        <button class="map-tool-btn" id="tool-label" onclick="setMapTool('label')">✏️ ข้อความ</button>
+        <button class="map-tool-btn danger" onclick="clearMapConfirm()">🗑️ ล้าง</button>
+        <button class="map-tool-btn" onclick="exportMapImg()">💾 บันทึก</button>
+      </div>
+      <div class="map-legend-row" id="map-legend-row">
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:rgba(0,200,160,0.4)"></div>โซน/พื้นที่</div>
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#2af0ff"></div>อุปกรณ์ ON</div>
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:rgba(255,255,255,0.2)"></div>อุปกรณ์ OFF</div>
+        <div class="map-legend-item"><div class="map-legend-dot" style="background:#ff3a5c"></div>OFFLINE</div>
+      </div>
+      <div class="farmmap-wrap" id="farmmap-wrap">
+        <canvas id="farm-canvas"></canvas>
+      </div>
+      <div style="padding:6px 18px 4px;font-size:11px;color:var(--text-dim);">
+        แตะ <strong style="color:var(--accent)">วางอุปกรณ์</strong> แล้วแตะบนแผนที่เพื่อวางตำแหน่ง • แตะอุปกรณ์เพื่อสั่งงาน
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- PAGE: WEATHER                         -->
+    <!-- ══════════════════════════════════════ -->
+    <div class="page" id="page-weather">
+      <div class="section-title">พยากรณ์อากาศ & แผนรดน้ำ</div>
+      <div id="weather-hero-wrap">
+        <div style="text-align:center;padding:30px;color:var(--text-dim);">
+          <div style="font-size:40px">🛰️</div>
+          <div style="margin-top:8px;">กำลังโหลดข้อมูล...</div>
+          <button class="btn btn-primary" style="margin-top:12px;" onclick="loadWeather()">โหลดพยากรณ์</button>
+        </div>
+      </div>
+      <div class="section-title" id="wx-forecast-title" style="display:none;">พยากรณ์ 7 วัน</div>
+      <div class="forecast-scroll" id="forecast-scroll"></div>
+      <div class="section-title" id="wx-plan-title" style="display:none;">แผนการรดน้ำที่แนะนำ</div>
+      <div class="water-plan" id="water-plan" style="display:none;">
+        <div class="water-plan-header">💧 ระดับการรดน้ำที่แนะนำ (0–100%)</div>
+        <div id="water-plan-rows"></div>
+      </div>
+      <div style="padding:10px 18px;font-size:11px;color:var(--text-dim);line-height:1.7;">
+        ข้อมูลจาก Open-Meteo • แนะนำรดน้ำเพิ่มเมื่อปริมาณฝนน้อยและอุณหภูมิสูง
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- PAGE: EXPORT                          -->
+    <!-- ══════════════════════════════════════ -->
+    <div class="page" id="page-export">
+      <div class="section-title">Export & รายงาน</div>
+      <div class="export-section">
+
+        <!-- Stats summary -->
+        <div class="export-row" id="export-stats-row">
+          <div class="export-stat"><div class="export-stat-val" id="es-records">0</div><div class="export-stat-label">ค่าที่บันทึก</div></div>
+          <div class="export-stat"><div class="export-stat-val" id="es-days">0</div><div class="export-stat-label">วันที่มีข้อมูล</div></div>
+          <div class="export-stat"><div class="export-stat-val" id="es-size">0 KB</div><div class="export-stat-label">ขนาดข้อมูล</div></div>
+        </div>
+
+        <!-- CSV Export -->
+        <div class="export-card">
+          <div class="export-card-header">
+            <div class="export-card-icon">📊</div>
+            <div><div class="export-card-title">Export CSV</div><div class="export-card-sub">ดาวน์โหลดข้อมูลเซ็นเซอร์ทั้งหมด</div></div>
+          </div>
+          <div class="export-card-body">
+            <div class="field-group" style="padding:0;margin-bottom:10px;">
+              <div class="field-label">ช่วงเวลา</div>
+              <select class="field-input" id="csv-range">
+                <option value="1">1 ชั่วโมงล่าสุด</option>
+                <option value="24" selected>24 ชั่วโมงล่าสุด</option>
+                <option value="72">3 วันล่าสุด</option>
+                <option value="168">7 วันล่าสุด</option>
+                <option value="0">ทั้งหมด</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary" style="flex:1" onclick="exportCSV()">⬇️ ดาวน์โหลด CSV</button>
+              <button class="btn btn-outline" style="flex:1" onclick="previewCSV()">👁 ดูตัวอย่าง</button>
+            </div>
+            <div id="csv-preview" style="display:none;margin-top:10px;background:rgba(0,0,0,0.3);border-radius:8px;padding:10px;font-family:var(--font-mono);font-size:10px;color:var(--accent);overflow-x:auto;white-space:pre;max-height:120px;overflow-y:auto;"></div>
+          </div>
+        </div>
+
+        <!-- Google Sheets -->
+        <div class="export-card">
+          <div class="export-card-header">
+            <div class="export-card-icon">📗</div>
+            <div><div class="export-card-title">Google Sheets</div><div class="export-card-sub">ส่งข้อมูลผ่าน Google Apps Script</div></div>
+          </div>
+          <div class="export-card-body">
+            <div class="field-group" style="padding:0;margin-bottom:8px;">
+              <div class="field-label">Apps Script Web App URL</div>
+              <input class="field-input" id="gs-url" placeholder="https://script.google.com/macros/s/..." oninput="saveSetting('gs_url',this.value)">
+              <div style="font-size:10px;color:var(--text-dim);margin-top:5px;line-height:1.6;">
+                สร้าง Google Sheet → Extensions → Apps Script → วาง script → Deploy as Web App
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:8px;">
+              <button class="btn btn-primary" style="flex:1" onclick="sendToSheets()">📤 ส่งข้อมูลล่าสุด</button>
+              <button class="btn btn-outline" style="flex:1" onclick="sendAllToSheets()">📤 ส่งทั้งหมด</button>
+            </div>
+            <div id="gs-status" style="font-size:11px;color:var(--text-dim);min-height:16px;"></div>
+            <details style="margin-top:10px;">
+              <summary style="font-size:11px;color:var(--accent);cursor:pointer;">📋 ดู Apps Script ที่ต้องวาง</summary>
+              <div style="background:rgba(0,0,0,0.4);border-radius:8px;padding:10px;margin-top:8px;font-family:var(--font-mono);font-size:10px;color:#8be24a;overflow-x:auto;white-space:pre;line-height:1.6;">${getGSScript()}</div>
+            </details>
+          </div>
+        </div>
+
+        <!-- Activity Log Export -->
+        <div class="export-card">
+          <div class="export-card-header">
+            <div class="export-card-icon">📋</div>
+            <div><div class="export-card-title">Export Activity Log</div><div class="export-card-sub">ประวัติการสั่งงานอุปกรณ์ทั้งหมด</div></div>
+          </div>
+          <div class="export-card-body">
+            <button class="btn btn-primary" style="width:100%" onclick="exportLog()">⬇️ ดาวน์โหลด Log CSV</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </div><!-- end main-content -->
 
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav">
     <button class="nav-item active" onclick="showPage('dashboard',this)">
-      <span class="nav-icon">🌿</span>แดชบอร์ด
+      <span class="nav-icon">🌿</span>หน้าหลัก
     </button>
     <button class="nav-item" onclick="showPage('graph',this)">
       <span class="nav-icon">📈</span>กราฟ
     </button>
-    <button class="nav-item" onclick="showPage('schedule',this)">
-      <span class="nav-icon">⏰</span>ตาราง
+    <button class="nav-item" onclick="showPage('weather',this)">
+      <span class="nav-icon">🌤️</span>อากาศ
     </button>
-    <button class="nav-item" onclick="showPage('nfc',this)">
-      <span class="nav-icon">📡</span>NFC
+    <button class="nav-item" onclick="showPage('camera',this)">
+      <span class="nav-icon">📷</span>กล้อง
     </button>
-    <button class="nav-item" onclick="showPage('settings',this)">
-      <span class="nav-icon">⚙️</span>ตั้งค่า
+    <button class="nav-item" onclick="openPanel('more-panel')">
+      <span class="nav-icon">⋯</span>เพิ่มเติม
     </button>
   </nav>
-  <div class="version-badge">v1.3.0</div>
+  <div class="version-badge">v1.4.0</div>
+</div>
+
+<!-- MORE PANEL -->
+<div class="panel-overlay" id="more-panel">
+  <div class="panel-sheet" style="padding-bottom:30px;">
+    <div class="panel-handle"></div>
+    <div class="panel-title">เมนูเพิ่มเติม</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 20px 10px;">
+      <button onclick="closePanel('more-panel');showPageMore('map')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px 14px;text-align:center;cursor:pointer;color:var(--text-primary);">
+        <div style="font-size:28px;margin-bottom:6px;">🗺️</div><div style="font-size:13px;font-weight:600;">แผนผังฟาร์ม</div>
+      </button>
+      <button onclick="closePanel('more-panel');showPageMore('schedule')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px 14px;text-align:center;cursor:pointer;color:var(--text-primary);">
+        <div style="font-size:28px;margin-bottom:6px;">⏰</div><div style="font-size:13px;font-weight:600;">ตารางเวลา</div>
+      </button>
+      <button onclick="closePanel('more-panel');showPageMore('export')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px 14px;text-align:center;cursor:pointer;color:var(--text-primary);">
+        <div style="font-size:28px;margin-bottom:6px;">📊</div><div style="font-size:13px;font-weight:600;">Export ข้อมูล</div>
+      </button>
+      <button onclick="closePanel('more-panel');showPageMore('nfc')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px 14px;text-align:center;cursor:pointer;color:var(--text-primary);">
+        <div style="font-size:28px;margin-bottom:6px;">📡</div><div style="font-size:13px;font-weight:600;">NFC</div>
+      </button>
+      <button onclick="closePanel('more-panel');showPageMore('settings')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px 14px;text-align:center;cursor:pointer;color:var(--text-primary);grid-column:1/-1;">
+        <div style="font-size:28px;margin-bottom:6px;">⚙️</div><div style="font-size:13px;font-weight:600;">ตั้งค่า</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CAMERA PANEL -->
+<div class="panel-overlay" id="add-cam-panel">
+  <div class="panel-sheet">
+    <div class="panel-handle"></div>
+    <div class="panel-title">📷 เพิ่ม IP Camera</div>
+    <div class="field-group">
+      <div class="field-label">ชื่อกล้อง</div>
+      <input class="field-input" id="cam-name" placeholder="เช่น โรงเรือน A หน้า">
+    </div>
+    <div class="field-group">
+      <div class="field-label">Stream URL (MJPEG / Snapshot)</div>
+      <input class="field-input" id="cam-url" placeholder="http://192.168.1.x/video.mjpeg" type="url">
+      <div style="font-size:10px;color:var(--text-dim);margin-top:5px;line-height:1.6;">
+        MJPEG: http://IP/video<br>Snapshot: http://IP/snapshot.jpg<br>HLS: http://IP:port/stream.m3u8
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">ชนิด</div>
+      <select class="field-input" id="cam-type">
+        <option value="mjpeg">MJPEG Stream</option>
+        <option value="snapshot">Snapshot (auto refresh)</option>
+        <option value="hls">HLS / HTML5 Video</option>
+      </select>
+    </div>
+    <div class="field-group">
+      <div class="field-label">Snapshot refresh (วินาที)</div>
+      <input class="field-input" id="cam-refresh" type="number" value="3" min="1" max="60">
+    </div>
+    <div class="field-row" style="padding:0 20px 20px;gap:10px;">
+      <button class="btn btn-outline" style="flex:1" onclick="closePanel('add-cam-panel')">ยกเลิก</button>
+      <button class="btn btn-primary" style="flex:2" onclick="addCamera()">+ เพิ่มกล้อง</button>
+    </div>
+  </div>
 </div>
 
 <!-- ═══ PANELS ═══ -->
@@ -1858,6 +2212,8 @@ function showPage(name, btn) {
   if (name === 'nfc') renderNFCTags();
   if (name === 'settings') checkSW();
   if (name === 'graph') { setTimeout(() => { drawChart(); renderStats(); }, 50); }
+  if (name === 'camera') { renderCamGrid(); }
+  if (name === 'weather') { loadWeather(); }
 }
 
 function openPanel(id) {
@@ -1941,6 +2297,8 @@ function init() {
   setupManifest();
   registerSW();
   initGraph(); // ← graph engine
+  loadCameras();
+  loadMap();
   renderDevices();
   updateSummary();
   renderSchedules();
@@ -2323,9 +2681,7 @@ renderEnvValues = function(temp, hum, soil, lux) {
 // ─── Init graph on page load ───
 function initGraph() {
   loadHistory();
-  // Seed with some simulated history so graph isn't empty on first load
   if (historyLog.length === 0) {
-    const h = new Date().getHours();
     for (let i = 60; i >= 0; i--) {
       const ts = Date.now() - i * 30000;
       const hh = new Date(ts).getHours();
@@ -2340,6 +2696,261 @@ function initGraph() {
     }
     saveHistory();
   }
+}
+
+// ═══════════════════════════════════════════════
+//  📷 CAMERA  v1.4.0
+// ═══════════════════════════════════════════════
+let cameras=[];
+const CAM_KEY='sc_cameras_v1';
+function loadCameras(){try{cameras=JSON.parse(localStorage.getItem(CAM_KEY)||'[]');}catch(e){cameras=[];}}
+function saveCameras(){localStorage.setItem(CAM_KEY,JSON.stringify(cameras));}
+function addCamera(){
+  const name=document.getElementById('cam-name').value.trim();
+  const url=document.getElementById('cam-url').value.trim();
+  const type=document.getElementById('cam-type').value;
+  const refresh=parseInt(document.getElementById('cam-refresh').value)||3;
+  if(!name||!url)return showToast('กรอกชื่อและ URL','error');
+  cameras.push({id:'cam_'+Date.now(),name,url,type,refresh});
+  saveCameras();renderCamGrid();closePanel('add-cam-panel');
+  ['cam-name','cam-url'].forEach(i=>document.getElementById(i).value='');
+  showToast('✅ เพิ่มกล้องแล้ว');
+}
+function renderCamGrid(){
+  const grid=document.getElementById('cam-grid');if(!grid)return;
+  if(!cameras.length){grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--text-dim);"><div style="font-size:48px;margin-bottom:12px;">📷</div><div>ยังไม่มีกล้อง</div><div style="font-size:11px;margin-top:6px;">รองรับ MJPEG / Snapshot / HLS</div></div>`;return;}
+  grid.innerHTML=cameras.map((cam,idx)=>`
+    <div class="cam-card ${cameras.length===1?'full':''}">
+      <div onclick="openCamFullscreen(${idx})">
+        ${cam.type==='hls'
+          ?`<video class="cam-feed" src="${cam.url}" autoplay muted playsinline></video>`
+          :`<img class="cam-feed" id="cam-feed-${idx}" src="${cam.url}${cam.type==='snapshot'?'?t='+Date.now():''}" onerror="this.style.display='none'">`}
+      </div>
+      <div class="cam-bar">
+        <span class="cam-name">${cam.name}</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="cam-live">● LIVE</span>
+          <button style="background:none;border:none;color:var(--accent-red);cursor:pointer;font-size:14px;" onclick="event.stopPropagation();removeCamera('${cam.id}')">✕</button>
+        </div>
+      </div>
+    </div>`).join('');
+  startSnapshotRefresh();
+}
+let snapshotTimers=[];
+function startSnapshotRefresh(){
+  snapshotTimers.forEach(t=>clearInterval(t));snapshotTimers=[];
+  cameras.forEach((cam,idx)=>{
+    if(cam.type==='snapshot')snapshotTimers.push(setInterval(()=>{const img=document.getElementById('cam-feed-'+idx);if(img)img.src=cam.url+'?t='+Date.now();},cam.refresh*1000));
+  });
+}
+function openCamFullscreen(idx){
+  const cam=cameras[idx];
+  document.getElementById('cam-fs-name').textContent=cam.name;
+  const feed=document.getElementById('cam-fs-feed');
+  feed.src=cam.url;feed.style.display='block';
+  feed.onerror=()=>{feed.style.display='none';document.getElementById('cam-fs-placeholder').style.display='flex';};
+  document.getElementById('cam-fullscreen').classList.add('open');
+}
+function closeCamFullscreen(){document.getElementById('cam-fullscreen').classList.remove('open');document.getElementById('cam-fs-feed').src='';}
+function removeCamera(id){cameras=cameras.filter(c=>c.id!==id);saveCameras();renderCamGrid();}
+function refreshAllCams(){cameras.forEach((cam,idx)=>{if(cam.type==='snapshot'){const img=document.getElementById('cam-feed-'+idx);if(img)img.src=cam.url+'?t='+Date.now();}});showToast('🔄 รีเฟรชกล้อง');}
+
+// ═══════════════════════════════════════════════
+//  🗺️ FARM MAP  v1.4.0
+// ═══════════════════════════════════════════════
+const MAP_KEY='sc_map_v1';
+let mapObjects=[],mapTool='select',mapDragging=null,mapDrawStart=null,selectedObj=null,mapCanvas,mapCtx;
+function loadMap(){try{mapObjects=JSON.parse(localStorage.getItem(MAP_KEY)||'[]');}catch(e){mapObjects=[];}}
+function saveMap(){localStorage.setItem(MAP_KEY,JSON.stringify(mapObjects));}
+function initFarmMap(){
+  mapCanvas=document.getElementById('farm-canvas');if(!mapCanvas)return;
+  const wrap=document.getElementById('farmmap-wrap');
+  const W=wrap.clientWidth,H=Math.round(W*0.65);
+  mapCanvas.width=W*devicePixelRatio;mapCanvas.height=H*devicePixelRatio;
+  mapCanvas.style.width=W+'px';mapCanvas.style.height=H+'px';
+  mapCtx=mapCanvas.getContext('2d');mapCtx.scale(devicePixelRatio,devicePixelRatio);
+  mapCanvas.addEventListener('pointerdown',mapPointerDown);
+  mapCanvas.addEventListener('pointermove',mapPointerMove);
+  mapCanvas.addEventListener('pointerup',mapPointerUp);
+  let lpt=null;
+  mapCanvas.addEventListener('pointerdown',e=>{lpt=setTimeout(()=>{const pos=getMapPos(e);const obj=mapObjects.slice().reverse().find(o=>o.type==='device'&&hitTest(o,pos));if(obj){toggleDevice(obj.devId);setTimeout(drawMap,500);}},650);});
+  mapCanvas.addEventListener('pointerup',()=>clearTimeout(lpt));
+  mapCanvas.addEventListener('pointermove',()=>clearTimeout(lpt));
+  drawMap();
+}
+function setMapTool(t){mapTool=t;document.querySelectorAll('.map-tool-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tool-'+t)?.classList.add('active');}
+function getMapPos(e){const r=mapCanvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+function hitTest(o,pos){
+  if(o.type==='zone')return pos.x>=o.x&&pos.x<=o.x+o.w&&pos.y>=o.y&&pos.y<=o.y+o.h;
+  if(o.type==='device')return Math.hypot(pos.x-o.x,pos.y-o.y)<20;
+  if(o.type==='label')return Math.abs(pos.x-o.x)<60&&Math.abs(pos.y-o.y)<14;
+  return false;
+}
+function mapPointerDown(e){
+  const pos=getMapPos(e);
+  if(mapTool==='select'){selectedObj=mapObjects.slice().reverse().find(o=>hitTest(o,pos))||null;if(selectedObj)mapDragging={obj:selectedObj,ox:pos.x-selectedObj.x,oy:pos.y-selectedObj.y};drawMap();}
+  else if(mapTool==='zone'){mapDrawStart=pos;}
+  else if(mapTool==='device'){promptDeviceForMap(pos);}
+  else if(mapTool==='label'){const txt=prompt('ข้อความ:');if(txt){mapObjects.push({type:'label',x:pos.x,y:pos.y,text:txt});saveMap();drawMap();}}
+}
+function mapPointerMove(e){
+  if(mapDragging){const pos=getMapPos(e);mapDragging.obj.x=pos.x-mapDragging.ox;mapDragging.obj.y=pos.y-mapDragging.oy;drawMap();}
+  else if(mapDrawStart&&mapTool==='zone'){const pos=getMapPos(e);drawMap();const ctx=mapCtx;ctx.strokeStyle='rgba(0,200,160,0.6)';ctx.fillStyle='rgba(0,200,160,0.08)';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);ctx.strokeRect(mapDrawStart.x,mapDrawStart.y,pos.x-mapDrawStart.x,pos.y-mapDrawStart.y);ctx.fillRect(mapDrawStart.x,mapDrawStart.y,pos.x-mapDrawStart.x,pos.y-mapDrawStart.y);ctx.setLineDash([]);}
+}
+function mapPointerUp(e){
+  if(mapDragging){saveMap();mapDragging=null;drawMap();return;}
+  if(mapDrawStart&&mapTool==='zone'){const pos=getMapPos(e),w=pos.x-mapDrawStart.x,h=pos.y-mapDrawStart.y;if(Math.abs(w)>20&&Math.abs(h)>20){const name=prompt('ชื่อโซน:')||'โซน';mapObjects.push({type:'zone',x:Math.min(mapDrawStart.x,pos.x),y:Math.min(mapDrawStart.y,pos.y),w:Math.abs(w),h:Math.abs(h),text:name});saveMap();}mapDrawStart=null;drawMap();}
+}
+function promptDeviceForMap(pos){
+  if(!db.devices.length){showToast('ยังไม่มีอุปกรณ์','warn');return;}
+  const idx=parseInt(prompt('เลือกอุปกรณ์:\n'+db.devices.map((d,i)=>`${i}: ${d.name}`).join('\n')));
+  if(isNaN(idx)||!db.devices[idx])return;
+  mapObjects.push({type:'device',x:pos.x,y:pos.y,devId:db.devices[idx].id});saveMap();drawMap();
+}
+const DCOLORS={ON:'#00c8a0',OFF:'rgba(200,220,210,0.3)',OFFLINE:'#ff3a5c'};
+function drawMap(){
+  if(!mapCtx||!mapCanvas)return;
+  const W=mapCanvas.width/devicePixelRatio,H=mapCanvas.height/devicePixelRatio,ctx=mapCtx;
+  ctx.clearRect(0,0,W,H);
+  ctx.strokeStyle='rgba(0,200,160,0.05)';ctx.lineWidth=1;
+  for(let x=0;x<W;x+=30){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=30){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  mapObjects.filter(o=>o.type==='zone').forEach(o=>{
+    ctx.fillStyle='rgba(0,200,160,0.06)';ctx.fillRect(o.x,o.y,o.w,o.h);
+    ctx.strokeStyle=selectedObj===o?'rgba(0,200,160,0.9)':'rgba(0,200,160,0.25)';ctx.lineWidth=selectedObj===o?2:1;ctx.setLineDash(selectedObj===o?[]:[5,3]);ctx.strokeRect(o.x,o.y,o.w,o.h);ctx.setLineDash([]);
+    ctx.fillStyle='rgba(0,200,160,0.7)';ctx.font='bold 11px Sarabun,sans-serif';ctx.textAlign='left';ctx.fillText(o.text||'',o.x+6,o.y+16);
+  });
+  mapObjects.filter(o=>o.type==='device').forEach(o=>{
+    const dev=db.devices.find(d=>d.id===o.devId);if(!dev)return;
+    const tc=DEV_TYPES[dev.type]||DEV_TYPES.plug,col=DCOLORS[dev.state]||DCOLORS.OFF;
+    if(dev.state==='ON'){ctx.shadowColor=col;ctx.shadowBlur=12;}
+    ctx.beginPath();ctx.arc(o.x,o.y,selectedObj===o?18:15,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,0.07)';ctx.fill();ctx.strokeStyle=col;ctx.lineWidth=selectedObj===o?2.5:1.5;ctx.stroke();ctx.shadowBlur=0;
+    ctx.font='14px serif';ctx.textAlign='center';ctx.fillText(tc.icon,o.x,o.y+5);
+    ctx.fillStyle='rgba(200,230,220,0.75)';ctx.font='10px Sarabun,sans-serif';ctx.fillText(dev.name.substring(0,8),o.x,o.y+28);
+    ctx.beginPath();ctx.arc(o.x+12,o.y-12,4,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
+  });
+  mapObjects.filter(o=>o.type==='label').forEach(o=>{ctx.font='12px Sarabun,sans-serif';ctx.fillStyle='rgba(200,230,220,0.8)';ctx.textAlign='left';ctx.fillText(o.text,o.x,o.y);});
+  if(!mapObjects.length){ctx.fillStyle='rgba(150,190,180,0.22)';ctx.font='13px Sarabun,sans-serif';ctx.textAlign='center';ctx.fillText('เลือกเครื่องมือ → แตะบนแผนที่เพื่อเริ่มวาด',W/2,H/2-8);ctx.fillText('กด "วางอุปกรณ์" แล้วแตะเพื่อวาง',W/2,H/2+12);}
+}
+function clearMapConfirm(){if(confirm('ล้างแผนที่?')){mapObjects=[];saveMap();drawMap();showToast('ล้างแล้ว','warn');}}
+function exportMapImg(){const a=document.createElement('a');a.download='farmmap.png';a.href=mapCanvas.toDataURL();a.click();showToast('💾 บันทึกรูปแล้ว');}
+
+// ═══════════════════════════════════════════════
+//  🌧️ WEATHER  v1.4.0
+// ═══════════════════════════════════════════════
+const WX_ICONS={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'⛈️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',99:'⛈️'};
+const WX_DESC={0:'ท้องฟ้าแจ่มใส',1:'มีเมฆบางส่วน',2:'มีเมฆปานกลาง',3:'ท้องฟ้าครึ้ม',45:'หมอก',51:'ฝนปรอย',61:'ฝนเบา',63:'ฝนปานกลาง',65:'ฝนหนัก',80:'ฝนฟ้าคะนอง',81:'ฝนฟ้าคะนอง',82:'ฝนหนักมาก',95:'พายุฝน',99:'พายุรุนแรง'};
+async function loadWeather(){
+  if(!gpsCoords&&db.settings.gps_lat)gpsCoords={lat:db.settings.gps_lat,lon:db.settings.gps_lon};
+  if(!gpsCoords){showToast('ต้องการ GPS ก่อน','warn');await getGPSLocation();if(!gpsCoords)return;}
+  document.getElementById('weather-hero-wrap').innerHTML=`<div style="text-align:center;padding:30px;color:var(--text-dim);">🛰️ กำลังโหลด...</div>`;
+  try{
+    const{lat,lon}=gpsCoords;
+    const j=await(await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,uv_index_max&timezone=Asia%2FBangkok&forecast_days=7`,{signal:AbortSignal.timeout(8000)})).json();
+    renderWeather(j);
+  }catch(e){document.getElementById('weather-hero-wrap').innerHTML=`<div style="text-align:center;padding:30px;color:var(--accent-red);">❌ ${e.message}<br><button class="btn btn-outline" style="margin-top:10px;" onclick="loadWeather()">ลองใหม่</button></div>`;}
+}
+function renderWeather(j){
+  const c=j.current,d=j.daily,dn=['อา','จ','อ','พ','พฤ','ศ','ส'];
+  document.getElementById('weather-hero-wrap').innerHTML=`
+    <div class="weather-hero">
+      <div class="wx-today">
+        <div class="wx-icon">${WX_ICONS[c.weather_code]||'🌡️'}</div>
+        <div class="wx-main">
+          <div class="wx-temp">${c.temperature_2m.toFixed(1)}°C</div>
+          <div class="wx-desc">${WX_DESC[c.weather_code]||''} • รู้สึกเหมือน ${(c.apparent_temperature||c.temperature_2m).toFixed(1)}°C</div>
+        </div>
+      </div>
+      <div class="wx-meta">
+        <div class="wx-chip">💧<span class="wc">${c.relative_humidity_2m}%</span></div>
+        <div class="wx-chip">💨<span class="wc">${(c.wind_speed_10m||0).toFixed(1)} km/h</span></div>
+        <div class="wx-chip">🌧️<span class="wc">${(c.precipitation||0).toFixed(1)} mm</span></div>
+      </div>
+    </div>`;
+  document.getElementById('forecast-scroll').innerHTML=d.time.map((date,i)=>{
+    const dt=new Date(date),rain=(d.precipitation_sum[i]||0).toFixed(1);
+    return`<div class="forecast-day ${i===0?'today':''}">
+      <div class="fd-day">${i===0?'วันนี้':dn[dt.getDay()]}</div>
+      <div class="fd-icon">${WX_ICONS[d.weather_code[i]]||'🌡️'}</div>
+      <div class="fd-hi">${(d.temperature_2m_max[i]||0).toFixed(0)}°</div>
+      <div class="fd-lo">${(d.temperature_2m_min[i]||0).toFixed(0)}°</div>
+      ${parseFloat(rain)>0?`<div class="fd-rain">💧${rain}mm</div>`:''}
+    </div>`;}).join('');
+  document.getElementById('water-plan-rows').innerHTML=d.time.map((date,i)=>{
+    const dt=new Date(date),rain=d.precipitation_sum[i]||0,temp=d.temperature_2m_max[i]||30;
+    const need=Math.round((Math.max(0,1-rain/15)*0.7+Math.min(1,(temp-20)/20)*0.3)*100);
+    const col=need>70?'#ff7c2a':need>40?'#f0d62a':'#00c8a0';
+    return`<div class="water-day-row">
+      <div class="wd-date">${i===0?'วันนี้':dn[dt.getDay()]}<br><span style="font-size:9px;color:var(--text-dim)">${date.slice(5)}</span></div>
+      <div class="wd-bar-wrap"><div class="wd-bar" style="width:${need}%;background:${col}"></div></div>
+      <div class="wd-rec" style="color:${col}">${need>70?'💧 รดน้ำมาก':need>40?'💧 รดปกติ':'✅ ลดน้ำ'}</div>
+    </div>`;}).join('');
+  ['wx-forecast-title','wx-plan-title'].forEach(id=>document.getElementById(id).style.display='');
+  document.getElementById('water-plan').style.display='';
+}
+
+// ═══════════════════════════════════════════════
+//  📊 EXPORT  v1.4.0
+// ═══════════════════════════════════════════════
+function getGSScript(){return`function doPost(e){
+  var ss=SpreadsheetApp.getActiveSpreadsheet();
+  var sh=ss.getSheetByName('SensorData')||ss.insertSheet('SensorData');
+  var d=JSON.parse(e.postData.contents);
+  if(sh.getLastRow()===0)sh.appendRow(['Timestamp','Temp(C)','Humidity(%)','Soil(%)','Light(klux)']);
+  d.rows.forEach(function(r){sh.appendRow([new Date(r.ts),r.temp,r.hum,r.soil,r.lux]);});
+  return ContentService.createTextOutput(JSON.stringify({ok:true})).setMimeType(ContentService.MimeType.JSON);
+}`;}
+function getCSVData(h){
+  let data=h>0?historyLog.filter(r=>r.ts>=Date.now()-h*3600000):historyLog;
+  return'Timestamp,DateTime,Temperature(C),Humidity(%),SoilMoisture(%),Light(klux)\n'+data.map(r=>`${r.ts},"${new Date(r.ts).toLocaleString('th-TH')}",${r.temp??''},${r.hum??''},${r.soil??''},${r.lux??''}`).join('\n');
+}
+function exportCSV(){
+  const hours=parseInt(document.getElementById('csv-range').value);
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+getCSVData(hours)],{type:'text/csv;charset=utf-8'}));
+  a.download=`SmartControl_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+  showToast(`✅ Export ${historyLog.length} ค่า`);
+}
+function previewCSV(){
+  const p=document.getElementById('csv-preview');
+  p.textContent=getCSVData(parseInt(document.getElementById('csv-range').value)).split('\n').slice(0,8).join('\n')+'...';
+  p.style.display=p.style.display==='none'?'block':'none';
+}
+async function sendToSheets(allData=false){
+  const url=db.settings.gs_url||(document.getElementById('gs-url')?.value||'');
+  if(!url)return showToast('กรอก Apps Script URL','error');
+  const rows=allData?historyLog:historyLog.slice(-50);
+  const gs=document.getElementById('gs-status');
+  gs.textContent='📤 กำลังส่ง...';gs.style.color='var(--text-dim)';
+  try{
+    await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({rows})});
+    gs.textContent=`✅ ส่ง ${rows.length} แถว — ${new Date().toLocaleTimeString('th-TH')}`;gs.style.color='var(--accent)';
+    addLog('info',`Google Sheets: ${rows.length} แถว`);
+  }catch(e){gs.textContent=`❌ ${e.message}`;gs.style.color='var(--accent-red)';}
+}
+function sendAllToSheets(){sendToSheets(true);}
+function exportLog(){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\ufeff'+'Time,Date,Type,Message\n'+db.logs.map(l=>`"${l.time}","${l.date}","${l.type}","${l.msg.replace(/"/g,'""')}"`).join('\n')],{type:'text/csv;charset=utf-8'}));
+  a.download=`Log_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+  showToast(`✅ Export Log ${db.logs.length} รายการ`);
+}
+function updateExportStats(){
+  const s=id=>document.getElementById(id);if(!s('es-records'))return;
+  s('es-records').textContent=historyLog.length.toLocaleString();
+  s('es-days').textContent=new Set(historyLog.map(r=>new Date(r.ts).toDateString())).size;
+  try{const sz=(localStorage.getItem(HIST_KEY)||'').length;s('es-size').textContent=sz>1024?(sz/1024).toFixed(1)+' KB':sz+' B';}catch(e){}
+}
+
+// ─── showPageMore ───
+function showPageMore(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name)?.classList.add('active');
+  if(name==='schedule'){populateSchedSelect();renderSchedules();}
+  if(name==='nfc')renderNFCTags();
+  if(name==='settings')checkSW();
+  if(name==='map')setTimeout(()=>{loadMap();initFarmMap();},60);
+  if(name==='export'){updateExportStats();const gv=db.settings.gs_url;if(gv){const el=document.getElementById('gs-url');if(el)el.value=gv;}}
 }
 
 </script>
