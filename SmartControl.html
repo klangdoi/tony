@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="SmartControl">
-<title>SmartControl v1.5.0 — Farm Intelligence</title>
+<title>SmartControl v1.5.1 — Farm Intelligence</title>
 <link rel="manifest" href="#" id="manifest-link">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -804,31 +804,22 @@ select.field-input option { background: #0c1a30; }
 
     <!-- PAGE: SCHEDULE -->
     <div class="page" id="page-schedule">
-      <!-- Tabs: ตารางเวลา vs Smart Rules -->
-      <div class="rule-section-tabs" style="margin-top:6px;">
-        <button class="rule-tab active" id="tab-sched" onclick="switchSchedTab('sched')">⏰ ตารางเวลา</button>
-        <button class="rule-tab" id="tab-rules" onclick="switchSchedTab('rules')">🤖 Smart Rules</button>
-      </div>
+      <div class="section-title">ตารางเวลาอัตโนมัติ</div>
+      <div class="schedule-list" id="schedule-list"></div>
+      <br>
+      <button class="btn btn-primary btn-full" onclick="openPanel('add-sched-panel')">+ เพิ่มตารางเวลา</button>
+    </div>
 
-      <!-- ตารางเวลา -->
-      <div id="sched-tab-content">
-        <div class="section-title">ตารางเวลาอัตโนมัติ</div>
-        <div class="schedule-list" id="schedule-list"></div>
-        <br>
-        <button class="btn btn-primary btn-full" onclick="openPanel('add-sched-panel')">+ เพิ่มตารางเวลา</button>
+    <!-- PAGE: SMART RULES (standalone) -->
+    <div class="page" id="page-rules">
+      <div class="section-title">🤖 Smart Rules</div>
+      <div style="padding:0 18px 10px;font-size:12px;color:var(--text-dim);line-height:1.7;">
+        กำหนดเงื่อนไข เช่น <span style="color:var(--accent-orange)">อุณหภูมิ &gt; 35°C</span> → เปิดพัดลม กี่นาที
       </div>
-
-      <!-- Smart Rules -->
-      <div id="rules-tab-content" style="display:none;">
-        <div class="section-title">Smart Rules — เงื่อนไขอัตโนมัติ</div>
-        <div style="padding:0 18px 10px;font-size:12px;color:var(--text-dim);line-height:1.7;">
-          กำหนดเงื่อนไข เช่น <span style="color:var(--accent-orange)">อุณหภูมิ > 35°C</span> → เปิดพัดลม กี่นาที
-        </div>
-        <div id="rules-list" style="padding:0 18px;"></div>
-        <br>
-        <button class="btn btn-primary btn-full" onclick="openPanel('add-rule-panel')">+ เพิ่ม Smart Rule</button>
-        <div style="height:16px;"></div>
-      </div>
+      <div id="rules-list" style="padding:0 18px;"></div>
+      <br>
+      <button class="btn btn-primary btn-full" onclick="openPanel('add-rule-panel')">+ เพิ่ม Smart Rule</button>
+      <div style="height:16px;"></div>
     </div>
 
     <!-- PAGE: NFC -->
@@ -1213,7 +1204,7 @@ select.field-input option { background: #0c1a30; }
       <span class="nav-icon">⋯</span>เพิ่มเติม
     </button>
   </nav>
-  <div class="version-badge">v1.5.0</div>
+  <div class="version-badge">v1.5.1</div>
 </div>
 
 <!-- MORE PANEL -->
@@ -1221,23 +1212,52 @@ select.field-input option { background: #0c1a30; }
   <div class="panel-sheet" style="padding-bottom:30px;">
     <div class="panel-handle"></div>
     <div class="panel-title">เมนูเพิ่มเติม</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 20px 10px;">
-      <button onclick="closePanel('more-panel');showPageMore('map')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px 14px;text-align:center;cursor:pointer;color:var(--text-primary);">
-        <div style="font-size:28px;margin-bottom:6px;">🗺️</div><div style="font-size:13px;font-weight:600;">แผนผังฟาร์ม</div>
-      </button>
-      <button onclick="closePanel('more-panel');showPageMore('schedule')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px 14px;text-align:center;cursor:pointer;color:var(--text-primary);">
-        <div style="font-size:28px;margin-bottom:6px;">⏰</div><div style="font-size:13px;font-weight:600;">ตารางเวลา</div>
-      </button>
-      <button onclick="closePanel('more-panel');showPageMore('export')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px 14px;text-align:center;cursor:pointer;color:var(--text-primary);">
-        <div style="font-size:28px;margin-bottom:6px;">📊</div><div style="font-size:13px;font-weight:600;">Export ข้อมูล</div>
-      </button>
-      <button onclick="closePanel('more-panel');showPageMore('nfc')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px 14px;text-align:center;cursor:pointer;color:var(--text-primary);">
-        <div style="font-size:28px;margin-bottom:6px;">📡</div><div style="font-size:13px;font-weight:600;">NFC</div>
-      </button>
-      <button onclick="closePanel('more-panel');showPageMore('settings')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px 14px;text-align:center;cursor:pointer;color:var(--text-primary);grid-column:1/-1;">
-        <div style="font-size:28px;margin-bottom:6px;">⚙️</div><div style="font-size:13px;font-weight:600;">ตั้งค่า</div>
-      </button>
+
+    <!-- กลุ่ม: ระบบอัตโนมัติ -->
+    <div style="padding:0 20px 6px;">
+      <div style="font-size:10px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">⚡ ระบบอัตโนมัติ</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button onclick="closePanel('more-panel');showPageMore('schedule')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:16px 10px;text-align:center;cursor:pointer;color:var(--text-primary);">
+          <div style="font-size:26px;margin-bottom:5px;">⏰</div><div style="font-size:12px;font-weight:600;">ตารางเวลา</div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">เปิด/ปิดตามเวลา</div>
+        </button>
+        <button onclick="closePanel('more-panel');showPageMore('rules')" style="background:var(--bg-card);border:1px solid rgba(255,124,42,0.3);border-radius:14px;padding:16px 10px;text-align:center;cursor:pointer;color:var(--text-primary);">
+          <div style="font-size:26px;margin-bottom:5px;">🤖</div><div style="font-size:12px;font-weight:600;">Smart Rules</div>
+          <div style="font-size:10px;color:var(--accent-orange);margin-top:3px;" id="more-rules-count">เงื่อนไขอัตโนมัติ</div>
+        </button>
+      </div>
     </div>
+
+    <!-- กลุ่ม: เครื่องมือฟาร์ม -->
+    <div style="padding:10px 20px 6px;">
+      <div style="font-size:10px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">🌿 เครื่องมือฟาร์ม</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button onclick="closePanel('more-panel');showPageMore('map')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:16px 10px;text-align:center;cursor:pointer;color:var(--text-primary);">
+          <div style="font-size:26px;margin-bottom:5px;">🗺️</div><div style="font-size:12px;font-weight:600;">แผนผังฟาร์ม</div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">วาด layout</div>
+        </button>
+        <button onclick="closePanel('more-panel');showPageMore('nfc')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:16px 10px;text-align:center;cursor:pointer;color:var(--text-primary);">
+          <div style="font-size:26px;margin-bottom:5px;">📡</div><div style="font-size:12px;font-weight:600;">NFC</div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">แตะแท็กสั่งงาน</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- กลุ่ม: ข้อมูลและการตั้งค่า -->
+    <div style="padding:10px 20px 4px;">
+      <div style="font-size:10px;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">📋 ข้อมูลและการตั้งค่า</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button onclick="closePanel('more-panel');showPageMore('export')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:16px 10px;text-align:center;cursor:pointer;color:var(--text-primary);">
+          <div style="font-size:26px;margin-bottom:5px;">📊</div><div style="font-size:12px;font-weight:600;">Export ข้อมูล</div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">CSV / Google Sheets</div>
+        </button>
+        <button onclick="closePanel('more-panel');showPageMore('settings')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:16px 10px;text-align:center;cursor:pointer;color:var(--text-primary);">
+          <div style="font-size:26px;margin-bottom:5px;">⚙️</div><div style="font-size:12px;font-weight:600;">ตั้งค่า</div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">Telegram, GPS, Sensor</div>
+        </button>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -2622,12 +2642,14 @@ function showPage(name, btn) {
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   btn.classList.add('active');
-  if (name === 'schedule') { populateSchedSelect(); renderSchedules(); renderRules(); }
+  if (name === 'schedule') { populateSchedSelect(); renderSchedules(); }
+  if (name === 'rules') { populateRuleDevSelect(); renderRules(); }
   if (name === 'nfc') renderNFCTags();
   if (name === 'settings') checkSW();
   if (name === 'graph') { setTimeout(() => { drawChart(); renderStats(); }, 50); }
   if (name === 'camera') { renderCamGrid(); }
   if (name === 'weather') { loadWeather(); }
+  if (name === 'more-panel' || name === 'rules') { updateMoreRulesCount(); }
 }
 
 function openPanel(id) {
@@ -3121,7 +3143,7 @@ function initGraph() {
 }
 
 // ═══════════════════════════════════════════════
-//  📷 CAMERA  v1.5.0
+//  📷 CAMERA  v1.5.1
 // ═══════════════════════════════════════════════
 let cameras=[];
 const CAM_KEY='sc_cameras_v1';
@@ -3178,7 +3200,7 @@ function removeCamera(id){cameras=cameras.filter(c=>c.id!==id);saveCameras();ren
 function refreshAllCams(){cameras.forEach((cam,idx)=>{if(cam.type==='snapshot'){const img=document.getElementById('cam-feed-'+idx);if(img)img.src=cam.url+'?t='+Date.now();}});showToast('🔄 รีเฟรชกล้อง');}
 
 // ═══════════════════════════════════════════════
-//  🗺️ FARM MAP  v1.5.0
+//  🗺️ FARM MAP  v1.5.1
 // ═══════════════════════════════════════════════
 const MAP_KEY='sc_map_v1';
 let mapObjects=[],mapTool='select',mapDragging=null,mapDrawStart=null,selectedObj=null,mapCanvas,mapCtx;
@@ -3258,7 +3280,7 @@ function clearMapConfirm(){if(confirm('ล้างแผนที่?')){mapObj
 function exportMapImg(){const a=document.createElement('a');a.download='farmmap.png';a.href=mapCanvas.toDataURL();a.click();showToast('💾 บันทึกรูปแล้ว');}
 
 // ═══════════════════════════════════════════════
-//  🌧️ WEATHER  v1.5.0
+//  🌧️ WEATHER  v1.5.1
 // ═══════════════════════════════════════════════
 const WX_ICONS={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'⛈️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',99:'⛈️'};
 const WX_DESC={0:'ท้องฟ้าแจ่มใส',1:'มีเมฆบางส่วน',2:'มีเมฆปานกลาง',3:'ท้องฟ้าครึ้ม',45:'หมอก',51:'ฝนปรอย',61:'ฝนเบา',63:'ฝนปานกลาง',65:'ฝนหนัก',80:'ฝนฟ้าคะนอง',81:'ฝนฟ้าคะนอง',82:'ฝนหนักมาก',95:'พายุฝน',99:'พายุรุนแรง'};
@@ -3339,7 +3361,7 @@ function renderWeather(j, placeName, lat, lon){
 }
 
 // ═══════════════════════════════════════════════
-//  📊 EXPORT  v1.5.0
+//  📊 EXPORT  v1.5.1
 // ═══════════════════════════════════════════════
 function getGSScript(){return`function doPost(e){
   var ss=SpreadsheetApp.getActiveSpreadsheet();
@@ -3391,7 +3413,7 @@ function updateExportStats(){
 }
 
 // ═══════════════════════════════════════════════
-//  🤖 SMART RULE ENGINE  v1.5.0
+//  🤖 SMART RULE ENGINE  v1.5.1
 //  เงื่อนไข: sensor value → trigger device
 // ═══════════════════════════════════════════════
 
@@ -3543,6 +3565,7 @@ function saveSmartRule() {
   });
   saveDB();
   renderRules();
+  updateMoreRulesCount();
   closePanel('add-rule-panel');
   addLog('info', `เพิ่ม Rule: "${name}" — ${sc.label} ${OP_LABELS[operator]} ${threshold}${sc.unit} → ${action.toUpperCase()}`);
   showToast(`✅ เพิ่ม Rule: ${name}`);
@@ -3624,6 +3647,7 @@ function toggleRule(id) {
   rule.enabled = !rule.enabled;
   saveDB();
   renderRules();
+  updateMoreRulesCount();
   showToast(`${rule.enabled ? '✅ เปิด' : '⏸️ ปิด'} Rule: ${rule.name}`);
 }
 
@@ -3634,18 +3658,11 @@ function deleteRule(id) {
   db.rules = db.rules.filter(r => r.id !== id);
   saveDB();
   renderRules();
+  updateMoreRulesCount();
   showToast('ลบ Rule แล้ว', 'warn');
 }
 
 // ─── UI HELPERS ───
-function switchSchedTab(tab) {
-  document.getElementById('sched-tab-content').style.display = tab==='sched' ? 'block' : 'none';
-  document.getElementById('rules-tab-content').style.display = tab==='rules' ? 'block' : 'none';
-  document.getElementById('tab-sched').classList.toggle('active', tab==='sched');
-  document.getElementById('tab-rules').classList.toggle('active', tab==='rules');
-  if (tab === 'rules') { populateRuleDevSelect(); renderRules(); }
-}
-
 function populateRuleDevSelect() {
   const sel = document.getElementById('rule-dev');
   if (!sel) return;
@@ -3667,7 +3684,7 @@ openPanel = function(id) {
 // ─── init rules ───
 function initRules() {
   if (!db.rules) db.rules = [];
-  // ตั้ง interval ตรวจ rules ทุก 60 วิ (นอกจาก sensor update)
+  updateMoreRulesCount();
   setInterval(checkSmartRules, 60000);
 }
 
@@ -3677,10 +3694,21 @@ function showPageMore(name){
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
   document.getElementById('page-'+name)?.classList.add('active');
   if(name==='schedule'){populateSchedSelect();renderSchedules();}
+  if(name==='rules'){populateRuleDevSelect();renderRules();}
   if(name==='nfc')renderNFCTags();
   if(name==='settings')checkSW();
   if(name==='map')setTimeout(()=>{loadMap();initFarmMap();},60);
   if(name==='export'){updateExportStats();const gv=db.settings.gs_url;if(gv){const el=document.getElementById('gs-url');if(el)el.value=gv;}}
+}
+
+// อัปเดตจำนวน rules ใน more-panel badge
+function updateMoreRulesCount() {
+  const el = document.getElementById('more-rules-count');
+  if (!el) return;
+  const total = db.rules?.length || 0;
+  const active = db.rules?.filter(r => r.enabled).length || 0;
+  el.textContent = total === 0 ? 'เงื่อนไขอัตโนมัติ' : `${active}/${total} rule ทำงานอยู่`;
+  el.style.color = active > 0 ? 'var(--accent-orange)' : 'var(--text-dim)';
 }
 
 </script>
