@@ -844,15 +844,24 @@ if('serviceWorker' in navigator){
     <div class="ct">💧 ตั้งเวลารดน้ำ</div>
     <div style="font-size:12px;color:var(--t3);margin-bottom:10px">ระบบจะแจ้งเตือน + ส่ง Telegram ตามเวลาที่กำหนด</div>
     <div id="water-schedule-list"></div>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <input class="fi" id="water-time-input" type="time" style="flex:1">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+      <div class="fg" style="margin:0">
+        <label class="fl">⏰ เวลาเปิดน้ำ</label>
+        <input class="fi" id="water-time-input" type="time">
+      </div>
+      <div class="fg" style="margin:0">
+        <label class="fl">⏱️ เปิดนาน (นาที)</label>
+        <input class="fi" id="water-min-input" type="number" min="1" max="120" value="10" placeholder="10">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
       <select class="fi" id="water-days-input" style="flex:1">
         <option value="daily">ทุกวัน</option>
         <option value="mon,wed,fri">จ/พ/ศ</option>
         <option value="tue,thu,sat">อ/พฤ/ส</option>
         <option value="custom">กำหนดเอง</option>
       </select>
-      <button class="btn-p" style="margin:0;padding:10px 14px;width:auto;font-size:13px" onclick="addWaterSchedule()">＋</button>
+      <button class="btn-p" style="margin:0;padding:10px 16px;width:auto;font-size:13px" onclick="addWaterSchedule()">＋ เพิ่ม</button>
     </div>
   </div>
   <div class="card">
@@ -1129,7 +1138,7 @@ if('serviceWorker' in navigator){
 </div>
 
 <script>
-const APP_VERSION='4.1', APP_BUILD='2026-03-20';
+const APP_VERSION='4.1.1', APP_BUILD='2026-03-20';
 
 
 const DB='sf_plants_v3', IDB='sf_images_v2', ZDB='sf_zones';
@@ -2400,22 +2409,29 @@ function renderWaterScheduleList(){
   el.innerHTML=waterSchedules.map((s,i)=>`
     <div class="water-sched-row">
       <button class="water-toggle ${s.active?'on':'off'}" onclick="toggleWaterSched(${i})"></button>
-      <span style="font-family:Syne,sans-serif;font-weight:700;font-size:16px;color:var(--blue)">${s.time}</span>
-      <span style="color:var(--t3);font-size:12px;flex:1">${dayTH[s.days]||s.days}</span>
-      <span style="font-size:11px;color:var(--t3)">${s.lastRun||'ยังไม่เคยทำงาน'}</span>
-      <button onclick="deleteWaterSched(${i})" style="background:none;border:none;color:var(--danger);font-size:16px;cursor:pointer;padding:0">×</button>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:Syne,sans-serif;font-weight:700;font-size:16px;color:var(--blue)">${s.time}</span>
+          <span style="color:var(--t3);font-size:12px">${dayTH[s.days]||s.days}</span>
+          <span style="background:rgba(180,122,255,.15);color:var(--purple);border-radius:6px;padding:2px 7px;font-size:11px;font-weight:600">⏱️ ${s.duration||10} นาที</span>
+        </div>
+        <div style="font-size:10px;color:var(--t3);margin-top:2px">${s.lastRun||'ยังไม่เคยทำงาน'}</div>
+      </div>
+      <button onclick="deleteWaterSched(${i})" style="background:none;border:none;color:var(--danger);font-size:18px;cursor:pointer;padding:0 4px;flex-shrink:0">×</button>
     </div>`).join('');
 }
 
 function addWaterSchedule(){
   const time=document.getElementById('water-time-input').value;
   const days=document.getElementById('water-days-input').value;
+  const duration=parseInt(document.getElementById('water-min-input').value)||10;
   if(!time){toast('กรุณาเลือกเวลา');return;}
+  if(duration<1||duration>120){toast('ระยะเวลา 1-120 นาที');return;}
   loadWaterSchedules();
-  waterSchedules.push({time,days,active:true,lastRun:''});
+  waterSchedules.push({time,days,duration,active:true,lastRun:''});
   saveWaterSchedules();
   renderWaterScheduleList();
-  toast('💧 เพิ่มตารางรดน้ำแล้ว ✓');
+  toast(`💧 เพิ่มตารางรดน้ำ ${time} เปิด ${duration} นาที ✓`);
 }
 
 function toggleWaterSched(i){
@@ -2449,23 +2465,31 @@ function checkWaterSchedule(){
     const daysOk=s.days==='daily'||s.days.split(',').includes(today);
     if(!daysOk) return;
     // FIRE!
+    const dur=s.duration||10;
     localStorage.setItem(todayKey+i,'1');
     waterSchedules[i].lastRun=now2.toLocaleString('th-TH',{hour:'2-digit',minute:'2-digit'});
+    const stopDt=new Date(now2.getTime()+dur*60000);
+    waterSchedules[i].stopTime=stopDt.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
     saveWaterSchedules();
-    // Push notification บน status bar
+    // Push + Banner + Telegram
     fireWaterPush(s.time, s.days);
-    // Show in-app banner
-    showNotif(`💧 <strong>ถึงเวลารดน้ำ!</strong> ${s.time} — ${s.days==='daily'?'ทุกวัน':s.days}`, 'var(--blue)');
-    // Send Telegram
-    sendTelegram(`💧 <b>SmartFarm — ถึงเวลารดน้ำ!</b>\nเวลา ${s.time}\nต้นไม้ทั้งหมด ${plants.length} ต้น\n📅 ${now2.toLocaleString('th-TH')}`);
-    // Auto-activate water overlay on all plants
-    plants.forEach(p=>{
-      p.overlays=p.overlays||[];
-      if(!p.overlays.includes('water')) p.overlays.push('water');
-    });
+    showNotif(`💧 <strong>เปิดน้ำ ${s.time}</strong> — ${dur} นาที (ปิด ${waterSchedules[i].stopTime})`, 'var(--blue)');
+    sendTelegram(`💧 <b>SmartFarm — เปิดน้ำอัตโนมัติ!</b>\nเวลา ${s.time} | เปิด ${dur} นาที\nจะปิด ${waterSchedules[i].stopTime}\nต้นไม้ ${plants.length} ต้น\n📅 ${now2.toLocaleString('th-TH')}`);
+    // Activate water overlay
+    plants.forEach(p=>{p.overlays=p.overlays||[];if(!p.overlays.includes('water'))p.overlays.push('water');});
     save();
     if(document.getElementById('pg-dashboard').classList.contains('on')) renderFarmMap();
     renderWaterScheduleList();
+    // ตั้ง timer ปิดน้ำอัตโนมัติ
+    setTimeout(()=>{
+      plants.forEach(p=>{if(p.overlays)p.overlays=p.overlays.filter(o=>o!=='water');});
+      plants.forEach(p=>(p.history=p.history||[]).push({ts:now(),note:`💧 รดน้ำครบ ${dur} นาที (${s.time})`}));
+      save();
+      if(document.getElementById('pg-dashboard').classList.contains('on')) renderFarmMap();
+      showNotif(`🔴 <strong>ปิดน้ำแล้ว</strong> — รดน้ำครบ ${dur} นาที`,'var(--t3)');
+      sendTelegram(`🔴 <b>SmartFarm — ปิดน้ำแล้ว</b>\nรดน้ำครบ ${dur} นาที\n📅 ${now()}`);
+      toast('🔴 ปิดน้ำแล้ว ครบ '+dur+' นาที');
+    }, dur*60*1000);
   });
 }
 
