@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>FuelWatch Thailand</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=Kanit:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07090e;--surf:#0d1119;--surf2:#131825;--surf3:#1c2438;
+  --border:#1e2840;--border2:#28374f;
+  --gold:#f5a623;--gold2:#ffd060;
+  --green:#05e899;--yellow:#ffc030;--red:#ff4560;--blue:#50a8ff;
+  --text:#ffffff;       /* pure white for max readability */
+  --text2:#c8d4e8;      /* light blue-grey, still very readable */
+  --sub:#8898b8;        /* subtext, readable on dark */
+  --muted:#4a5c78;      /* hints/placeholders only */
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:var(--bg);overflow:hidden;}
+body{font-family:'Sarabun',sans-serif;color:var(--text);display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;}
+
+/* ═══ HEADER ═══ */
+.hd{
+  flex-shrink:0;height:60px;
+  background:#0a0e18;
+  border-bottom:1px solid var(--border);
+  padding:0 14px;
+  display:flex;align-items:center;gap:10px;
+  position:relative;z-index:1000;
+}
+.logo-wrap{flex-shrink:0;}
+.logo-row{display:flex;align-items:center;gap:8px;}
+.logo-icon{
+  width:32px;height:32px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--gold),#e85d00);
+  border-radius:9px;display:flex;align-items:center;justify-content:center;
+  font-size:16px;box-shadow:0 0 16px rgba(245,166,35,.35);
+}
+.logo-title{
+  font-family:'Kanit',sans-serif;font-weight:800;font-size:18px;
+  background:linear-gradient(90deg,var(--gold),var(--gold2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+}
+.logo-studio{
+  font-size:9.5px;font-weight:600;
+  color:#ffffff;
+  letter-spacing:1.8px;text-transform:uppercase;
+  margin-top:1px;padding-left:40px;opacity:.85;
+}
+
+/* Province */
+.prov-wrap{position:relative;z-index:9000;flex-shrink:0;}
+.prov-btn{
+  display:flex;align-items:center;gap:6px;
+  background:var(--surf2);border:1.5px solid var(--border2);
+  border-radius:9px;padding:6px 10px;cursor:pointer;transition:border-color .2s;
+}
+.prov-btn:hover{border-color:var(--gold);}
+.prov-name{font-family:'Kanit',sans-serif;font-size:13px;font-weight:700;color:var(--text);max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.prov-chev{font-size:9px;color:var(--text2);transition:transform .2s;}
+.prov-wrap.open .prov-chev{transform:rotate(180deg);}
+.prov-dd{
+  position:absolute;top:calc(100% + 6px);left:0;
+  background:#111826;border:1.5px solid var(--border2);
+  border-radius:12px;padding:8px;
+  width:210px;max-height:280px;overflow-y:auto;
+  z-index:9999;
+  box-shadow:0 24px 60px rgba(0,0,0,.8);
+  display:none;
+}
+.prov-wrap.open .prov-dd{display:block;animation:ddIn .15s ease;}
+@keyframes ddIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:none;}}
+.prov-search{
+  width:100%;background:var(--surf3);border:1px solid var(--border2);
+  border-radius:7px;padding:7px 10px;
+  color:var(--text);font-size:12.5px;font-family:'Sarabun',sans-serif;
+  outline:none;margin-bottom:6px;font-weight:500;
+}
+.prov-search:focus{border-color:var(--gold);}
+.prov-search::placeholder{color:var(--muted);}
+.prov-region{font-size:10px;color:var(--sub);letter-spacing:.5px;text-transform:uppercase;padding:5px 8px 2px;font-weight:600;}
+.prov-opt{padding:7px 10px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);transition:background .1s,color .1s;}
+.prov-opt:hover{background:var(--surf3);color:var(--text);}
+.prov-opt.act{background:rgba(245,166,35,.12);color:var(--gold);font-weight:700;}
+
+.live-pill{
+  display:flex;align-items:center;gap:5px;flex-shrink:0;
+  background:rgba(5,232,153,.08);border:1px solid rgba(5,232,153,.25);
+  border-radius:14px;padding:4px 9px;font-size:10.5px;font-weight:700;color:var(--green);
+  letter-spacing:.3px;
+}
+.ldot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:ld 1.6s ease-in-out infinite;}
+@keyframes ld{0%,100%{opacity:1;}50%{opacity:.2;}}
+.hd-spacer{flex:1;}
+.hd-time{font-size:11px;color:var(--sub);white-space:nowrap;font-weight:500;}
+.ref-btn{
+  background:var(--surf2);border:1px solid var(--border2);color:var(--text2);
+  padding:6px 11px;border-radius:7px;font-size:13px;
+  font-family:'Sarabun',sans-serif;cursor:pointer;
+  display:flex;align-items:center;gap:4px;transition:all .15s;flex-shrink:0;font-weight:600;
+}
+.ref-btn:hover{border-color:var(--gold);color:var(--gold);}
+.ref-btn.sp .ri{animation:sp360 .6s linear infinite;}
+@keyframes sp360{to{transform:rotate(360deg);}}
+
+/* ═══ TABS ═══ */
+.tabs{
+  flex-shrink:0;background:#0a0e18;
+  border-bottom:1px solid var(--border);
+  display:flex;padding:0 14px;position:relative;z-index:100;
+}
+.tab{
+  padding:10px 14px;font-family:'Kanit',sans-serif;font-size:13px;font-weight:600;
+  color:var(--sub);border:none;background:transparent;cursor:pointer;
+  position:relative;display:flex;align-items:center;gap:5px;transition:color .2s;white-space:nowrap;
+}
+.tab::after{content:'';position:absolute;bottom:0;left:8px;right:8px;height:2.5px;border-radius:2px 2px 0 0;background:transparent;transition:background .2s;}
+.tab:hover{color:var(--text2);}
+.tab.act{color:var(--gold);}
+.tab.act::after{background:var(--gold);}
+.tbadge{background:rgba(245,166,35,.15);color:var(--gold);border-radius:9px;font-size:10px;font-weight:700;padding:1px 5px;font-family:'Sarabun',sans-serif;}
+.tbadge-b{background:rgba(80,168,255,.15);color:var(--blue);border-radius:9px;font-size:10px;font-weight:700;padding:1px 5px;font-family:'Sarabun',sans-serif;}
+
+/* ═══ CONTENT ═══ */
+.content{flex:1;overflow:hidden;}
+.panel{display:none;height:100%;flex-direction:column;overflow:hidden;}
+.panel.act{display:flex;}
+
+/* ═══ TOPBAR ═══ */
+.topbar{
+  flex-shrink:0;padding:8px 14px;
+  background:var(--surf);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.count-chip{
+  display:flex;align-items:center;gap:5px;
+  background:var(--surf2);border:1px solid var(--border2);
+  border-radius:7px;padding:5px 11px;
+}
+.cc-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.cc-dot.g{background:var(--green);box-shadow:0 0 6px rgba(5,232,153,.5);}
+.cc-dot.y{background:var(--yellow);box-shadow:0 0 6px rgba(255,192,48,.5);}
+.cc-val{font-family:'Kanit',sans-serif;font-size:16px;font-weight:800;line-height:1;}
+.cc-val.g{color:var(--green);}
+.cc-val.y{color:var(--yellow);}
+.cc-lbl{font-size:11px;color:var(--text2);font-weight:600;}
+.tb-sep{width:1px;height:18px;background:var(--border2);}
+.topbar-info{font-size:11px;color:var(--sub);font-weight:500;}
+
+/* ═══ MAP SIDEBAR ═══ */
+.map-body{flex:1;overflow:hidden;display:flex;}
+.map-side{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--surf);}
+.ms-head{flex-shrink:0;padding:10px 14px 8px;border-bottom:1px solid var(--border);}
+.ms-title{font-family:'Kanit',sans-serif;font-size:11.5px;font-weight:700;color:var(--gold);letter-spacing:.6px;text-transform:uppercase;margin-bottom:8px;}
+.ms-search{
+  width:100%;background:var(--surf2);border:1.5px solid var(--border2);
+  border-radius:8px;padding:8px 11px;
+  color:var(--text);font-size:13px;font-weight:500;
+  font-family:'Sarabun',sans-serif;outline:none;transition:border-color .2s;
+}
+.ms-search:focus{border-color:var(--gold);}
+.ms-search::placeholder{color:var(--muted);}
+
+.ms-filter{flex-shrink:0;padding:7px 14px;border-bottom:1px solid var(--border);display:flex;gap:5px;}
+.mfb{
+  padding:4px 11px;border-radius:6px;font-size:12px;font-weight:600;
+  font-family:'Sarabun',sans-serif;cursor:pointer;
+  border:1.5px solid var(--border2);background:transparent;color:var(--sub);transition:all .15s;
+}
+.mfb.mfa{background:var(--gold);border-color:var(--gold);color:#1a0800;font-weight:700;}
+.mfb.mfg{background:rgba(5,232,153,.1);border-color:rgba(5,232,153,.4);color:var(--green);font-weight:700;}
+.mfb.mfy{background:rgba(255,192,48,.1);border-color:rgba(255,192,48,.4);color:var(--yellow);font-weight:700;}
+.ms-list{flex:1;overflow-y:auto;}
+
+/* ═══ STATION ITEM — key fix: no flex truncation on name ═══ */
+.si{
+  padding:12px 14px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .12s;
+}
+.si:hover{background:var(--surf2);}
+.si.sel{background:rgba(245,166,35,.07);border-left:3px solid var(--gold);padding-left:11px;}
+.si:last-child{border-bottom:none;}
+
+/* Row 1: name only — full width, no flex siblings */
+.si-name{
+  font-family:'Kanit',sans-serif;
+  font-weight:700;font-size:14px;
+  color:#ffffff;
+  line-height:1.3;
+  margin-bottom:5px;
+  /* NO overflow hidden — let it wrap naturally */
+  word-break:keep-all;
+  overflow-wrap:break-word;
+}
+/* Row 2: brand pill + watch btn — separate row */
+.si-row2{
+  display:flex;align-items:center;gap:7px;margin-bottom:5px;
+}
+.si-addr{font-size:11px;color:var(--sub);margin-bottom:7px;line-height:1.4;font-weight:500;}
+.si-fuels{display:flex;gap:4px;flex-wrap:wrap;}
+
+.ftag{
+  font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px;
+  display:flex;align-items:center;gap:3px;white-space:nowrap;
+}
+.ftag-available{background:rgba(5,232,153,.12);color:var(--green);border:1px solid rgba(5,232,153,.3);}
+.ftag-low{background:rgba(255,192,48,.12);color:var(--yellow);border:1px solid rgba(255,192,48,.3);}
+.ftt{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.ftt.g{background:var(--green);}
+.ftt.y{background:var(--yellow);}
+
+.si-watch-btn{
+  margin-left:auto;flex-shrink:0;
+  width:26px;height:26px;border-radius:6px;
+  border:1.5px solid var(--border2);background:transparent;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:14px;transition:all .15s;color:var(--sub);
+}
+.si-watch-btn:hover{border-color:var(--blue);color:var(--blue);}
+.si-watch-btn.watching{background:rgba(80,168,255,.15);border-color:var(--blue);color:var(--blue);}
+
+/* ═══ POPUP (bottom sheet) ═══ */
+.popup-overlay{
+  display:none;position:fixed;inset:0;z-index:5000;
+  background:rgba(0,0,0,.65);backdrop-filter:blur(6px);
+  align-items:flex-end;justify-content:center;
+}
+.popup-overlay.open{display:flex;animation:fo .2s ease;}
+@keyframes fo{from{opacity:0;}to{opacity:1;}}
+.popup-sheet{
+  width:100%;max-width:520px;
+  background:#111826;
+  border-radius:20px 20px 0 0;
+  border:1.5px solid var(--border2);border-bottom:none;
+  padding:0 0 32px;
+  animation:su .22s ease;
+  max-height:88vh;overflow-y:auto;
+}
+@keyframes su{from{transform:translateY(28px);opacity:0;}to{transform:none;opacity:1;}}
+.popup-drag{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:12px auto 16px;}
+.popup-inner{padding:0 18px;}
+
+.popup-top{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;}
+.popup-name{
+  flex:1;
+  font-family:'Kanit',sans-serif;font-size:18px;font-weight:800;
+  color:#ffffff;line-height:1.25;
+  word-break:keep-all;overflow-wrap:break-word;
+}
+.popup-close{
+  flex-shrink:0;margin-top:2px;
+  width:28px;height:28px;border-radius:7px;
+  background:var(--surf2);border:1px solid var(--border2);
+  color:var(--sub);font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.popup-close:hover{border-color:var(--red);color:var(--red);}
+
+.popup-badges{display:flex;align-items:center;gap:7px;margin-bottom:12px;flex-wrap:wrap;}
+
+.popup-loc{
+  background:var(--surf2);border:1.5px solid var(--border2);border-radius:11px;
+  padding:10px 12px;margin-bottom:12px;
+  display:flex;align-items:center;gap:10px;
+}
+.popup-loc-icon{font-size:20px;flex-shrink:0;}
+.popup-loc-info{flex:1;min-width:0;}
+.popup-loc-addr{font-size:12px;color:var(--text2);font-weight:600;line-height:1.4;}
+.popup-loc-coord{font-size:10.5px;color:var(--sub);margin-top:1px;font-weight:500;}
+.popup-maps-btn{
+  flex-shrink:0;
+  background:rgba(245,166,35,.12);border:1px solid rgba(245,166,35,.3);
+  color:var(--gold);border-radius:7px;padding:6px 10px;
+  font-size:11.5px;font-weight:700;cursor:pointer;
+  font-family:'Sarabun',sans-serif;transition:all .15s;white-space:nowrap;
+  text-decoration:none;display:inline-flex;align-items:center;gap:4px;
+}
+.popup-maps-btn:hover{background:rgba(245,166,35,.2);}
+
+.popup-fuels{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;}
+.pf-row{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surf2);border:1px solid var(--border2);
+  border-radius:10px;padding:10px 13px;
+}
+.pfl{display:flex;align-items:center;gap:8px;}
+.pf-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.pf-dot.g{background:var(--green);box-shadow:0 0 7px rgba(5,232,153,.6);}
+.pf-dot.y{background:var(--yellow);box-shadow:0 0 7px rgba(255,192,48,.6);}
+.pf-name{font-size:13.5px;font-weight:600;color:var(--text);}
+.pfr{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
+.pf-stat{font-size:11px;font-weight:700;}
+.pf-stat.g{color:var(--green);}
+.pf-stat.y{color:var(--yellow);}
+.pf-price{font-family:'Kanit',sans-serif;font-size:17px;font-weight:800;color:#ffffff;}
+.pf-unit{font-size:10px;color:var(--sub);font-family:'Sarabun',sans-serif;}
+
+.popup-watch-btn{
+  width:100%;padding:12px;border-radius:11px;
+  font-family:'Kanit',sans-serif;font-size:14px;font-weight:700;
+  cursor:pointer;transition:all .2s;
+  border:2px solid var(--blue);background:rgba(80,168,255,.1);color:var(--blue);
+  display:flex;align-items:center;justify-content:center;gap:7px;
+}
+.popup-watch-btn.watching{background:rgba(80,168,255,.2);}
+.popup-watch-btn.full{border-color:var(--red);background:rgba(255,69,96,.08);color:var(--red);}
+
+/* ═══ LIST TAB ═══ */
+.list-panel{flex-direction:column;}
+.lt-bar{
+  flex-shrink:0;padding:10px 14px;
+  background:var(--surf);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.lt-sw{position:relative;flex:1;min-width:160px;}
+.lt-si{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--sub);pointer-events:none;}
+.lt-inp{
+  width:100%;background:var(--surf2);border:1.5px solid var(--border2);
+  border-radius:8px;padding:8px 10px 8px 30px;
+  color:var(--text);font-size:13px;font-weight:500;
+  font-family:'Sarabun',sans-serif;outline:none;transition:border-color .2s;
+}
+.lt-inp:focus{border-color:var(--gold);}
+.lt-inp::placeholder{color:var(--muted);}
+.lt-filt{display:flex;gap:5px;flex-wrap:wrap;}
+.ltf{padding:4px 11px;border-radius:6px;font-size:12px;font-weight:600;font-family:'Sarabun',sans-serif;cursor:pointer;border:1.5px solid var(--border2);background:transparent;color:var(--sub);transition:all .15s;}
+.ltf.la{background:var(--gold);border-color:var(--gold);color:#1a0800;font-weight:700;}
+.ltf.lg{background:rgba(5,232,153,.1);border-color:rgba(5,232,153,.35);color:var(--green);font-weight:700;}
+.ltf.ly{background:rgba(255,192,48,.1);border-color:rgba(255,192,48,.35);color:var(--yellow);font-weight:700;}
+.lt-cnt{font-size:12px;color:var(--text2);white-space:nowrap;font-weight:600;}
+.lt-grid-wrap{flex:1;overflow-y:auto;padding:12px 14px;}
+.lt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px;}
+
+.lc{background:var(--surf);border:1.5px solid var(--border);border-radius:13px;overflow:hidden;cursor:pointer;transition:border-color .2s,transform .15s;}
+.lc:hover{border-color:rgba(245,166,35,.35);transform:translateY(-1px);}
+.lc-top{padding:12px 13px;border-bottom:1px solid var(--border);}
+.lc-name{font-family:'Kanit',sans-serif;font-size:14px;font-weight:800;color:#ffffff;line-height:1.25;margin-bottom:4px;word-break:keep-all;overflow-wrap:break-word;}
+.lc-addr{font-size:11px;color:var(--sub);font-weight:500;margin-bottom:6px;}
+.lc-badges{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.lc-fuels{padding:9px 13px;display:flex;flex-direction:column;gap:5px;}
+.lc-fuel{display:flex;align-items:center;justify-content:space-between;background:var(--surf2);border:1px solid var(--border);border-radius:7px;padding:7px 11px;}
+.lcfl{display:flex;align-items:center;gap:6px;}
+.lcf-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.lcf-dot.g{background:var(--green);}
+.lcf-dot.y{background:var(--yellow);}
+.lcfn{font-size:12.5px;font-weight:600;color:var(--text);}
+.lcfr{display:flex;align-items:center;gap:8px;}
+.lcfs{font-size:11px;font-weight:700;}
+.lcfs.g{color:var(--green);}
+.lcfs.y{color:var(--yellow);}
+.lcfp{font-family:'Kanit',sans-serif;font-size:13px;font-weight:700;color:var(--text);}
+.lc-foot{padding:7px 13px 11px;display:flex;align-items:center;justify-content:space-between;}
+.lc-phone{font-size:11px;color:var(--sub);font-weight:500;}
+.lc-open{font-size:11px;font-weight:700;}
+.lc-open.o{color:var(--green);}
+.lc-open.c{color:var(--sub);}
+
+/* ═══ SUMMARY ═══ */
+.sum-panel{flex-direction:column;overflow-y:auto;padding:14px;gap:12px;}
+.sum-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;flex-shrink:0;}
+.ss{background:var(--surf);border:1.5px solid var(--border);border-radius:13px;padding:16px;display:flex;align-items:center;gap:11px;}
+.ss-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.ss-val{font-family:'Kanit',sans-serif;font-size:28px;font-weight:800;line-height:1;}
+.ss-lbl{font-size:11px;color:var(--sub);margin-top:2px;font-weight:600;}
+.sum-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;flex-shrink:0;}
+.sp{background:var(--surf);border:1.5px solid var(--border);border-radius:13px;overflow:hidden;}
+.sph{padding:11px 15px;border-bottom:1px solid var(--border);font-family:'Kanit',sans-serif;font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;}
+.fb-list{padding:13px 15px;display:flex;flex-direction:column;gap:12px;}
+.fb-top{display:flex;justify-content:space-between;margin-bottom:5px;}
+.fb-name{font-size:12.5px;font-weight:600;color:var(--text);}
+.fb-pct{font-family:'Kanit',sans-serif;font-size:13px;font-weight:800;}
+.fb-track{height:6px;background:var(--surf2);border-radius:3px;overflow:hidden;}
+.fb-fill{height:100%;border-radius:3px;transition:width .5s ease;}
+.fbg{background:linear-gradient(90deg,var(--green),#40ffb8);}
+.fby{background:linear-gradient(90deg,var(--yellow),#ffe080);}
+.bb-list{padding:13px 15px;display:flex;flex-direction:column;gap:9px;}
+.bb-row{display:flex;align-items:center;gap:8px;}
+.bb-track{flex:1;height:5px;background:var(--surf2);border-radius:3px;overflow:hidden;}
+.bb-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold),#ff9500);}
+.bb-cnt{font-size:11.5px;color:var(--text2);width:24px;text-align:right;font-weight:600;}
+
+/* ═══ WATCHLIST TAB ═══ */
+.watch-panel{flex-direction:column;overflow:hidden;}
+.watch-body{
+  flex:1;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding:14px;
+  /* block layout — no flex column which causes overlap */
+}
+
+.w-info-card{
+  background:linear-gradient(135deg,rgba(80,168,255,.08),rgba(80,168,255,.04));
+  border:1.5px solid rgba(80,168,255,.2);
+  border-radius:13px;padding:14px 16px;
+}
+.watch-body > *{margin-bottom:12px;}
+.watch-body > *:last-child{margin-bottom:0;}
+.wi-desc{font-size:12.5px;color:var(--text2);line-height:1.6;font-weight:500;}
+.wi-slots{display:flex;gap:5px;margin-top:10px;}
+.wi-slot{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.wi-slot.on{background:rgba(80,168,255,.15);border:1.5px solid rgba(80,168,255,.35);}
+.wi-slot.off{background:var(--surf2);border:1.5px dashed var(--border2);}
+
+/* Watchlist items */
+.wl-empty{background:var(--surf2);border:1.5px dashed var(--border2);border-radius:12px;padding:22px;text-align:center;color:var(--sub);font-size:13px;font-weight:500;}
+.wl-item{
+  background:var(--surf);border:1.5px solid var(--border);
+  border-radius:12px;padding:13px 14px;
+  display:flex;align-items:center;gap:11px;
+}
+.wli-info{flex:1;min-width:0;}
+.wli-name{font-family:'Kanit',sans-serif;font-size:14px;font-weight:800;color:#ffffff;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.wli-addr{font-size:11px;color:var(--sub);font-weight:500;}
+.wli-st{font-size:11.5px;font-weight:700;margin-top:3px;}
+.wli-st.g{color:var(--green);}
+.wli-st.y{color:var(--yellow);}
+.wli-rm{
+  flex-shrink:0;width:28px;height:28px;border-radius:7px;
+  background:rgba(255,69,96,.08);border:1.5px solid rgba(255,69,96,.25);
+  color:var(--red);font-size:15px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.wli-rm:hover{background:rgba(255,69,96,.18);}
+
+/* ═══ NOTIFICATION SETTINGS ═══ */
+.notif-card{background:var(--surf);border:1.5px solid var(--border);border-radius:13px;overflow:hidden;}
+.notif-hd{padding:12px 16px;border-bottom:1px solid var(--border);font-family:'Kanit',sans-serif;font-size:14px;font-weight:700;color:var(--text);}
+.notif-body{padding:14px 16px;display:flex;flex-direction:column;gap:14px;}
+
+.notif-channel{background:var(--surf2);border:1.5px solid var(--border2);border-radius:11px;padding:13px;}
+.nc-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+.nc-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+.nc-tg{background:rgba(33,150,243,.15);border:1px solid rgba(33,150,243,.3);}
+.nc-line{background:rgba(0,195,0,.12);border:1px solid rgba(0,195,0,.25);}
+.nc-name{font-family:'Kanit',sans-serif;font-size:14px;font-weight:700;}
+.nc-name.tg{color:#4fc3f7;}
+.nc-name.ln{color:#06c755;}
+.nc-toggle{
+  margin-left:auto;width:40px;height:22px;border-radius:11px;
+  background:var(--surf3);border:1.5px solid var(--border2);
+  cursor:pointer;position:relative;transition:all .25s;flex-shrink:0;
+}
+.nc-toggle.on{background:var(--green);border-color:var(--green);}
+.nc-toggle::after{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:#ccc;top:1px;left:2px;transition:left .25s;}
+.nc-toggle.on::after{left:20px;background:#fff;}
+
+/* Recipient rows */
+.rc-section{margin-top:8px;}
+.rc-label{font-size:11px;font-weight:700;color:var(--sub);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px;}
+.rc-row{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.rc-num{font-family:'Kanit',sans-serif;font-size:11px;font-weight:700;color:var(--muted);width:16px;flex-shrink:0;}
+.rc-inp{
+  flex:1;background:var(--surf3);border:1.5px solid var(--border2);
+  border-radius:7px;padding:7px 10px;
+  color:var(--text);font-size:12.5px;font-weight:500;
+  font-family:'Sarabun',sans-serif;outline:none;transition:border-color .2s;
+}
+.rc-inp:focus{border-color:var(--gold);}
+.rc-inp::placeholder{color:var(--muted);}
+.rc-inp.name-inp{max-width:100px;}
+
+.notif-hint{font-size:11px;color:var(--sub);line-height:1.6;margin-top:8px;font-weight:500;}
+.notif-hint a{color:var(--blue);text-decoration:none;}
+
+.test-btn{
+  width:100%;margin-top:10px;padding:9px;border-radius:8px;
+  font-family:'Kanit',sans-serif;font-size:13px;font-weight:700;
+  cursor:pointer;transition:all .2s;border:1.5px solid;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.test-btn-tg{border-color:#4fc3f7;background:rgba(79,195,247,.08);color:#4fc3f7;}
+.test-btn-tg:hover{background:rgba(79,195,247,.18);}
+.test-btn-line{border-color:#06c755;background:rgba(6,199,85,.08);color:#06c755;}
+.test-btn-line:hover{background:rgba(6,199,85,.18);}
+.test-btn:disabled{opacity:.45;cursor:not-allowed;}
+.save-btn-row{display:flex;gap:8px;}
+.save-btn{
+  flex:1;padding:12px;border-radius:11px;
+  font-family:'Kanit',sans-serif;font-size:14px;font-weight:800;
+  cursor:pointer;transition:all .2s;border:none;
+  background:linear-gradient(90deg,var(--gold),#e87700);color:#1a0800;
+}
+.save-btn:hover{opacity:.9;}
+
+/* ═══ WATCHLIST SELECTOR ═══ */
+.wsel-card{
+  background:var(--surf);border:1.5px solid var(--border);
+  border-radius:13px;overflow:hidden;
+}
+.wsel-hd{
+  padding:12px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.wsel-title{font-family:'Kanit',sans-serif;font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:6px;}
+.wsel-cnt{font-size:11px;color:var(--sub);font-weight:600;}
+
+.wsel-search-wrap{padding:10px 14px;border-bottom:1px solid var(--border);}
+.wsel-search{
+  width:100%;background:var(--surf2);border:1.5px solid var(--border2);
+  border-radius:8px;padding:8px 11px;
+  color:var(--text);font-size:13px;font-weight:500;
+  font-family:'Sarabun',sans-serif;outline:none;transition:border-color .2s;
+}
+.wsel-search:focus{border-color:var(--gold);}
+.wsel-search::placeholder{color:var(--muted);}
+
+.wsel-filters{padding:8px 14px;border-bottom:1px solid var(--border);display:flex;gap:5px;flex-wrap:wrap;}
+.wsf{
+  padding:3px 10px;border-radius:5px;
+  font-size:11.5px;font-weight:600;font-family:'Sarabun',sans-serif;
+  cursor:pointer;border:1.5px solid var(--border2);background:transparent;color:var(--sub);
+  transition:all .15s;
+}
+.wsf.wsfa{background:var(--gold);border-color:var(--gold);color:#1a0800;}
+.wsf.wsfg{background:rgba(5,232,153,.1);border-color:rgba(5,232,153,.35);color:var(--green);}
+.wsf.wsfy{background:rgba(255,192,48,.1);border-color:rgba(255,192,48,.35);color:var(--yellow);}
+.wsf.wsfr{background:rgba(255,69,96,.1);border-color:rgba(255,69,96,.35);color:var(--red);}
+.wsf.wsfb{background:rgba(80,168,255,.15);border-color:var(--blue);color:var(--blue);}
+
+.wsel-list{max-height:320px;overflow-y:auto;}
+
+/* Station row in selector */
+.wsi{
+  padding:11px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+  transition:background .12s;cursor:pointer;
+}
+.wsi:hover{background:var(--surf2);}
+.wsi:last-child{border-bottom:none;}
+.wsi-status-dot{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;
+}
+.wsi-status-dot.g{background:var(--green);box-shadow:0 0 6px rgba(5,232,153,.5);}
+.wsi-status-dot.y{background:var(--yellow);box-shadow:0 0 6px rgba(255,192,48,.5);}
+.wsi-status-dot.r{background:var(--red);box-shadow:0 0 4px rgba(255,69,96,.4);}
+.wsi-info{flex:1;min-width:0;}
+.wsi-name{
+  font-family:'Kanit',sans-serif;font-size:13px;font-weight:700;color:#ffffff;
+  line-height:1.25;word-break:keep-all;overflow-wrap:break-word;margin-bottom:2px;
+}
+.wsi-addr{font-size:10.5px;color:var(--sub);font-weight:500;}
+.wsi-fueltags{display:flex;gap:3px;flex-wrap:wrap;margin-top:4px;}
+.wsi-ftag{
+  font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:3px;
+  display:flex;align-items:center;gap:2px;
+}
+.wsi-ftag.tg{background:rgba(5,232,153,.1);color:var(--green);border:1px solid rgba(5,232,153,.25);}
+.wsi-ftag.ty{background:rgba(255,192,48,.1);color:var(--yellow);border:1px solid rgba(255,192,48,.25);}
+.wsi-ftag.tr{background:rgba(255,69,96,.08);color:var(--red);border:1px solid rgba(255,69,96,.2);}
+.wsi-empty-tag{font-size:10px;color:var(--muted);font-weight:500;font-style:italic;}
+
+.wsi-add-btn{
+  flex-shrink:0;
+  width:30px;height:30px;border-radius:7px;
+  border:1.5px solid var(--border2);background:transparent;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:15px;transition:all .15s;color:var(--sub);
+}
+.wsi-add-btn:hover{border-color:var(--blue);color:var(--blue);}
+.wsi-add-btn.watching{
+  background:rgba(80,168,255,.15);border-color:var(--blue);color:var(--blue);
+  font-size:13px;
+}
+.wsi-add-btn.full-watch{
+  background:rgba(255,69,96,.08);border-color:rgba(255,69,96,.3);
+  color:var(--red);cursor:not-allowed;font-size:11px;
+}
+
+/* Status badge */
+.st-badge{
+  font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0;
+}
+.stb-g{background:rgba(5,232,153,.1);color:var(--green);border:1px solid rgba(5,232,153,.25);}
+.stb-y{background:rgba(255,192,48,.1);color:var(--yellow);border:1px solid rgba(255,192,48,.25);}
+.stb-r{background:rgba(255,69,96,.1);color:var(--red);border:1px solid rgba(255,69,96,.25);}
+
+/* Watchlist item — now shows all statuses including empty */
+.wli-st.r{color:var(--red);}
+
+/* ═══ TOAST ═══ */
+.toast{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  background:#111826;border:1.5px solid var(--border2);
+  border-radius:11px;padding:11px 18px;
+  font-size:13px;font-weight:600;color:var(--text);
+  box-shadow:0 12px 40px rgba(0,0,0,.7);
+  z-index:6000;display:none;white-space:nowrap;max-width:92vw;
+}
+.toast.show{display:flex;align-items:center;gap:8px;animation:toIn .2s ease;}
+@keyframes toIn{from{opacity:0;transform:translateX(-50%) translateY(6px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+
+/* ═══ BRAND PILLS ═══ */
+.bp{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;letter-spacing:.2px;flex-shrink:0;}
+.bp-ptt{background:rgba(255,165,0,.12);color:#ffb830;border:1px solid rgba(255,165,0,.3);}
+.bp-shell{background:rgba(255,215,0,.1);color:#ffe040;border:1px solid rgba(255,215,0,.25);}
+.bp-caltex{background:rgba(255,60,60,.1);color:#ff7070;border:1px solid rgba(255,60,60,.25);}
+.bp-bangchak{background:rgba(5,232,153,.1);color:var(--green);border:1px solid rgba(5,232,153,.25);}
+.bp-susco{background:rgba(80,168,255,.1);color:var(--blue);border:1px solid rgba(80,168,255,.25);}
+
+.open-tag{font-size:10.5px;font-weight:700;}
+.open-tag.o{color:var(--green);}
+.open-tag.c{color:var(--sub);}
+
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hd">
+  <div class="logo-wrap">
+    <div class="logo-row">
+      <div class="logo-icon">⛽</div>
+      <div class="logo-title">FuelWatch</div>
+    </div>
+    <div class="logo-studio">Klangdoi Studio</div>
+  </div>
+
+  <div class="prov-wrap" id="prov-wrap">
+    <div class="prov-btn" onclick="toggleProv()">
+      <span style="font-size:13px">📍</span>
+      <span class="prov-name" id="prov-name">เชียงใหม่</span>
+      <span class="prov-chev">▼</span>
+    </div>
+    <div class="prov-dd">
+      <input class="prov-search" id="prov-search" type="text" placeholder="ค้นหาจังหวัด..." oninput="filterProv()" onclick="event.stopPropagation()">
+      <div id="prov-list"></div>
+    </div>
+  </div>
+
+  <div class="live-pill"><div class="ldot"></div>LIVE</div>
+  <div class="hd-spacer"></div>
+  <span class="hd-time" id="hd-time">--:--</span>
+  <button class="ref-btn" id="ref-btn" onclick="doRefresh()"><span class="ri">↻</span>&nbsp;รีเฟรช</button>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab act" data-t="map" onclick="goTab('map',this)"><span>🗺️</span> แผนที่</button>
+  <button class="tab" data-t="list" onclick="goTab('list',this)"><span>📋</span> รายการ <span class="tbadge" id="tb-cnt">0</span></button>
+  <button class="tab" data-t="sum" onclick="goTab('sum',this)"><span>📊</span> สรุป</button>
+  <button class="tab" data-t="watch" onclick="goTab('watch',this)"><span>⭐</span> ติดตาม <span class="tbadge-b" id="tb-watch">0</span></button>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+  <!-- MAP -->
+  <div class="panel act" id="panel-map">
+    <div class="topbar" id="topbar"></div>
+    <div class="map-body">
+      <div class="map-side">
+        <div class="ms-head">
+          <div class="ms-title">ปั้มที่ยังมีน้ำมัน</div>
+          <input class="ms-search" type="text" placeholder="ค้นหาปั้ม, ถนน..." id="ms-search" oninput="renderSide()">
+        </div>
+        <div class="ms-filter">
+          <button class="mfb mfa" onclick="setMF('all',this)">ทั้งหมด</button>
+          <button class="mfb" onclick="setMF('available',this)">มีน้ำมัน</button>
+          <button class="mfb" onclick="setMF('low',this)">ใกล้หมด</button>
+        </div>
+        <div class="ms-list" id="ms-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIST -->
+  <div class="panel list-panel" id="panel-list">
+    <div class="lt-bar">
+      <div class="lt-sw">
+        <span class="lt-si">🔍</span>
+        <input class="lt-inp" type="text" placeholder="ค้นหาปั้ม, ถนน, แบรนด์..." id="lt-inp" oninput="renderList()">
+      </div>
+      <div class="lt-filt">
+        <button class="ltf la" onclick="setLF('all',this)">ทั้งหมด</button>
+        <button class="ltf" onclick="setLF('available',this)">🟢 มีน้ำมัน</button>
+        <button class="ltf" onclick="setLF('low',this)">🟡 ใกล้หมด</button>
+      </div>
+      <span class="lt-cnt" id="lt-cnt">0 แห่ง</span>
+    </div>
+    <div class="lt-grid-wrap">
+      <div class="lt-grid" id="lt-grid"></div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="panel sum-panel" id="panel-sum">
+    <div class="sum-stats" id="sum-stats"></div>
+    <div class="sum-row">
+      <div class="sp"><div class="sph">⛽ ความพร้อมน้ำมัน</div><div class="fb-list" id="fb-list"></div></div>
+      <div class="sp"><div class="sph">🏷️ แบรนด์</div><div class="bb-list" id="bb-list"></div></div>
+    </div>
+  </div>
+
+  <!-- WATCHLIST -->
+  <div class="panel watch-panel" id="panel-watch">
+    <div class="watch-body" id="watch-body">
+
+      <!-- Tracked stations summary -->
+      <div class="w-info-card">
+        <div class="wi-title">⭐ รายการติดตาม (<span id="wl-count">0</span>/5 แห่ง)</div>
+        <div class="wi-desc">แจ้งเตือนทันที เมื่อปั้มที่เลือกไว้มีน้ำมันพร้อมจำหน่าย</div>
+        <div class="wi-slots" id="wi-slots"></div>
+      </div>
+
+      <!-- Current watchlist -->
+      <div id="wl-items"></div>
+
+      <!-- ── Station Selector ── -->
+      <div class="wsel-card">
+        <div class="wsel-hd">
+          <span class="wsel-title">📋 เลือกสาขาที่ต้องการติดตาม</span>
+          <span class="wsel-cnt" id="wsel-cnt">ทั้งหมด 0 แห่ง</span>
+        </div>
+        <div class="wsel-search-wrap">
+          <input class="wsel-search" type="text" id="wsel-search" placeholder="ค้นหาชื่อ, ถนน, แบรนด์..." oninput="renderWsel()">
+        </div>
+        <div class="wsel-filters">
+          <button class="wsf wsfa" onclick="setWF('all',this)">ทั้งหมด</button>
+          <button class="wsf" onclick="setWF('available',this)">🟢 มีน้ำมัน</button>
+          <button class="wsf" onclick="setWF('low',this)">🟡 ใกล้หมด</button>
+          <button class="wsf" onclick="setWF('empty',this)">🔴 หมด</button>
+          <button class="wsf" onclick="setWF('watching',this)">⭐ กำลังติดตาม</button>
+        </div>
+        <div class="wsel-list" id="wsel-list"></div>
+      </div>
+
+      <!-- Notification settings -->
+      <div class="notif-card">
+        <div class="notif-hd">🔔 ตั้งค่าการแจ้งเตือน</div>
+        <div class="notif-body">
+
+          <!-- Telegram -->
+          <div class="notif-channel">
+            <div class="nc-head">
+              <div class="nc-icon nc-tg">✈️</div>
+              <span class="nc-name tg">Telegram Bot</span>
+              <div class="nc-toggle" id="tg-tog" onclick="this.classList.toggle('on');saveNotif()"></div>
+            </div>
+
+            <div class="rc-section">
+              <div class="rc-label">Bot Token</div>
+              <input class="rc-inp" type="text" id="tg-token" placeholder="xxxxxxxx:AAHxxx..." autocomplete="off" oninput="saveNotif()">
+            </div>
+
+            <div class="rc-section" style="margin-top:10px;">
+              <div class="rc-label">ผู้รับ (Chat ID) — สูงสุด 3 คน</div>
+              <div class="rc-row"><span class="rc-num">1.</span><input class="rc-inp name-inp" type="text" id="tg-n1" placeholder="ชื่อ" autocomplete="off" oninput="saveNotif()"><input class="rc-inp" type="text" id="tg-c1" placeholder="Chat ID" autocomplete="off" oninput="saveNotif()"></div>
+              <div class="rc-row"><span class="rc-num">2.</span><input class="rc-inp name-inp" type="text" id="tg-n2" placeholder="ชื่อ" autocomplete="off" oninput="saveNotif()"><input class="rc-inp" type="text" id="tg-c2" placeholder="Chat ID" autocomplete="off" oninput="saveNotif()"></div>
+              <div class="rc-row"><span class="rc-num">3.</span><input class="rc-inp name-inp" type="text" id="tg-n3" placeholder="ชื่อ" autocomplete="off" oninput="saveNotif()"><input class="rc-inp" type="text" id="tg-c3" placeholder="Chat ID" autocomplete="off" oninput="saveNotif()"></div>
+            </div>
+            <div class="notif-hint">
+              สร้าง bot จาก <a href="https://t.me/BotFather" target="_blank">@BotFather</a> → รับ Token
+              · รับ Chat ID จาก <a href="https://t.me/userinfobot" target="_blank">@userinfobot</a>
+            </div>
+            <button class="test-btn test-btn-tg" id="tg-test-btn" onclick="testTelegram()">✈️ ทดสอบส่ง Telegram</button>
+          </div>
+
+          <!-- LINE Messaging API -->
+          <div class="notif-channel">
+            <div class="nc-head">
+              <div class="nc-icon nc-line">💬</div>
+              <span class="nc-name ln">LINE Messaging API</span>
+              <div class="nc-toggle" id="line-tog" onclick="this.classList.toggle('on');saveNotif()"></div>
+            </div>
+
+            <div class="rc-section">
+              <div class="rc-label">Channel Access Token</div>
+              <input class="rc-inp" type="text" id="line-channel-token" placeholder="Channel access token (long-lived)..." autocomplete="off" oninput="saveNotif()">
+            </div>
+
+            <div class="rc-section" style="margin-top:10px;">
+              <div class="rc-label">User ID ผู้รับ — สูงสุด 3 คน</div>
+              <div class="rc-row"><span class="rc-num">1.</span><input class="rc-inp name-inp" type="text" id="ln-n1" placeholder="ชื่อ" autocomplete="off" oninput="saveNotif()"><input class="rc-inp" type="text" id="ln-t1" placeholder="User ID (Uxxxxxxxx)" autocomplete="off" oninput="saveNotif()"></div>
+              <div class="rc-row"><span class="rc-num">2.</span><input class="rc-inp name-inp" type="text" id="ln-n2" placeholder="ชื่อ" autocomplete="off" oninput="saveNotif()"><input class="rc-inp" type="text" id="ln-t2" placeholder="User ID (Uxxxxxxxx)" autocomplete="off" oninput="saveNotif()"></div>
+              <div class="rc-row"><span class="rc-num">3.</span><input class="rc-inp name-inp" type="text" id="ln-n3" placeholder="ชื่อ" autocomplete="off" oninput="saveNotif()"><input class="rc-inp" type="text" id="ln-t3" placeholder="User ID (Uxxxxxxxx)" autocomplete="off" oninput="saveNotif()"></div>
+            </div>
+            <div class="notif-hint">
+              <strong style="color:var(--text2)">วิธีตั้งค่า:</strong><br>
+              1. ไปที่ <a href="https://developers.line.biz/console/" target="_blank">developers.line.biz</a> → สร้าง Provider → สร้าง Channel (Messaging API)<br>
+              2. ไปที่ Basic settings → คัดลอก <strong>Channel access token</strong><br>
+              3. รับ User ID: เพิ่ม bot เป็นเพื่อน → ส่งข้อความ → ดู User ID จาก webhook หรือ <a href="https://manager.line.biz" target="_blank">LINE Official Account Manager</a><br>
+              <span style="color:var(--yellow)">⚠️ ต้องเปิดใช้ Webhook และ Reply message</span>
+            </div>
+            <button class="test-btn test-btn-line" id="line-test-btn" onclick="testLine()">💬 ทดสอบส่ง LINE</button>
+          </div>
+
+          <div class="save-btn-row">
+            <button class="save-btn" onclick="saveNotif();showToast('💾 บันทึกแล้ว')">💾 บันทึก</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- POPUP -->
+<div class="popup-overlay" id="popup-overlay" onclick="onOverlayClick(event)">
+  <div class="popup-sheet" id="popup-sheet">
+    <div class="popup-drag"></div>
+    <div class="popup-inner" id="popup-inner"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════ DATA ═══════════════
+const PROVINCES=[
+  {n:'เชียงใหม่',r:'ภาคเหนือ'},{n:'เชียงราย',r:'ภาคเหนือ'},{n:'ลำปาง',r:'ภาคเหนือ'},
+  {n:'ลำพูน',r:'ภาคเหนือ'},{n:'แม่ฮ่องสอน',r:'ภาคเหนือ'},{n:'พะเยา',r:'ภาคเหนือ'},
+  {n:'น่าน',r:'ภาคเหนือ'},{n:'แพร่',r:'ภาคเหนือ'},{n:'อุตรดิตถ์',r:'ภาคเหนือ'},
+  {n:'สุโขทัย',r:'ภาคเหนือ'},{n:'กรุงเทพมหานคร',r:'ภาคกลาง'},{n:'นนทบุรี',r:'ภาคกลาง'},
+  {n:'ปทุมธานี',r:'ภาคกลาง'},{n:'สมุทรปราการ',r:'ภาคกลาง'},{n:'นครราชสีมา',r:'ภาคอีสาน'},
+  {n:'ขอนแก่น',r:'ภาคอีสาน'},{n:'อุบลราชธานี',r:'ภาคอีสาน'},{n:'อุดรธานี',r:'ภาคอีสาน'},
+  {n:'สงขลา',r:'ภาคใต้'},{n:'สุราษฎร์ธานี',r:'ภาคใต้'},{n:'นครศรีธรรมราช',r:'ภาคใต้'},
+  {n:'ภูเก็ต',r:'ภาคใต้'},{n:'ชลบุรี',r:'ภาคตะวันออก'},{n:'ระยอง',r:'ภาคตะวันออก'},
+];
+const FTYPES=['91','95','ดีเซล','B7'];
+const FNAME={'91':'แก๊สโซฮอล์ 91','95':'แก๊สโซฮอล์ 95','ดีเซล':'ดีเซล','B7':'ดีเซล B7'};
+const FBASE={'91':35.38,'95':36.78,'ดีเซล':29.84,'B7':30.14};
+const BRANDS=['PTT','Shell','Caltex','Bangchak','Susco'];
+const GPS=[
+  [18.799,98.969],[18.816,98.968],[18.763,98.972],[18.690,98.940],
+  [18.846,99.012],[18.792,99.118],[18.785,98.994],[18.756,98.989],
+  [18.795,98.954],[18.726,99.002],[18.871,98.972],[18.856,99.081],
+  [18.721,99.000],[18.924,98.988],[18.601,98.934],[18.706,98.962],
+  [18.776,98.999],[18.935,98.942],[18.834,99.021],[18.792,99.132],
+];
+const TPLS=[
+  {name:'ปตท.',sfx:'นิมมานเหมินท์',brand:'PTT',addr:'ถ.นิมมานเหมินท์ ต.สุเทพ'},
+  {name:'เชลล์',sfx:'สันติธรรม',brand:'Shell',addr:'ถ.สันติธรรม ต.ช้างเผือก'},
+  {name:'คาลเท็กซ์',sfx:'แอร์พอร์ต',brand:'Caltex',addr:'ถ.มหิดล ต.หายยา'},
+  {name:'บางจาก',sfx:'หางดง',brand:'Bangchak',addr:'ถ.เชียงใหม่-หางดง อ.หางดง'},
+  {name:'ปตท.',sfx:'สันทราย',brand:'PTT',addr:'ถ.เชียงใหม่-พร้าว อ.สันทราย'},
+  {name:'ซัสโก้',sfx:'สันกำแพง',brand:'Susco',addr:'ถ.บ้านกลาง อ.สันกำแพง'},
+  {name:'เชลล์',sfx:'ช้างคลาน',brand:'Shell',addr:'ถ.ช้างคลาน ต.ช้างคลาน'},
+  {name:'ปตท.',sfx:'สี่แยกสนามบิน',brand:'PTT',addr:'ถ.เชียงใหม่-ลำพูน ต.หนองหอย'},
+  {name:'บางจาก',sfx:'สุเทพ',brand:'Bangchak',addr:'ถ.สุเทพ ต.สุเทพ'},
+  {name:'คาลเท็กซ์',sfx:'สารภี',brand:'Caltex',addr:'ถ.เชียงใหม่-ลำพูน อ.สารภี'},
+  {name:'เชลล์',sfx:'แม่ริม',brand:'Shell',addr:'ถ.โชตนา อ.แม่ริม'},
+  {name:'ปตท.',sfx:'ดอยสะเก็ด',brand:'PTT',addr:'ถ.เชียงใหม่-เชียงราย อ.ดอยสะเก็ด'},
+  {name:'ซัสโก้',sfx:'สารภี',brand:'Susco',addr:'ถ.บ้านกลาง อ.สารภี'},
+  {name:'บางจาก',sfx:'พร้าว',brand:'Bangchak',addr:'ถ.เชียงใหม่-ฝาง อ.พร้าว'},
+  {name:'ปตท.',sfx:'จอมทอง',brand:'PTT',addr:'ถ.จอมทอง อ.จอมทอง'},
+  {name:'คาลเท็กซ์',sfx:'หางดง',brand:'Caltex',addr:'ถ.สายเก่า อ.หางดง'},
+  {name:'เชลล์',sfx:'เมืองใหม่',brand:'Shell',addr:'ถ.ซุปเปอร์ไฮเวย์ ต.ดอนแก้ว'},
+  {name:'ปตท.',sfx:'แม่แตง',brand:'PTT',addr:'ถ.โชตนา อ.แม่แตง'},
+  {name:'ซัสโก้',sfx:'สันทราย',brand:'Susco',addr:'ถ.พหลโยธิน อ.สันทราย'},
+  {name:'คาลเท็กซ์',sfx:'ดอยสะเก็ด',brand:'Caltex',addr:'ถ.สายเอเซีย อ.ดอยสะเก็ด'},
+];
+
+function rndSt(){const r=Math.random();return r<.55?'available':r<.78?'low':'empty';}
+
+function buildSt(prov){
+  const isChiangMai=prov==='เชียงใหม่';
+  return TPLS.map((t,i)=>({
+    id:i+1,
+    name:isChiangMai
+      ?`${t.name} ${t.sfx} เชียงใหม่`
+      :`${t.name} ${t.sfx} ${prov}`,
+    brand:t.brand,
+    addr:isChiangMai?t.addr+' จ.เชียงใหม่':t.addr.split(' ')[0]+' จ.'+prov,
+    open:Math.random()>.12,
+    tel:`0${53+Math.floor(Math.random()*10)}-${Math.floor(100000+Math.random()*899999)}`,
+    lat:GPS[i]?GPS[i][0]:18.790,
+    lng:GPS[i]?GPS[i][1]:98.985,
+  }));
+}
+function buildFuel(sts){
+  const d={};
+  sts.forEach(s=>{
+    d[s.id]={};
+    FTYPES.forEach(f=>{
+      const st=rndSt();
+      d[s.id][f]={status:st,price:+(FBASE[f]+(Math.random()*.2-.1)).toFixed(2)};
+    });
+  });
+  return d;
+}
+
+// ═══════════════ STATE ═══════════════
+let prov='เชียงใหม่';
+let stations=buildSt(prov);
+let fuel=buildFuel(stations);
+let mFilter='all',lFilter='all';
+let selId=null;
+let watchlist=[];
+let prevWatchSt={};
+let activeTab='map';
+
+// ═══════════════ HELPERS ═══════════════
+function oSt(id){
+  const fs=FTYPES.map(f=>fuel[id][f].status);
+  if(fs.some(s=>s==='available')) return 'available';
+  if(fs.some(s=>s==='low')) return 'low';
+  return 'empty';
+}
+function stTxt(s){return s==='available'?'มีน้ำมัน':'ใกล้หมด';}
+function stC(s){return s==='available'?'g':'y';}
+function bpC(b){return 'bp-'+b.toLowerCase();}
+function actSt(){return stations.filter(s=>oSt(s.id)!=='empty');}
+function counts(){
+  let av=0,lw=0;
+  actSt().forEach(s=>{if(oSt(s.id)==='available')av++;else lw++;});
+  return{total:stations.length,active:actSt().length,av,lw};
+}
+
+// ═══════════════ PROVINCE ═══════════════
+function renderProvList(q=''){
+  const reg={};
+  PROVINCES.filter(p=>!q||p.n.includes(q)).forEach(p=>{
+    if(!reg[p.r])reg[p.r]=[];
+    reg[p.r].push(p);
+  });
+  document.getElementById('prov-list').innerHTML=
+    Object.entries(reg).map(([r,ps])=>`
+      <div class="prov-region">${r}</div>
+      ${ps.map(p=>`<div class="prov-opt ${p.n===prov?'act':''}" onclick="pickProv('${p.n}')">${p.n}</div>`).join('')}
+    `).join('');
+}
+function filterProv(){renderProvList(document.getElementById('prov-search').value);}
+function toggleProv(){
+  const w=document.getElementById('prov-wrap');
+  w.classList.toggle('open');
+  if(w.classList.contains('open')){renderProvList();setTimeout(()=>document.getElementById('prov-search').focus(),40);}
+}
+function pickProv(n){
+  prov=n;selId=null;watchlist=[];prevWatchSt={};
+  document.getElementById('prov-name').textContent=n;
+  document.getElementById('prov-wrap').classList.remove('open');
+  document.getElementById('prov-search').value='';
+  stations=buildSt(n);fuel=buildFuel(stations);
+  renderAll();
+}
+document.addEventListener('click',e=>{
+  if(!document.getElementById('prov-wrap').contains(e.target))
+    document.getElementById('prov-wrap').classList.remove('open');
+});
+
+// ═══════════════ TABS ═══════════════
+function goTab(t,btn){
+  activeTab=t;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('act'));
+  document.getElementById('panel-'+t).classList.add('act');
+  if(t==='sum') renderSum();
+  if(t==='watch'){ renderWatch(); renderWsel(); }
+}
+
+// ═══════════════ MAP / SIDEBAR ═══════════════
+function renderTopbar(){
+  const{av,lw,total}=counts();
+  document.getElementById('topbar').innerHTML=`
+    <div class="count-chip"><div class="cc-dot g"></div><span class="cc-val g">${av}</span><span class="cc-lbl">มีน้ำมัน</span></div>
+    <div class="tb-sep"></div>
+    <div class="count-chip"><div class="cc-dot y"></div><span class="cc-val y">${lw}</span><span class="cc-lbl">ใกล้หมด</span></div>
+    <span class="topbar-info">จาก ${total} ปั้มทั้งหมด · จ.${prov}</span>`;
+}
+function setMF(f,btn){
+  mFilter=f;
+  document.querySelectorAll('.mfb').forEach(b=>b.className='mfb');
+  btn.className='mfb '+(f==='all'?'mfa':f==='available'?'mfg':'mfy');
+  renderSide();
+}
+function renderSide(){
+  const q=(document.getElementById('ms-search').value||'').toLowerCase();
+  const list=actSt().filter(s=>
+    (mFilter==='all'||oSt(s.id)===mFilter)&&
+    (!q||s.name.toLowerCase().includes(q)||s.addr.toLowerCase().includes(q)||s.brand.toLowerCase().includes(q))
+  );
+  const isW=id=>watchlist.includes(id);
+  document.getElementById('ms-list').innerHTML=list.map(s=>{
+    const gf=FTYPES.filter(f=>fuel[s.id][f].status!=='empty');
+    const tags=gf.map(f=>`<div class="ftag ftag-${fuel[s.id][f].status}"><div class="ftt ${stC(fuel[s.id][f].status)}"></div>${f}</div>`).join('');
+    return `<div class="si ${selId===s.id?'sel':''}" onclick="openPopup(${s.id})">
+      <div class="si-name">${s.name}</div>
+      <div class="si-row2">
+        <span class="bp ${bpC(s.brand)}">${s.brand}</span>
+        <span class="open-tag ${s.open?'o':'c'}">${s.open?'● เปิด':'● ปิด'}</span>
+        <button class="si-watch-btn ${isW(s.id)?'watching':''}" onclick="event.stopPropagation();toggleWatch(${s.id})" title="ติดตาม">${isW(s.id)?'★':'☆'}</button>
+      </div>
+      <div class="si-addr">📍 ${s.addr}</div>
+      <div class="si-fuels">${tags}</div>
+    </div>`;
+  }).join('')||'<div style="padding:18px;text-align:center;color:var(--muted);font-size:13px;font-weight:500;">ไม่พบปั้ม</div>';
+}
+
+// ═══════════════ POPUP ═══════════════
+function openPopup(id){
+  selId=id;renderSide();
+  const s=stations.find(x=>x.id===id);if(!s)return;
+  const gf=FTYPES.filter(f=>fuel[id][f].status!=='empty');
+  const fRows=gf.map(f=>{
+    const fd=fuel[id][f];const sc=stC(fd.status);
+    return `<div class="pf-row">
+      <div class="pfl"><div class="pf-dot ${sc}"></div><span class="pf-name">${FNAME[f]}</span></div>
+      <div class="pfr">
+        <span class="pf-stat ${sc}">${stTxt(fd.status)}</span>
+        <span class="pf-price">${fd.price.toFixed(2)}<span class="pf-unit"> ฿/ลิตร</span></span>
+      </div>
+    </div>`;
+  }).join('');
+  const isW=watchlist.includes(id);
+  const full=!isW&&watchlist.length>=5;
+  const wTxt=full?'❌ ครบ 5 รายการแล้ว':isW?'⭐ กำลังติดตาม — แตะเพื่อยกเลิก':'☆ เพิ่มในรายการติดตาม';
+  const mapsUrl=`https://maps.google.com/?q=${s.lat},${s.lng}`;
+  document.getElementById('popup-inner').innerHTML=`
+    <div class="popup-top">
+      <div class="popup-name">${s.name}</div>
+      <button class="popup-close" onclick="closePopup()">✕</button>
+    </div>
+    <div class="popup-badges">
+      <span class="bp ${bpC(s.brand)}">${s.brand}</span>
+      <span class="open-tag ${s.open?'o':'c'}">${s.open?'● เปิดบริการ':'● ปิดบริการ'}</span>
+      <span style="font-size:11px;color:var(--sub);font-weight:500">📞 ${s.tel}</span>
+    </div>
+    <div class="popup-loc">
+      <div class="popup-loc-icon">📍</div>
+      <div class="popup-loc-info">
+        <div class="popup-loc-addr">${s.addr}</div>
+        <div class="popup-loc-coord">${s.lat.toFixed(4)}, ${s.lng.toFixed(4)}</div>
+      </div>
+      <a href="${mapsUrl}" target="_blank" class="popup-maps-btn">🗺️ แผนที่</a>
+    </div>
+    <div class="popup-fuels">${fRows}</div>
+    <button class="popup-watch-btn ${full?'full':isW?'watching':''}" id="pw-btn" onclick="toggleWatch(${id});updPWBtn(${id})">${wTxt}</button>`;
+  document.getElementById('popup-overlay').classList.add('open');
+}
+function updPWBtn(id){
+  const btn=document.getElementById('pw-btn');if(!btn)return;
+  const isW=watchlist.includes(id);
+  const full=!isW&&watchlist.length>=5;
+  btn.className='popup-watch-btn '+(full?'full':isW?'watching':'');
+  btn.textContent=full?'❌ ครบ 5 รายการแล้ว':isW?'⭐ กำลังติดตาม — แตะเพื่อยกเลิก':'☆ เพิ่มในรายการติดตาม';
+}
+function closePopup(){document.getElementById('popup-overlay').classList.remove('open');selId=null;renderSide();}
+function onOverlayClick(e){if(e.target===document.getElementById('popup-overlay'))closePopup();}
+
+// ═══════════════ LIST ═══════════════
+function setLF(f,btn){
+  lFilter=f;
+  document.querySelectorAll('.ltf').forEach(b=>b.className='ltf');
+  btn.className='ltf '+(f==='all'?'la':f==='available'?'lg':'ly');
+  renderList();
+}
+function renderList(){
+  const q=(document.getElementById('lt-inp').value||'').toLowerCase();
+  const list=actSt().filter(s=>
+    (lFilter==='all'||oSt(s.id)===lFilter)&&
+    (!q||s.name.toLowerCase().includes(q)||s.addr.toLowerCase().includes(q)||s.brand.toLowerCase().includes(q))
+  );
+  document.getElementById('lt-cnt').textContent=list.length+' แห่ง';
+  document.getElementById('lt-grid').innerHTML=list.map(s=>{
+    const gf=FTYPES.filter(f=>fuel[s.id][f].status!=='empty');
+    const rows=gf.map(f=>{
+      const fd=fuel[s.id][f];const sc=stC(fd.status);
+      return `<div class="lc-fuel">
+        <div class="lcfl"><div class="lcf-dot ${sc}"></div><span class="lcfn">${FNAME[f]}</span></div>
+        <div class="lcfr"><span class="lcfs ${sc}">${stTxt(fd.status)}</span><span class="lcfp">${fd.price.toFixed(2)} ฿</span></div>
+      </div>`;
+    }).join('');
+    return `<div class="lc" onclick="openPopup(${s.id})">
+      <div class="lc-top">
+        <div class="lc-name">${s.name}</div>
+        <div class="lc-addr">📍 ${s.addr}</div>
+        <div class="lc-badges"><span class="bp ${bpC(s.brand)}">${s.brand}</span><span class="open-tag ${s.open?'o':'c'}">${s.open?'● เปิด':'● ปิด'}</span></div>
+      </div>
+      <div class="lc-fuels">${rows}</div>
+      <div class="lc-foot"><span class="lc-phone">📞 ${s.tel}</span></div>
+    </div>`;
+  }).join('')||'<div style="padding:28px;text-align:center;color:var(--muted);">ไม่พบปั้ม</div>';
+}
+
+// ═══════════════ SUMMARY ═══════════════
+function renderSum(){
+  const{total,active,av,lw}=counts();
+  document.getElementById('sum-stats').innerHTML=`
+    <div class="ss"><div class="ss-icon" style="background:rgba(80,168,255,.1)">🏪</div><div><div class="ss-val" style="color:var(--blue)">${total}</div><div class="ss-lbl">ปั้มทั้งหมด</div></div></div>
+    <div class="ss"><div class="ss-icon" style="background:rgba(5,232,153,.1)">✅</div><div><div class="ss-val" style="color:var(--green)">${av}</div><div class="ss-lbl">มีน้ำมัน</div></div></div>
+    <div class="ss"><div class="ss-icon" style="background:rgba(255,192,48,.1)">⚠️</div><div><div class="ss-val" style="color:var(--yellow)">${lw}</div><div class="ss-lbl">ใกล้หมด</div></div></div>`;
+  document.getElementById('fb-list').innerHTML=FTYPES.map(f=>{
+    let av2=0,tot2=0;actSt().forEach(s=>{tot2++;if(fuel[s.id][f].status==='available')av2++;});
+    const pct=tot2?Math.round(av2/tot2*100):0;
+    return `<div><div class="fb-top"><span class="fb-name">${FNAME[f]}</span><span class="fb-pct" style="color:${pct>60?'var(--green)':'var(--yellow)'}">${pct}%</span></div><div class="fb-track"><div class="fb-fill ${pct>60?'fbg':'fby'}" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+  const bc={};BRANDS.forEach(b=>bc[b]=0);actSt().forEach(s=>bc[s.brand]++);
+  const mx=Math.max(...Object.values(bc))||1;
+  document.getElementById('bb-list').innerHTML=BRANDS.map(b=>`
+    <div class="bb-row"><span class="bp ${bpC(b)}" style="min-width:54px;text-align:center">${b}</span><div class="bb-track"><div class="bb-fill" style="width:${Math.round(bc[b]/mx*100)}%"></div></div><span class="bb-cnt">${bc[b]}</span></div>`).join('');
+}
+
+// ═══════════════ WATCHLIST ═══════════════
+let wselFilter = 'all';
+
+function setWF(f, btn){
+  wselFilter = f;
+  document.querySelectorAll('.wsf').forEach(b => b.className = 'wsf');
+  const cls = {all:'wsfa',available:'wsfg',low:'wsfy',empty:'wsfr',watching:'wsfb'};
+  btn.className = 'wsf ' + (cls[f] || 'wsfa');
+  renderWsel();
+}
+
+function toggleWatch(id){
+  if(watchlist.includes(id)){
+    watchlist = watchlist.filter(x => x !== id);
+    delete prevWatchSt[id];
+    showToast('🗑️ ลบออกจากรายการติดตามแล้ว');
+  } else {
+    if(watchlist.length >= 5){ showToast('⚠️ ติดตามได้สูงสุด 5 รายการ'); return; }
+    watchlist.push(id);
+    prevWatchSt[id] = oSt(id);
+    const s = stations.find(x => x.id === id);
+    const st = oSt(id);
+    const note = st === 'empty' ? ' (น้ำมันหมด — จะแจ้งเตือนเมื่อมีน้ำมัน)' : '';
+    showToast('⭐ เพิ่มติดตาม: ' + (s ? s.name : '') + note);
+  }
+  renderSide(); renderWatch(); renderWsel();
+  document.getElementById('tb-watch').textContent = watchlist.length;
+}
+
+function stDotClass(st){ return st==='available'?'g':st==='low'?'y':'r'; }
+function stBadgeClass(st){ return st==='available'?'stb-g':st==='low'?'stb-y':'stb-r'; }
+function stFullTxt(st){ return st==='available'?'มีน้ำมัน':st==='low'?'ใกล้หมด':'น้ำมันหมด'; }
+
+function renderWatch(){
+  // update count
+  const wlc = document.getElementById('wl-count');
+  if(wlc) wlc.textContent = watchlist.length;
+
+  // slots
+  const slotsEl = document.getElementById('wi-slots');
+  if(slotsEl) slotsEl.innerHTML = Array(5).fill(0).map((_,i) =>
+    `<div class="wi-slot ${i < watchlist.length ? 'on' : 'off'}">${i < watchlist.length ? '⭐' : '○'}</div>`
+  ).join('');
+
+  // Watched items list
+  const el = document.getElementById('wl-items');
+  if(!el) return;
+  if(watchlist.length === 0){
+    el.innerHTML = '<div class="wl-empty">ยังไม่มีรายการ<br><span style="font-size:11px">เลือกสาขาจากรายการด้านล่าง ↓</span></div>';
+  } else {
+    el.innerHTML = watchlist.map(id => {
+      const s = stations.find(x => x.id === id); if(!s) return '';
+      const st = oSt(id);
+      const sc = stDotClass(st);
+      const ftags = FTYPES.map(f => {
+        const fs = fuel[id][f].status;
+        const tc = fs==='available'?'tg':fs==='low'?'ty':'tr';
+        const dot = fs==='available'?'🟢':fs==='low'?'🟡':'🔴';
+        return `<span class="wsi-ftag ${tc}">${dot} ${f}</span>`;
+      }).join('');
+      return `<div class="wl-item">
+        <div class="wsi-status-dot ${sc}"></div>
+        <div class="wli-info">
+          <div class="wli-name">${s.name}</div>
+          <div class="wli-addr">📍 ${s.addr}</div>
+          <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:5px;">${ftags}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;">
+          <span class="st-badge ${stBadgeClass(st)}">${stFullTxt(st)}</span>
+          <button class="wli-rm" onclick="toggleWatch(${id})">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  // NOTE: renderWsel() is called separately by goTab / renderAll — do NOT call here
+  loadNotif();
+}
+
+function renderWsel(){
+  const q = (document.getElementById('wsel-search') ? document.getElementById('wsel-search').value : '').toLowerCase();
+  let list = stations.filter(s => {
+    const st = oSt(s.id);
+    const matchF = wselFilter === 'all' ? true
+      : wselFilter === 'watching' ? watchlist.includes(s.id)
+      : st === wselFilter;
+    const matchQ = !q || s.name.toLowerCase().includes(q) || s.addr.toLowerCase().includes(q) || s.brand.toLowerCase().includes(q);
+    return matchF && matchQ;
+  });
+
+  // Sort: watched first, then by status (available > low > empty)
+  const order = {available:0, low:1, empty:2};
+  list.sort((a,b) => {
+    const aw = watchlist.includes(a.id) ? 0 : 1;
+    const bw = watchlist.includes(b.id) ? 0 : 1;
+    if(aw !== bw) return aw - bw;
+    return (order[oSt(a.id)] || 0) - (order[oSt(b.id)] || 0);
+  });
+
+  const cnt = document.getElementById('wsel-cnt');
+  if(cnt) cnt.textContent = list.length + ' แห่ง';
+
+  const el = document.getElementById('wsel-list');
+  if(!el) return;
+
+  el.innerHTML = list.map(s => {
+    const st = oSt(s.id);
+    const isW = watchlist.includes(s.id);
+    const full = !isW && watchlist.length >= 5;
+    const sc = stDotClass(st);
+
+    // Per-fuel tags
+    const ftags = FTYPES.map(f => {
+      const fs = fuel[s.id][f].status;
+      if(fs === 'empty') return `<span class="wsi-ftag tr">🔴 ${f}</span>`;
+      if(fs === 'low')   return `<span class="wsi-ftag ty">🟡 ${f}</span>`;
+      return `<span class="wsi-ftag tg">🟢 ${f}</span>`;
+    }).join('');
+
+    let btnCls = 'wsi-add-btn';
+    let btnTxt = '☆';
+    let btnTitle = 'เพิ่มติดตาม';
+    if(isW){ btnCls += ' watching'; btnTxt = '★'; btnTitle = 'กำลังติดตาม — แตะเพื่อยกเลิก'; }
+    else if(full){ btnCls += ' full-watch'; btnTxt = '×'; btnTitle = 'ครบ 5 แล้ว'; }
+
+    return `<div class="wsi" onclick="toggleWatch(${s.id})">
+      <div class="wsi-status-dot ${sc}"></div>
+      <div class="wsi-info">
+        <div class="wsi-name">${s.name}</div>
+        <div class="wsi-addr">📍 ${s.addr}</div>
+        <div class="wsi-fueltags">${ftags}</div>
+      </div>
+      <span class="st-badge ${stBadgeClass(st)}">${stFullTxt(st)}</span>
+      <button class="${btnCls}" onclick="event.stopPropagation();toggleWatch(${s.id})" title="${btnTitle}">${btnTxt}</button>
+    </div>`;
+  }).join('') || '<div style="padding:18px;text-align:center;color:var(--muted);font-size:13px;">ไม่พบสาขา</div>';
+}
+
+// ═══════════════ NOTIFICATIONS ═══════════════
+function getNotifConfig(){
+  return{
+    tgToken:v('tg-token'),
+    tgOn:document.getElementById('tg-tog').classList.contains('on'),
+    tgRecipients:[
+      {name:v('tg-n1'),chatId:v('tg-c1')},
+      {name:v('tg-n2'),chatId:v('tg-c2')},
+      {name:v('tg-n3'),chatId:v('tg-c3')},
+    ].filter(r=>r.chatId),
+    lineOn:document.getElementById('line-tog').classList.contains('on'),
+    lineChannelToken:v('line-channel-token'),
+    lineRecipients:[
+      {name:v('ln-n1'),userId:v('ln-t1')},
+      {name:v('ln-n2'),userId:v('ln-t2')},
+      {name:v('ln-n3'),userId:v('ln-t3')},
+    ].filter(r=>r.userId),
+  };
+}
+function v(id){return(document.getElementById(id)||{}).value||'';}
+function saveNotif(){
+  try{localStorage.setItem('fw_notif',JSON.stringify(getNotifConfig()));}catch(e){}
+}
+function loadNotif(){
+  try{
+    const raw=localStorage.getItem('fw_notif');
+    if(!raw) return;
+    const d=JSON.parse(raw);
+    if(d.tgToken){const e=document.getElementById('tg-token');if(e)e.value=d.tgToken;}
+    if(d.tgOn){const e=document.getElementById('tg-tog');if(e)e.classList.add('on');}
+    if(d.lineOn){const e=document.getElementById('line-tog');if(e)e.classList.add('on');}
+    if(d.lineChannelToken){const e=document.getElementById('line-channel-token');if(e)e.value=d.lineChannelToken;}
+    (d.tgRecipients||[]).forEach((r,i)=>{
+      const idx=i+1;
+      const ne=document.getElementById('tg-n'+idx);const ce=document.getElementById('tg-c'+idx);
+      if(ne&&r.name)ne.value=r.name;if(ce&&r.chatId)ce.value=r.chatId;
+    });
+    (d.lineRecipients||[]).forEach((r,i)=>{
+      const idx=i+1;
+      const ne=document.getElementById('ln-n'+idx);const te=document.getElementById('ln-t'+idx);
+      if(ne&&r.name)ne.value=r.name;if(te&&r.userId)te.value=r.userId;
+    });
+  }catch(e){console.warn('loadNotif error',e);}
+}
+function saveAndTest(){
+  saveNotif();
+  const cfg=getNotifConfig();
+  const lines=[];
+  if(cfg.tgOn&&cfg.tgToken&&cfg.tgRecipients.length)
+    lines.push('Telegram → '+cfg.tgRecipients.map(r=>r.name||r.chatId).join(', '));
+  else if(cfg.tgOn) lines.push('Telegram — กรุณาใส่ Token และ Chat ID');
+  if(cfg.lineOn&&cfg.lineRecipients.length)
+    lines.push('LINE → '+cfg.lineRecipients.map(r=>r.name||'token').join(', '));
+  else if(cfg.lineOn) lines.push('LINE — กรุณาใส่ Token');
+  if(lines.length===0){showToast('⚠️ ยังไม่ได้เปิดใช้งานช่องทางใด');return;}
+  showToast('💾 บันทึกแล้ว');
+  sendToAll('[FuelWatch] ทดสอบการแจ้งเตือน ✅ ระบบทำงานปกติ');
+}
+async function testTelegram(){
+  saveNotif();
+  const cfg=getNotifConfig();
+  if(!cfg.tgToken){showToast('⚠️ กรุณาใส่ Bot Token ก่อน');return;}
+  if(!cfg.tgRecipients.length){showToast('⚠️ กรุณาใส่ Chat ID อย่างน้อย 1 คน');return;}
+  const btn=document.getElementById('tg-test-btn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ กำลังส่ง...';}
+  const msg='[FuelWatch] ✅ ทดสอบ Telegram สำเร็จ!\nBot ของคุณทำงานปกติ 🎉';
+  let ok=0,fail=0;
+  for(const r of cfg.tgRecipients){
+    if(!r.chatId)continue;
+    try{
+      const res=await fetch(`https://api.telegram.org/bot${cfg.tgToken}/sendMessage`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({chat_id:r.chatId,text:msg})
+      });
+      const data=await res.json();
+      if(data.ok) ok++; else fail++;
+    }catch(e){fail++;}
+  }
+  if(btn){btn.disabled=false;btn.textContent='✈️ ทดสอบส่ง Telegram';}
+  showToast(ok>0?`✈️ ส่ง Telegram สำเร็จ ${ok} คน${fail>0?' ('+fail+' ล้มเหลว)':''}  `:'❌ ส่งไม่สำเร็จ ตรวจสอบ Token/Chat ID');
+}
+
+async function testLine(){
+  saveNotif();
+  const cfg=getNotifConfig();
+  if(!cfg.lineChannelToken){showToast('⚠️ กรุณาใส่ Channel Access Token');return;}
+  if(!cfg.lineRecipients.length){showToast('⚠️ กรุณาใส่ User ID อย่างน้อย 1 คน');return;}
+  const btn=document.getElementById('line-test-btn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ กำลังส่ง...';}
+  let ok=0,fail=0;
+  for(const r of cfg.lineRecipients){
+    if(!r.userId)continue;
+    try{
+      const res=await fetch('https://api.line.me/v2/bot/message/push',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.lineChannelToken},
+        body:JSON.stringify({to:r.userId,messages:[{type:'text',text:'[FuelWatch] ✅ ทดสอบ LINE สำเร็จ!\nระบบแจ้งเตือนทำงานปกติ 🎉'}]})
+      });
+      if(res.ok||res.status===200) ok++; else {const e=await res.json();console.warn('LINE err',e);fail++;}
+    }catch(e){fail++;}
+  }
+  if(btn){btn.disabled=false;btn.textContent='💬 ทดสอบส่ง LINE';}
+  showToast(ok>0?`💬 ส่ง LINE สำเร็จ ${ok} คน${fail>0?' ('+fail+' ล้มเหลว)':''}  `:'❌ ส่งไม่สำเร็จ ตรวจสอบ Token/User ID');
+}
+
+async function sendToAll(msg){
+  saveNotif();
+  const cfg=getNotifConfig();
+  if(cfg.tgOn&&cfg.tgToken){
+    for(const r of cfg.tgRecipients){
+      if(!r.chatId)continue;
+      try{
+        await fetch(`https://api.telegram.org/bot${cfg.tgToken}/sendMessage`,{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({chat_id:r.chatId,text:msg})
+        });
+      }catch(e){}
+    }
+  }
+  if(cfg.lineOn&&cfg.lineChannelToken){
+    for(const r of cfg.lineRecipients){
+      if(!r.userId)continue;
+      try{
+        await fetch('https://api.line.me/v2/bot/message/push',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':'Bearer '+cfg.lineChannelToken},
+          body:JSON.stringify({to:r.userId,messages:[{type:'text',text:msg}]})
+        });
+      }catch(e){}
+    }
+  }
+}
+function checkWatchAlerts(){
+  watchlist.forEach(id => {
+    const newSt = oSt(id);
+    const old = prevWatchSt[id];
+    // Alert when: was empty → now available or low
+    if(old === 'empty' && (newSt === 'available' || newSt === 'low')){
+      const s = stations.find(x => x.id === id); if(!s) return;
+      const gf = FTYPES.filter(f => fuel[id][f].status !== 'empty').map(f => {
+        const fs = fuel[id][f].status;
+        return (fs==='available'?'✅':'⚠️') + ' ' + FNAME[f];
+      }).join('\n');
+      const msg = `⛽ น้ำมันพร้อมจำหน่าย!\n📍 ${s.name}\n${s.addr}\n\n${gf}\n\n🕒 ${new Date().toLocaleTimeString('th-TH')}`;
+      showToast('🔔 ' + s.name + ' — น้ำมันพร้อมแล้ว!');
+      sendToAll(msg);
+    }
+    prevWatchSt[id] = newSt;
+  });
+}
+
+// ═══════════════ TOAST ═══════════════
+let _tt;
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.innerHTML=msg;el.classList.add('show');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),3500);
+}
+
+// ═══════════════ REFRESH ═══════════════
+function doRefresh(){
+  const btn=document.getElementById('ref-btn');btn.classList.add('sp');
+  setTimeout(()=>{
+    stations.forEach(s=>{if(Math.random()<.3){FTYPES.forEach(f=>{if(Math.random()<.4)fuel[s.id][f].status=rndSt();});}});
+    checkWatchAlerts();updateTime();renderAll();btn.classList.remove('sp');
+  },600);
+}
+function updateTime(){
+  const n=new Date();
+  document.getElementById('hd-time').textContent=`${n.getHours().toString().padStart(2,'0')}:${n.getMinutes().toString().padStart(2,'0')} น.`;
+  document.getElementById('tb-cnt').textContent=actSt().length;
+  document.getElementById('tb-watch').textContent=watchlist.length;
+}
+function renderAll(){
+  renderTopbar();renderSide();renderList();updateTime();
+  if(activeTab==='sum') renderSum();
+  if(activeTab==='watch'){ renderWatch(); renderWsel(); }
+}
+
+document.addEventListener('DOMContentLoaded',()=>{updateTime();renderAll();loadNotif();setInterval(doRefresh,120000);});
+</script>
+</body>
+</html>
