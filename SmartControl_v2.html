@@ -668,7 +668,7 @@ html, body {
   min-height: 20px;
 }
 .sensor-src-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
-.sensor-src-dot.sonoff { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.sensor-src-dot.esp8266 { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
 .sensor-src-dot.satellite { background: var(--accent-blue); box-shadow: 0 0 6px var(--accent-blue); }
 .sensor-src-dot.sim { background: var(--accent-yellow); }
 .sensor-src-dot.err { background: var(--accent-red); }
@@ -1226,8 +1226,8 @@ select.field-input option { background: #0c1a30; }
         <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;">
           <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;letter-spacing:0.5px;">เลือกแหล่งข้อมูลอุณหภูมิ / ความชื้น / แสง</div>
           <div class="sensor-source-bar" style="border-radius:10px;margin:0;">
-            <button class="src-btn" id="src-sonoff" onclick="setSensorSource('sonoff')">
-              <span class="src-icon">🔌</span>ESP8266<br>Sensor
+            <button class="src-btn" id="src-esp8266" onclick="setSensorSource('esp8266')">
+              <span class="src-icon">📡</span>ESP8266<br>Sensor
             </button>
             <button class="src-btn active" id="src-satellite" onclick="setSensorSource('satellite')">
               <span class="src-icon">🛰️</span>ดาวเทียม<br>Open-Meteo
@@ -1245,8 +1245,8 @@ select.field-input option { background: #0c1a30; }
           </div>
         </div>
         <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;">
-          <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--accent);">🔌 ESP8266 Sensor Node</div>
-          <div class="field-label" style="margin-bottom:6px;">IP ของ Sensor Node (TH Elite / ESP32)</div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--accent);">📡 ESP8266 Sensor Node</div>
+          <div class="field-label" style="margin-bottom:6px;">IP ของ ESP8266 (SmartControl Firmware)</div>
           <div style="display:flex;gap:8px;">
             <input class="field-input" id="sensor-ip" placeholder="192.168.1.x" style="flex:1;padding:8px 12px;font-size:13px;" oninput="saveSetting('sensor_ip',this.value)">
             <button class="btn btn-outline" style="padding:8px 12px;font-size:12px;" onclick="testSensorNode()">ทดสอบ</button>
@@ -1983,10 +1983,6 @@ select.field-input option { background: #0c1a30; }
         <input class="field-input" id="nd-ip" placeholder="192.168.1.x" type="text" inputmode="decimal">
       </div>
       <div class="field-group">
-        <div class="field-label">พอร์ต</div>
-        <input class="field-input" id="nd-port" value="80" type="number">
-      </div>
-      <div class="field-group">
         <div class="field-label">ชนิดอุปกรณ์</div>
         <select class="field-input" id="nd-type">
           <option value="water">💧 ระบบน้ำ / ปั๊ม</option>
@@ -2003,17 +1999,13 @@ select.field-input option { background: #0c1a30; }
         <input class="field-input" id="nd-zone" placeholder="เช่น โซน A, โรงเรือน 1">
       </div>
       <div class="field-group">
-        <div class="field-label">Relay Channel (1-4)</div>
-        <select class="field-input" id="nd-channel">
-          <option value="0">Channel 1 (switch/0)</option>
-          <option value="1">Channel 2 (switch/1)</option>
-          <option value="2">Channel 3 (switch/2)</option>
-          <option value="3">Channel 4 (switch/3)</option>
+        <div class="field-label">Relay Channel (ESP8266 4-CH)</div>
+        <select class="field-input" id="nd-relay-ch">
+          <option value="1">CH 1 — D1 (GPIO5)</option>
+          <option value="2">CH 2 — D2 (GPIO4)</option>
+          <option value="3">CH 3 — D5 (GPIO14)</option>
+          <option value="4">CH 4 — D6 (GPIO12)</option>
         </select>
-      </div>
-      <div class="field-group">
-        <div class="field-label">API Key (ถ้ามี, ไม่บังคับ)</div>
-        <input class="field-input" id="nd-apikey" placeholder="เว้นว่างถ้าไม่ได้ตั้ง">
       </div>
       <div class="field-row" style="padding:0 0 16px 0;gap:10px;">
         <button class="btn btn-outline" style="flex:1" onclick="closePanel('add-device-panel')">ยกเลิก</button>
@@ -2298,23 +2290,17 @@ const DEV_TYPES = {
   plug:   { icon: '🔌', color: '#e0e0e0', label: 'ปลั๊ก' },
 };
 
-// ─── ESP8266 HTTP API ───
-// Supports: eWeLink DIY Mode / LAN API (port 8081)
-// GET http://IP:8081/zeroconf/switch → info
-// POST http://IP:8081/zeroconf/switch → {deviceid,data:{switch:"on"/"off"}}
+// ─── ESP8266 HTTP RELAY API ───
+// SmartControl ESP8266 Firmware:
+//   GET  http://IP/status              → JSON ทุก channel
+//   POST http://IP/relay?ch=N&state=on → สั่ง relay (ch=1-4)
+//   GET  http://IP/sensor              → ค่า sensor
 
-async function sonoffRequest(device, action) {
-  const base = `http://${device.ip}:${device.port || 8081}`;
-  const payload = {
-    deviceid: device.id || '',
-    data: {}
-  };
-  if (action === 'on')  payload.data.switch = 'on';
-  if (action === 'off') payload.data.switch = 'off';
+async function esp8266Request(device, action) {
+  const base = `http://${device.ip}`;
   if (action === 'get') {
-    // GET info
     try {
-      const r = await fetch(`${base}/zeroconf/switch`, {
+      await fetch(`${base}/status`, {
         method: 'GET', mode: 'no-cors',
         signal: AbortSignal.timeout(3000)
       });
@@ -2323,27 +2309,14 @@ async function sonoffRequest(device, action) {
       return { ok: false, err: e.message };
     }
   }
-  // Channel support for multi-relay (Basic R4, 4CHPRO)
-  if (device.channel !== undefined && device.channel !== 0) {
-    payload.data = { switches: [] };
-    for (let i = 0; i < 4; i++) {
-      payload.data.switches.push({ switch: i === device.channel ? action : undefined, outlet: i });
-    }
-    payload.data.switches = payload.data.switches.filter(s => s.switch !== undefined);
-  }
+  const ch = device.relayCh || 1;
   try {
-    const headers = { 'Content-Type': 'application/json' };
-    if (device.apikey) headers['Authorization'] = `Bearer ${device.apikey}`;
-    const r = await fetch(`${base}/zeroconf/switch`, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers,
-      body: JSON.stringify(payload),
+    await fetch(`${base}/relay?ch=${ch}&state=${action}`, {
+      method: 'POST', mode: 'no-cors',
       signal: AbortSignal.timeout(4000)
     });
     return { ok: true };
   } catch(e) {
-    // no-cors can throw CORS but still may succeed on LAN
     if (e.name === 'TypeError' && e.message.includes('Failed to fetch')) {
       return { ok: false, err: 'ไม่สามารถเชื่อมต่อ — ตรวจสอบ IP และ LAN' };
     }
@@ -2369,7 +2342,7 @@ async function toggleDevice(id) {
   if (!dev) return;
   const newState = dev.state === 'ON' ? 'off' : 'on';
   addLog('info', `${dev.name}: สั่ง ${newState.toUpperCase()}...`, newState === 'on' ? 'on' : 'off');
-  const res = await sonoffRequest(dev, newState);
+  const res = await esp8266Request(dev, newState);
   if (res.ok) {
     dev.state = newState.toUpperCase();
     dev.lastToggle = new Date().toLocaleString('th-TH');
@@ -2421,7 +2394,7 @@ function renderCard(d) {
       </div>
     </div>
     <div class="dev-name">${d.name}</div>
-    <div class="dev-ip">${d.ip}:${d.port||8081}</div>
+    <div class="dev-ip">${d.ip} — CH${d.relayCh||1}</div>
     <div class="dev-status-row">
       <div class="dev-state ${isOn?'on':isOff?'offline':'off'}">${d.state}</div>
       <div class="ping-dot ${isOff?'fail':'ok'}"></div>
@@ -2459,15 +2432,13 @@ function updateSummary() {
 async function testAndAddDevice() {
   const name = document.getElementById('nd-name').value.trim();
   const ip = document.getElementById('nd-ip').value.trim();
-  const port = parseInt(document.getElementById('nd-port').value) || 8081;
   const type = document.getElementById('nd-type').value;
   const zone = document.getElementById('nd-zone').value.trim();
-  const channel = parseInt(document.getElementById('nd-channel').value) || 0;
-  const apikey = document.getElementById('nd-apikey').value.trim();
+  const relayCh = parseInt(document.getElementById('nd-relay-ch').value) || 1;
   if (!name || !ip) return showToast('กรอกชื่อและ IP', 'error');
   showToast('กำลังทดสอบการเชื่อมต่อ...');
   const id = 'dev_' + Date.now();
-  const newDev = { id, name, ip, port, type, zone, channel, apikey, state: 'OFF', lastToggle: null };
+  const newDev = { id, name, ip, type, zone, relayCh, state: 'OFF', lastToggle: null };
   const ping = await pingDevice(newDev);
   newDev.state = ping.ok ? 'OFF' : 'OFFLINE';
   db.devices.push(newDev);
@@ -2475,9 +2446,9 @@ async function testAndAddDevice() {
   renderDevices();
   updateSummary();
   closePanel('add-device-panel');
-  addLog('info', `เพิ่มอุปกรณ์: ${name} (${ip}) — ${ping.ok ? '✅ ออนไลน์' : '⚠️ ออฟไลน์'}`);
+  addLog('info', `เพิ่มอุปกรณ์: ${name} (${ip}) CH${relayCh} — ${ping.ok ? '✅ ออนไลน์' : '⚠️ ออฟไลน์'}`);
   showToast(ping.ok ? `✅ ${name} เชื่อมต่อได้` : `⚠️ ${name} เพิ่มแล้ว (ออฟไลน์)`, ping.ok ? null : 'warn');
-  ['nd-name','nd-ip','nd-apikey','nd-zone'].forEach(i => document.getElementById(i).value = '');
+  ['nd-name','nd-ip','nd-zone'].forEach(i => document.getElementById(i).value = '');
 }
 
 // ─── DEVICE DETAIL ───
@@ -2490,9 +2461,9 @@ function openDeviceDetail(id) {
   document.getElementById('detail-title').textContent = tc.icon + ' ' + dev.name;
   document.getElementById('detail-state').textContent = dev.state;
   document.getElementById('detail-state').style.color = dev.state==='ON' ? 'var(--accent)' : dev.state==='OFFLINE' ? 'var(--accent-red)' : 'var(--text-dim)';
-  document.getElementById('detail-ip').textContent = `${dev.ip}:${dev.port||8081}`;
+  document.getElementById('detail-ip').textContent = dev.ip;
   document.getElementById('detail-zone').textContent = dev.zone || '-';
-  document.getElementById('detail-ch').textContent = `CH ${dev.channel}`;
+  document.getElementById('detail-ch').textContent = `CH ${dev.relayCh||1}`;
   document.getElementById('detail-last').textContent = dev.lastToggle || '-';
   document.getElementById('detail-ping').textContent = '...';
   document.getElementById('detail-toggle-btn').textContent = dev.state === 'ON' ? '⛔ ปิด' : '✅ เปิด';
@@ -2604,7 +2575,7 @@ function runScheduler() {
     if (!dev) return;
     const action = s.action;
     addLog('sched', `⏰ ตั้งเวลา: ${dev.name} → ${action.toUpperCase()}`);
-    sonoffRequest(dev, action).then(r => {
+    esp8266Request(dev, action).then(r => {
       if (r.ok) {
         dev.state = action.toUpperCase();
         dev.lastToggle = now.toLocaleString('th-TH');
@@ -2616,7 +2587,7 @@ function runScheduler() {
         // Auto-off after duration
         if (action === 'on' && s.duration > 0) {
           setTimeout(async () => {
-            await sonoffRequest(dev, 'off');
+            await esp8266Request(dev, 'off');
             dev.state = 'OFF';
             dev.lastToggle = new Date().toLocaleString('th-TH');
             saveDB();
@@ -2776,7 +2747,7 @@ function handleNFCTag(tagId) {
   let action = tag.action;
   if (action === 'toggle') action = dev.state === 'ON' ? 'off' : 'on';
   addLog('nfc', `${tag.name}: สั่ง ${dev.name} → ${action.toUpperCase()}`);
-  sonoffRequest(dev, action).then(r => {
+  esp8266Request(dev, action).then(r => {
     if (r.ok) {
       dev.state = action.toUpperCase();
       saveDB();
@@ -2864,26 +2835,29 @@ function clearLog() {
 
 // ═══════════════════════════════════════════════
 //  SENSOR ENGINE — Multi-Source with Fallback
-//  Sources: esp8266 (sonoff) | satellite | auto | sim
+//  Sources: esp8266 | satellite | auto | sim
+// ═══════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════
+//  SENSOR ENGINE — Multi-Source with Fallback
+//  Sources: esp8266 | satellite | auto | sim
 // ═══════════════════════════════════════════════
 
 let sensorSource = 'satellite'; // default — จะถูก override โดย restoreUIFromSettings
 let gpsCoords = null;
 let lastSatData = null;
-let sensorFailCount = { sonoff: 0, satellite: 0 };
+let sensorFailCount = { esp8266: 0, satellite: 0 };
 
 function setSensorSource(src) {
-  if (src === 'sonoff' && !db.settings.sensor_ip) {
-    showToast('⚠️ กรอก IP Sensor Node ก่อน (กล่องด้านล่าง)', 'warn');
+  if (src === 'esp8266' && !db.settings.sensor_ip) {
+    showToast('⚠️ กรอก IP ESP8266 ก่อน (กล่องด้านล่าง)', 'warn');
   }
   sensorSource = src;
   db.settings.sensor_source = src;
-  saveDB(); // บันทึกทันที
-  // อัปเดตปุ่ม
-  ['sonoff','satellite','auto','sim'].forEach(s => {
+  saveDB();
+  ['esp8266','satellite','auto','sim'].forEach(s => {
     document.getElementById('src-'+s)?.classList.toggle('active', s === src);
   });
-  // ถ้าเลือก satellite/auto แต่ยังไม่มี GPS → auto-get
   if ((src === 'satellite' || src === 'auto') && !gpsCoords) {
     (async () => {
       setSensorStatusUI('satellite', '📍 กำลังขอ GPS...');
@@ -2911,34 +2885,33 @@ function setSensorStatusUI(type, msg) {
 // ─── MAIN ENTRY ───
 async function updateEnv() {
   const src = sensorSource;
-  if (src === 'sonoff')         await fetchFromSonoff();
+  if (src === 'esp8266')        await fetchFromEsp8266();
   else if (src === 'satellite') await fetchFromSatellite();
   else if (src === 'auto')      await fetchAuto();
   else                          fetchSim();
 }
 
 // ─── SOURCE 1: ESP8266 SENSOR NODE ───
-async function fetchFromSonoff() {
+async function fetchFromEsp8266() {
   const ip = db.settings.sensor_ip || '';
   if (!ip) {
-    setSensorStatusUI('err', '⚠️ ยังไม่ตั้งค่า IP Sensor Node — ไปที่ ⚙️ ตั้งค่า');
+    setSensorStatusUI('err', '⚠️ ยังไม่ตั้งค่า IP ESP8266 — ไปที่ ⚙️ ตั้งค่า');
     fetchSim(); return;
   }
-  setSensorStatusUI('sonoff', `🔌 กำลังดึงจาก ${ip}...`);
+  setSensorStatusUI('esp8266', `📡 กำลังดึงจาก ${ip}...`);
   try {
     const r = await fetch(`http://${ip}/sensor`, { signal: AbortSignal.timeout(4000) });
     const j = await r.json();
-    // Expected: { temp, hum, soil, lux } — any subset is fine
     renderEnvValues(
       j.temp ?? null, j.hum ?? null,
       j.soil ?? null, j.lux ?? null
     );
-    sensorFailCount.sonoff = 0;
-    setSensorStatusUI('sonoff', `🔌 ESP8266 Sensor — ${ip} | อัปเดต ${timeNow()}`);
+    sensorFailCount.esp8266 = 0;
+    setSensorStatusUI('esp8266', `📡 ESP8266 Sensor — ${ip} | อัปเดต ${timeNow()}`);
   } catch(e) {
-    sensorFailCount.sonoff++;
-    setSensorStatusUI('err', `❌ ESP8266 Sensor ไม่ตอบ (${ip}) — แสดงค่า Demo`);
-    addLog('warn', `Sensor Node ไม่ตอบสนอง: ${ip}`);
+    sensorFailCount.esp8266++;
+    setSensorStatusUI('err', `❌ ESP8266 ไม่ตอบ (${ip}) — แสดงค่า Demo`);
+    addLog('warn', `ESP8266 Sensor ไม่ตอบสนอง: ${ip}`);
     fetchSim();
   }
 }
@@ -3027,19 +3000,18 @@ async function fetchFromSatellite(isFallback = false) {
 // ─── SOURCE 3: AUTO (ESP8266 หลัก → Satellite สำรอง) ───
 async function fetchAuto() {
   const ip = db.settings.sensor_ip || '';
-  // ─ ลอง Sonoff ก่อน (ถ้ามี IP) ─
   if (ip) {
-    setSensorStatusUI('sonoff', `🔄 อัตโนมัติ — ลอง ESP8266 ${ip}...`);
+    setSensorStatusUI('esp8266', `🔄 อัตโนมัติ — ลอง ESP8266 ${ip}...`);
     try {
       const r = await fetch(`http://${ip}/sensor`, { signal: AbortSignal.timeout(3500) });
       const j = await r.json();
       renderEnvValues(j.temp ?? null, j.hum ?? null, j.soil ?? null, j.lux ?? null);
-      sensorFailCount.sonoff = 0;
-      setSensorStatusUI('sonoff', `🔄 อัตโนมัติ → ESP8266 OK | ${timeNow()}`);
+      sensorFailCount.esp8266 = 0;
+      setSensorStatusUI('esp8266', `🔄 อัตโนมัติ → ESP8266 OK | ${timeNow()}`);
       return;
     } catch(e) {
-      sensorFailCount.sonoff++;
-      addLog('warn', `Auto: ESP8266 ล้มเหลว (${sensorFailCount.sonoff}x) → ใช้ดาวเทียมแทน`);
+      sensorFailCount.esp8266++;
+      addLog('warn', `Auto: ESP8266 ล้มเหลว (${sensorFailCount.esp8266}x) → ใช้ดาวเทียมแทน`);
     }
   }
   // ─ Fallback → ดาวเทียม ─
@@ -3491,10 +3463,10 @@ function init() {
   // Demo devices if empty
   if (db.devices.length === 0) {
     db.devices = [
-      { id:'dev_demo1', name:'ปั๊มน้ำหลัก', ip:'192.168.1.100', port:8081, type:'water', zone:'โซน A', channel:0, apikey:'', state:'OFF', lastToggle:null },
-      { id:'dev_demo2', name:'ไฟ LED โรงเรือน', ip:'192.168.1.101', port:8081, type:'light', zone:'โรงเรือน 1', channel:0, apikey:'', state:'ON', lastToggle:'วันนี้ 06:00' },
-      { id:'dev_demo3', name:'พัดลมระบาย', ip:'192.168.1.102', port:8081, type:'fan', zone:'โรงเรือน 1', channel:0, apikey:'', state:'OFF', lastToggle:null },
-      { id:'dev_demo4', name:'หัวพ่นหมอก', ip:'192.168.1.103', port:8081, type:'mist', zone:'โซน B', channel:0, apikey:'', state:'OFFLINE', lastToggle:null },
+      { id:'dev_demo1', name:'ปั๊มน้ำหลัก',    ip:'192.168.1.100', type:'water', zone:'โซน A',       relayCh:1, state:'OFF',     lastToggle:null },
+      { id:'dev_demo2', name:'ไฟ LED โรงเรือน', ip:'192.168.1.101', type:'light', zone:'โรงเรือน 1', relayCh:2, state:'ON',      lastToggle:'วันนี้ 06:00' },
+      { id:'dev_demo3', name:'พัดลมระบาย',      ip:'192.168.1.102', type:'fan',   zone:'โรงเรือน 1', relayCh:3, state:'OFF',     lastToggle:null },
+      { id:'dev_demo4', name:'หัวพ่นหมอก',      ip:'192.168.1.103', type:'mist',  zone:'โซน B',       relayCh:4, state:'OFFLINE', lastToggle:null },
     ];
     saveDB();
     renderDevices();
@@ -4342,7 +4314,7 @@ function executeRuleAction(rule, dev) {
   }).join(' '+logic+' ');
   const msg = '🤖 Rule: "'+rule.name+'"\n'+condSummary+'\n→ '+dev.name+': '+rule.action.toUpperCase();
   addLog('sched','🤖 '+rule.name+': '+condSummary+' → '+dev.name+' '+rule.action.toUpperCase());
-  sonoffRequest(dev, rule.action).then(r => {
+  esp8266Request(dev, rule.action).then(r => {
     if (!r.ok) return;
     dev.state=rule.action.toUpperCase(); dev.lastToggle=new Date().toLocaleString('th-TH');
     saveDB(); renderDevices(); updateSummary();
@@ -4352,7 +4324,7 @@ function executeRuleAction(rule, dev) {
     if (rule.action==='on' && rule.duration>0) {
       if (rule._autoOffTimer) clearTimeout(rule._autoOffTimer);
       rule._autoOffTimer = setTimeout(async()=>{
-        await sonoffRequest(dev,'off');
+        await esp8266Request(dev,'off');
         dev.state='OFF'; dev.lastToggle=new Date().toLocaleString('th-TH');
         saveDB(); renderDevices(); updateSummary();
         addLog('off','🤖 '+rule.name+': '+dev.name+' ปิดอัตโนมัติหลัง '+rule.duration+' นาที');
@@ -4584,12 +4556,12 @@ function restoreUIFromSettings() {
   // อัปเดต indicator ล่วงหน้า
   const srcLabels = {
     satellite: '🛰️ ดาวเทียม Open-Meteo',
-    sonoff:    '🔌 ESP8266 Sensor',
+    esp8266:   '📡 ESP8266 Sensor',
     auto:      '🔄 อัตโนมัติ+สำรอง',
     sim:       '🎲 โหมดจำลอง (Demo)',
   };
   setSensorStatusUI(
-    savedSrc === 'sim' ? 'sim' : savedSrc === 'sonoff' ? 'sonoff' : 'satellite',
+    savedSrc === 'sim' ? 'sim' : savedSrc === 'esp8266' ? 'esp8266' : 'satellite',
     (srcLabels[savedSrc] || '🛰️ ดาวเทียม') + (gpsCoords?.placeName ? ` • ${gpsCoords.placeName}` : ' — กำลังระบุตำแหน่ง...')
   );
 
