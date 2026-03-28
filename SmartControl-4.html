@@ -2627,7 +2627,7 @@
       <div class="splash-bar-wrap">
         <div class="splash-bar" id="splash-bar"></div>
       </div>
-      <div class="splash-ver" id="splash-ver-label">v1.9.1 - กำลังโหลด...</div>
+      <div class="splash-ver" id="splash-ver-label">v1.9.2.1 - กำลังโหลด...</div>
     </div>
   </div>
 
@@ -3416,7 +3416,7 @@
         <span class="nav-icon">⋯</span>เพิ่มเติม
       </button>
     </nav>
-    <div class="version-badge">v1.9.1</div>
+    <div class="version-badge">v1.9.2.1</div>
   </div>
 
   <!-- MORE PANEL -->
@@ -4903,7 +4903,7 @@
       sensorSource = src;
       db.settings.sensor_source = src;
       if (SERVER_MODE) {
-        apiPost('/config', { sensor_source: src }).catch(()=>{});
+        apiPost('/config', { sensor_source: src }).catch(() => { });
       } else {
         saveDB();
       }
@@ -5121,7 +5121,7 @@
             db.settings.gps_lat = gpsCoords.lat;
             db.settings.gps_lon = gpsCoords.lon;
             if (SERVER_MODE) {
-              apiPost('/config', { gps_lat: gpsCoords.lat, gps_lon: gpsCoords.lon }).catch(()=>{});
+              apiPost('/config', { gps_lat: gpsCoords.lat, gps_lon: gpsCoords.lon }).catch(() => { });
             } else {
               saveDB();
             }
@@ -5132,7 +5132,7 @@
             gpsCoords.placeName = place;
             db.settings.gps_place = place;
             if (SERVER_MODE) {
-              apiPost('/config', { gps_place: place }).catch(()=>{});
+              apiPost('/config', { gps_place: place }).catch(() => { });
             } else {
               saveDB();
             }
@@ -5229,7 +5229,7 @@
       db.settings.gps_lon = lon;
       db.settings.gps_place = place;
       if (SERVER_MODE) {
-        apiPost('/config', { gps_lat: lat, gps_lon: lon, gps_place: place }).catch(()=>{});
+        apiPost('/config', { gps_lat: lat, gps_lon: lon, gps_place: place }).catch(() => { });
       } else {
         saveDB();
       }
@@ -5921,7 +5921,7 @@ self.addEventListener('push', e => {
     }
 
     // ═══════════════════════════════════════════════
-    //  📷 CAMERA  v1.9.1
+    //  📷 CAMERA  v1.9.2.1
     // ═══════════════════════════════════════════════
     let cameras = [];
     const CAM_KEY = 'sc_cameras_v1';
@@ -5978,7 +5978,7 @@ self.addEventListener('push', e => {
     function refreshAllCams() { cameras.forEach((cam, idx) => { if (cam.type === 'snapshot') { const img = document.getElementById('cam-feed-' + idx); if (img) img.src = cam.url + '?t=' + Date.now(); } }); showToast('🔄 รีเฟรชกล้อง'); }
 
     // ═══════════════════════════════════════════════
-    //  🗺️ FARM MAP  v1.9.1
+    //  🗺️ FARM MAP  v1.9.2.1
     // ═══════════════════════════════════════════════
     const MAP_KEY = 'sc_map_v1';
     let mapObjects = [], mapTool = 'select', mapDragging = null, mapDrawStart = null, selectedObj = null, mapCanvas, mapCtx;
@@ -6058,7 +6058,7 @@ self.addEventListener('push', e => {
     function exportMapImg() { const a = document.createElement('a'); a.download = 'farmmap.png'; a.href = mapCanvas.toDataURL(); a.click(); showToast('💾 บันทึกรูปแล้ว'); }
 
     // ═══════════════════════════════════════════════
-    //  🌧️ WEATHER  v1.9.1
+    //  🌧️ WEATHER  v1.9.2.1
     // ═══════════════════════════════════════════════
     const WX_ICONS = { 0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️', 45: '🌫️', 48: '🌫️', 51: '🌦️', 53: '🌦️', 55: '🌧️', 61: '🌧️', 63: '🌧️', 65: '⛈️', 80: '🌦️', 81: '🌧️', 82: '⛈️', 95: '⛈️', 99: '⛈️' };
     const WX_DESC = { 0: 'ท้องฟ้าแจ่มใส', 1: 'มีเมฆบางส่วน', 2: 'มีเมฆปานกลาง', 3: 'ท้องฟ้าครึ้ม', 45: 'หมอก', 51: 'ฝนปรอย', 61: 'ฝนเบา', 63: 'ฝนปานกลาง', 65: 'ฝนหนัก', 80: 'ฝนฟ้าคะนอง', 81: 'ฝนฟ้าคะนอง', 82: 'ฝนหนักมาก', 95: 'พายุฝน', 99: 'พายุรุนแรง' };
@@ -6141,7 +6141,7 @@ self.addEventListener('push', e => {
     }
 
     // ═══════════════════════════════════════════════
-    //  📊 EXPORT  v1.9.1
+    //  📊 EXPORT  v1.9.2.1
     // ═══════════════════════════════════════════════
     function getGSScript() {
       return `function doPost(e){
@@ -6820,7 +6820,7 @@ self.addEventListener('push', e => {
     }
 
     // ═══════════════════════════════════════════════
-    //  📊 SPARKLINE ENGINE  v1.9.1
+    //  📊 SPARKLINE ENGINE  v1.9.2.1
     // ═══════════════════════════════════════════════
     const SPARK_CFG = {
       temp: { color: '#ff7c2a', min: 15, max: 50 },
@@ -6915,7 +6915,7 @@ self.addEventListener('push', e => {
     }
 
     // ═══════════════════════════════════════════════
-    //  🔔 ANOMALY DETECTION ENGINE  v1.9.1
+    //  🔔 ANOMALY DETECTION ENGINE  v1.9.2.1
     // ═══════════════════════════════════════════════
     const ANOMALY_KEY = 'sc_anomaly_v1';
     let anomalyLog = [];
@@ -7083,7 +7083,7 @@ self.addEventListener('push', e => {
     }
 
     // ═══════════════════════════════════════════════
-    //  🌱 FARM INTELLIGENCE ENGINE  v1.9.1
+    //  🌱 FARM INTELLIGENCE ENGINE  v1.9.2.1
     // ═══════════════════════════════════════════════
     const HARVEST_KEY = 'sc_harvest_v1';
     let harvestLog = [];
@@ -7593,4 +7593,3 @@ _KLANGDOI GARDEN · SmartControl v${typeof APP_VERSION !== 'undefined' ? APP_VER
 </body>
 
 </html>
-
