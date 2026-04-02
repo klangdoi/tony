@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Klangdoi AI - Plant Scanner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        /* สไตล์รูปตัวอย่าง */
+        #image-preview {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            margin: 20px auto;
+            border-radius: 10px;
+            display: none;
+            border: 2px solid #ccc;
+        }
+
+        /* สไตล์ปุ่มแสดงผลคะแนน */
+        #label-container div {
+            padding: 10px;
+            margin: 8px 0;
+            background: #e9ecef;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16px;
+            border: 1px solid #ddd;
+        }
+
+        /* สไตล์ปุ่มกดอัพโหลด/ถ่ายรูป */
+        .upload-btn {
+            background-color: #28a745;
+            color: white;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            width: 100%;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .upload-btn:hover {
+            background-color: #218838;
+        }
+
+        /* ซ่อน input แบบมาตรฐาน */
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h2>Klangdoi AI-2</h2>
+        <p>กดปุ่มเพื่อถ่ายรูป หรือ เลือกรูปใบไม้จากอัลบั้ม</p>
+
+        <label class="upload-btn">
+            📷 ถ่ายรูป / เลือกรูปภาพ
+            <input type="file" accept="image/*" onchange="loadFile(event)">
+        </label>
+
+        <img id="image-preview" src="#" alt="ตัวอย่างรูปภาพ" />
+
+        <div id="label-container"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+    <script type="text/javascript">
+        // ลิงก์โมเดลของคุณโทนี่
+        const URL = "https://teachablemachine.withgoogle.com/models/SD27UQkzC/";
+        let model, labelContainer, maxPredictions;
+
+        // ฟังก์ชันโหลด Model ทันทีเมื่อเปิดเว็บ (ไม่ต้องรอปุ่ม Start)
+        async function loadModel() {
+            try {
+                const modelURL = URL + "model.json";
+                const metadataURL = URL + "metadata.json";
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+
+                // เตรียมหน้าจอแสดงผล
+                labelContainer = document.getElementById("label-container");
+                labelContainer.innerHTML = ""; // ล้างข้อมูลเก่า
+                for (let i = 0; i < maxPredictions; i++) {
+                    labelContainer.appendChild(document.createElement("div"));
+                }
+            } catch (err) {
+                console.error("ไม่สามารถโหลดโมเดลได้:", err);
+                alert("เกิดข้อผิดพลาดในการโหลดโมเดล กรุณาลองใหม่อีกครั้ง");
+            }
+        }
+        loadModel();
+
+        // ฟังก์ชันรับรูปภาพและเริ่มวิเคราะห์
+        async function loadFile(event) {
+            if (!model) {
+                alert("โมเดลยังโหลดไม่เสร็จ กรุณารอสักครู่");
+                return;
+            }
+
+            const imagePreview = document.getElementById('image-preview');
+
+            // ตรวจสอบว่ามีไฟล์หรือไม่
+            if (event.target.files && event.target.files[0]) {
+                imagePreview.src = window.URL.createObjectURL(event.target.files[0]);
+                imagePreview.style.display = "block";
+
+                // ล้างหน้าจอแสดงผลคะแนนเก่า
+                labelContainer.innerHTML = "";
+                for (let i = 0; i < maxPredictions; i++) {
+                    const div = document.createElement("div");
+                    div.innerHTML = "กำลังวิเคราะห์...";
+                    labelContainer.appendChild(div);
+                }
+
+                // รอให้รูปโหลดเสร็จแล้วสั่งวิเคราะห์ทันที
+                imagePreview.onload = async () => {
+                    await predict(imagePreview);
+                };
+            }
+        }
+
+        // ฟังก์ชันวิเคราะห์รูปภาพ
+        async function predict(imgElement) {
+            try {
+                const prediction = await model.predict(imgElement);
+
+                // เรียงลำดับคะแนนจากสูงไปต่ำ (เพิ่มเติมเพื่อให้ดูง่ายขึ้น)
+                const sortedPrediction = prediction.sort((a, b) => b.probability - a.probability);
+
+                for (let i = 0; i < maxPredictions; i++) {
+                    const prob = sortedPrediction[i].probability.toFixed(2);
+
+                    // แสดงผลเฉพาะตัวที่มีคะแนนเกิน 1% เพื่อไม่ให้รกหน้าจอ
+                    if (prob > 0.01) {
+                        const classPrediction = sortedPrediction[i].className + ": " + (prob * 100).toFixed(0) + "%";
+                        labelContainer.childNodes[i].innerHTML = classPrediction;
+
+                        // ไฮไลท์ตัวที่ AI มั่นใจที่สุด
+                        if (i === 0 && prob > 0.5) {
+                            labelContainer.childNodes[i].style.backgroundColor = "#d4edda"; // สีเขียวอ่อน
+                            labelContainer.childNodes[i].style.color = "#155724"; // สีเขียวเข้ม
+                        } else {
+                            labelContainer.childNodes[i].style.backgroundColor = "#e9ecef";
+                            labelContainer.childNodes[i].style.color = "#333";
+                        }
+                        labelContainer.childNodes[i].style.display = "block";
+                    } else {
+                        labelContainer.childNodes[i].style.display = "none";
+                    }
+                }
+            } catch (err) {
+                console.error("เกิดข้อผิดพลาดในการวิเคราะห์:", err);
+                alert("เกิดข้อผิดพลาดในการวิเคราะห์รูปภาพ");
+            }
+        }
+    </script>
+
+</body>
+
+</html>
