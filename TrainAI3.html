@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Klangdoi AI - Dual Mode</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #f0f4f0;
+        }
+
+        .card {
+            max-width: 400px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #2d5a27;
+            margin-bottom: 5px;
+        }
+
+        p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        #image-preview {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            margin: 20px auto;
+            border-radius: 15px;
+            display: none;
+            border: 2px solid #eee;
+        }
+
+        /* สไตล์ปุ่ม */
+        .btn-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 18px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            color: white;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-camera {
+            background: #28a745;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .btn-album {
+            background: #007bff;
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* การแสดงผล */
+        #status-text {
+            margin: 15px 0;
+            font-weight: bold;
+            color: #444;
+        }
+
+        .prediction-item {
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 10px;
+            background: #f8f9fa;
+            font-weight: bold;
+            border-left: 5px solid #ccc;
+        }
+
+        .top-match {
+            background: #d4edda !important;
+            border-left: 5px solid #28a745 !important;
+            color: #155724;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <h2>Klangdoi AI-2</h2>
+        <p>เลือกวิธีส่งรูปใบไม้/ผลไม้เพื่อวิเคราะห์</p>
+
+        <div class="btn-container">
+            <label class="btn btn-camera">
+                📸 เปิดกล้องถ่ายรูปสด
+                <input type="file" accept="image/*" capture="environment" onchange="processImage(event)">
+            </label>
+
+            <label class="btn btn-album">
+                🖼️ เลือกรูปจากอัลบั้ม
+                <input type="file" accept="image/*" onchange="processImage(event)">
+            </label>
+        </div>
+
+        <img id="image-preview" src="#" alt="Preview" />
+
+        <div id="status-text"></div>
+        <div id="label-container"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+    <script type="text/javascript">
+        const URL = "https://teachablemachine.withgoogle.com/models/SD27UQkzC/";
+        let model, maxPredictions;
+
+        async function setup() {
+            model = await tmImage.load(URL + "model.json", URL + "metadata.json");
+            maxPredictions = model.getTotalClasses();
+        }
+        setup();
+
+        async function processImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const preview = document.getElementById('image-preview');
+            const status = document.getElementById('status-text');
+            const labelContainer = document.getElementById('label-container');
+
+            preview.src = window.URL.createObjectURL(file);
+            preview.style.display = "block";
+            status.innerHTML = "⌛ กำลังประมวลผล...";
+            labelContainer.innerHTML = "";
+
+            preview.onload = async () => {
+                const prediction = await model.predict(preview);
+                const results = prediction.sort((a, b) => b.probability - a.probability);
+
+                status.innerHTML = "✅ วิเคราะห์เรียบร้อย";
+
+                for (let i = 0; i < maxPredictions; i++) {
+                    const score = (results[i].probability * 100).toFixed(0);
+                    if (score > 1) {
+                        const div = document.createElement("div");
+                        div.className = "prediction-item" + (i === 0 && score > 50 ? " top-match" : "");
+                        div.innerHTML = `${results[i].className}: ${score}%`;
+                        labelContainer.appendChild(div);
+                    }
+                }
+            };
+        }
+    </script>
+
+</body>
+
+</html>
