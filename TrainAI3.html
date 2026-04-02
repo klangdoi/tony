@@ -161,6 +161,10 @@
             labelContainer.innerHTML = "";
 
             preview.onload = async () => {
+                // หน่วงเวลาแสดงผล 5 วินาที
+                status.innerHTML = "⏳ กำลังวิเคราะห์สายพันธุ์...";
+                await new Promise(r => setTimeout(r, 3000));
+
                 const prediction = await model.predict(preview);
                 const results = prediction.sort((a, b) => b.probability - a.probability);
 
