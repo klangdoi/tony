@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Klangdoi AI Expert</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+    <meta name="theme-color" content="#2d5a27">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest"
+        href="data:application/manifest+json,{'name':'Klangdoi AI Expert','short_name':'KlangdoiAI','start_url':'.','display':'standalone','background_color':'#ffffff','theme_color':'#2d5a27'}">
+
+    <style>
+        :root {
+            --primary: #28a745;
+            --secondary: #007bff;
+            --accent: #ffc107;
+            --bg: #f4f7f4;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: var(--bg);
+            margin: 0;
+        }
+
+        .card {
+            max-width: 500px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        h2 {
+            color: #2d5a27;
+            margin: 0;
+            font-size: 26px;
+            letter-spacing: 1px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 25px;
+            display: block;
+        }
+
+        #image-preview {
+            width: 100%;
+            border-radius: 20px;
+            display: none;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            padding: 15px;
+            border-radius: 18px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            color: white;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-camera {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+        }
+
+        .btn-album {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        #status-text {
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #555;
+            font-size: 14px;
+        }
+
+        /* สไตล์ผลลัพธ์ */
+        .prediction-item {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 15px;
+            background: #f8f9fa;
+            font-weight: bold;
+            font-size: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .top-match {
+            background: #d4edda !important;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        /* สไตล์คำแนะนำจาก Gemini */
+        #ai-advice {
+            text-align: left;
+            background: #fff3cd;
+            color: #856404;
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            display: none;
+            border-left: 6px solid var(--accent);
+            line-height: 1.6;
+            font-size: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <h2>KLANGDOI AI EXPERT</h2>
+        <span class="subtitle">ระบบวิเคราะห์สายพันธุ์และมัคคุเทศก์ AI</span>
+
+        <div class="btn-container">
+            <label class="btn btn-camera">
+                <span>📸</span>
+                <span>ถ่ายรูปสด</span>
+                <input type="file" accept="image/*" capture="environment" onchange="processImage(event)">
+            </label>
+
+            <label class="btn btn-album">
+                <span>🖼️</span>
+                <span>เลือกรูป</span>
+                <input type="file" accept="image/*" onchange="processImage(event)">
+            </label>
+        </div>
+
+        <img id="image-preview" src="#" alt="Preview" />
+
+        <div id="status-text">กรุณาเลือกรูปภาพ...</div>
+        <div id="label-container"></div>
+
+        <div id="ai-advice"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+    <script type="text/javascript">
+        // -------------------------------------------------------
+        // 1. ตั้งค่า API และ URL (แก้ไขตรงนี้)
+        // -------------------------------------------------------
+        const GEMINI_API_KEY = "AIzaSyBYEYIRbhUQsgDHrABwNzkK5mOearBggQs";
+        const TM_URL = "https://teachablemachine.withgoogle.com/models/SD27UQkzC/";
+
+        let model, maxPredictions;
+
+        // โหลดโมเดล AI
+        async function setup() {
+            try {
+                model = await tmImage.load(TM_URL + "model.json", TM_URL + "metadata.json");
+                maxPredictions = model.getTotalClasses();
+                document.getElementById('status-text').innerHTML = "✅ AI พร้อมทำงานแล้ว";
+            } catch (e) {
+                document.getElementById('status-text').innerHTML = "❌ โหลดโมเดลไม่สำเร็จ";
+            }
+        }
+        setup();
+
+        // ฟังก์ชันถาม Gemini
+        async function askGemini(plantName) {
+            const adviceBox = document.getElementById('ai-advice');
+            adviceBox.style.display = "block";
+            adviceBox.innerHTML = "✨ กำลังขอคำแนะนำจากผู้เชี่ยวชาญ Gemini...";
+
+            const prompt = `คุณคือผู้เชี่ยวชาญมะเดื่อฝรั่งของสวน Klangdoi Garden (คลังดอยการ์เด้น) 
+        ลูกค้าเพิ่งสแกนเจอสายพันธุ์ "${plantName}" 
+        ช่วยบอก 3 อย่างสั้นๆ: 
+        1. จุดเด่นรสชาติ 2. วิธีดูแลที่เน้นเป็นพิเศษ 3. ความหายากหรือความพิเศษของมัน 
+        ใช้ภาษากันเอง อบอุ่น เหมือนเจ้าของสวนคุยกับแขก`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                const data = await response.json();
+                const text = data.candidates[0].content.parts[0].text;
+
+                // แปลง Markdown เบื้องต้น (ถ้ามี)
+                adviceBox.innerHTML = `<strong>💡 มัคคุเทศก์ AI แนะนำ:</strong><br>${text.replace(/\n/g, '<br>')}`;
+            } catch (error) {
+                adviceBox.innerHTML = "⚠️ ขออภัย ไม่สามารถดึงข้อมูลคำแนะนำได้ในขณะนี้";
+            }
+        }
+
+        async function processImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const preview = document.getElementById('image-preview');
+            const status = document.getElementById('status-text');
+            const labelContainer = document.getElementById('label-container');
+            const adviceBox = document.getElementById('ai-advice');
+
+            preview.src = window.URL.createObjectURL(file);
+            preview.style.display = "block";
+            status.innerHTML = "⌛ กำลังวิเคราะห์สายพันธุ์...";
+            labelContainer.innerHTML = "";
+            adviceBox.style.display = "none";
+
+            preview.onload = async () => {
+                const prediction = await model.predict(preview);
+                const results = prediction.sort((a, b) => b.probability - a.probability);
+
+                status.innerHTML = "✅ ผลการวิเคราะห์:";
+
+                // แสดงเฉพาะอันดับ 1
+                const topResult = results[0];
+                const score = (topResult.probability * 100).toFixed(0);
+
+                if (score > 10) {
+                    const div = document.createElement("div");
+                    div.className = "prediction-item top-match";
+                    div.innerHTML = `<span>${topResult.className}</span> <span>${score}%</span>`;
+                    labelContainer.appendChild(div);
+
+                    // ถ้ามั่นใจเกิน 50% ให้ถาม Gemini ต่อทันที
+                    if (score > 50) {
+                        await askGemini(topResult.className);
+                    }
+                } else {
+                    status.innerHTML = "❓ ไม่แน่ใจว่าเป็นสายพันธุ์ไหน ลองถ่ายใหม่นะครับ";
+                }
+            };
+        }
+
+        // Service Worker สำหรับ PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdmZXRjaCcsIGV2ZW50ID0+IHsgfSk7');
+            });
+        }
+    </script>
+
+</body>
+
+</html>
