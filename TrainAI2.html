@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Klangdoi AI - Smart Scanner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .card {
+            max-width: 450px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #2d5a27;
+        }
+
+        /* สไตล์รูปตัวอย่าง */
+        #image-preview {
+            width: 100%;
+            max-width: 320px;
+            height: auto;
+            margin: 20px auto;
+            border-radius: 15px;
+            display: none;
+            border: 3px solid #f0f0f0;
+        }
+
+        /* ปุ่มกดดีไซน์ใหม่ */
+        .btn-group {
+            margin: 20px 0;
+        }
+
+        .upload-label {
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+            color: white;
+            padding: 18px 30px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-block;
+            width: 80%;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .upload-label:active {
+            transform: scale(0.95);
+        }
+
+        /* ซ่อน input ตัวจริง */
+        #file-input {
+            display: none;
+        }
+
+        /* ส่วนแสดงผลลัพธ์ */
+        #result-box {
+            margin-top: 20px;
+        }
+
+        .prediction-item {
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 10px;
+            background: #f1f3f5;
+            font-size: 18px;
+            font-weight: 600;
+            display: none;
+            border-left: 5px solid #ccc;
+        }
+
+        .top-match {
+            background: #d4edda !important;
+            border-left: 5px solid #28a745 !important;
+            color: #155724;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+        <h2>Klangdoi AI-2</h2>
+        <p>วิเคราะห์สายพันธุ์และโรคพืช</p>
+
+        <div class="btn-group">
+            <label for="file-input" class="upload-label">
+                📸 ถ่ายรูป / เลือกจากเครื่อง
+            </label>
+            <input type="file" id="file-input" accept="image/*" capture="environment" onchange="processImage(event)">
+        </div>
+
+        <img id="image-preview" src="#" alt="Preview" />
+
+        <div id="result-box">
+            <div id="status-text" style="color: #666; font-style: italic;">รอรูปภาพเพื่อวิเคราะห์...</div>
+            <div id="label-container"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+
+    <script type="text/javascript">
+        const URL = "https://teachablemachine.withgoogle.com/models/SD27UQkzC/";
+        let model, labelContainer, maxPredictions;
+
+        // โหลด AI เตรียมไว้
+        async function setupAI() {
+            try {
+                model = await tmImage.load(URL + "model.json", URL + "metadata.json");
+                maxPredictions = model.getTotalClasses();
+
+                labelContainer = document.getElementById("label-container");
+                for (let i = 0; i < maxPredictions; i++) {
+                    const div = document.createElement("div");
+                    div.className = "prediction-item";
+                    labelContainer.appendChild(div);
+                }
+                console.log("AI Ready!");
+            } catch (e) {
+                alert("โหลด AI ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ต");
+            }
+        }
+        setupAI();
+
+        async function processImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const preview = document.getElementById('image-preview');
+            const status = document.getElementById('status-text');
+
+            // แสดงรูปที่เลือก
+            preview.src = window.URL.createObjectURL(file);
+            preview.style.display = "block";
+            status.innerHTML = "⌛ กำลังวิเคราะห์ข้อมูล...";
+
+            preview.onload = async () => {
+                const prediction = await model.predict(preview);
+
+                // เรียงลำดับตัวที่คะแนนสูงสุดขึ้นก่อน
+                const results = prediction.sort((a, b) => b.probability - a.probability);
+
+                status.innerHTML = "✅ วิเคราะห์สำเร็จ:";
+
+                for (let i = 0; i < maxPredictions; i++) {
+                    const item = labelContainer.childNodes[i];
+                    const score = (results[i].probability * 100).toFixed(0);
+
+                    if (score > 1) { // แสดงผลเฉพาะตัวที่มีคะแนน > 1%
+                        item.innerHTML = `${results[i].className}: ${score}%`;
+                        item.style.display = "block";
+
+                        // ตัวที่แม่นสุด (อันดับ 1) และคะแนนเกิน 50% ให้ไฮไลท์สีเขียว
+                        if (i === 0 && score > 50) {
+                            item.className = "prediction-item top-match";
+                        } else {
+                            item.className = "prediction-item";
+                        }
+                    } else {
+                        item.style.display = "none";
+                    }
+                }
+            };
+        }
+    </script>
+
+</body>
+
+</html>
