@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Klangdoi Smart Farm</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            padding: 50px;
+            background: #f4f4f9;
+            color: #333;
+        }
+
+        .mic-btn {
+            font-size: 60px;
+            padding: 30px;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+            background: #ff5722;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: 0.3s;
+        }
+
+        .mic-btn.active {
+            background: #4caf50;
+            transform: scale(1.1);
+            animation: pulse 1.2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 20px rgba(76, 175, 80, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+            }
+        }
+
+        #status {
+            margin-top: 30px;
+            font-size: 1.2em;
+            min-height: 1.5em;
+        }
+    </style>
+</head>
+
+<body>
+    <h1></h1>KLANGDOI ASSISTANT</h1>
+    <p>แตะที่ไมค์แล้วพูดว่า "เปิด" หรือ "ปิด"</p>
+
+    <button id="start-btn" class="mic-btn">🎤</button>
+    <div id="status">รอสั่งงาน...</div>
+
+    <script>
+        const btn = document.getElementById('start-btn');
+        const status = document.getElementById('status');
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+
+        recognition.lang = 'th-TH';
+        recognition.interimResults = false;
+
+        btn.onclick = () => {
+            recognition.start();
+            btn.classList.add('active');
+            status.innerText = "กำลังฟัง...";
+        };
+
+        recognition.onresult = async (event) => {
+            const command = event.results[0][0].transcript;
+            status.innerText = "พูดว่า: " + command;
+            btn.classList.remove('active');
+
+            try {
+                // เปลี่ยน localhost เป็น IP จริงของเครื่องถ้าใช้มือถือเปิด
+                const res = await fetch('http://192.168.0.12:3001/voice-command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command })
+                });
+                const data = await res.json();
+                status.innerText = "ผลลัพธ์: " + data.message;
+            } catch (err) {
+                status.innerText = "Error: ไม่สามารถเชื่อมต่อกับ Server (node webmcp.js) ได้";
+            }
+        };
+
+        recognition.onerror = (e) => {
+            btn.classList.remove('active');
+            status.innerText = "Error: " + e.error;
+        };
+    </script>
+</body>
+
+</html>
